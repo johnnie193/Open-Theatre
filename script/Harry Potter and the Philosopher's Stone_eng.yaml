@@ -1,0 +1,113 @@
+id: 
+  Harry Potter and the Philosopher's Stone
+background:
+  player: Harry
+  narrative: |
+    To prevent Voldemort from returning, Harry plans to sneak out tonight with his friends Hermione and Ron to find the Philosopher's Stone.
+  characters:
+    Harry: A member of Gryffindor, Harry is brave and clever, often making decisive choices in complicated situations. Although he can sometimes act impulsively, he always manages to find the right solution when it matters.
+    Hermione: A smart and talented first-year Gryffindor student at Hogwarts, Hermione is detail-oriented, logical, and enjoys academic pursuits. She is Harry and Ron's friend.
+    Ron: A kind, loyal, and funny first-year Gryffindor student at Hogwarts. He has both courage and resilience, though he also struggles with shyness and self-doubt. He is Harry and Hermione's friend.
+    Neville: A clumsy and weak first-year Gryffindor student at Hogwarts, Neville has a strong inner resolve. He is Harry, Hermione, and Ron's classmate.
+scenes:
+  scene1:
+    name: Midnight Scheme
+    scene: Location:Gryffindor Common Room. Time:10:00 PM. The common room is pitch dark. Perhaps everyone has gone to bed, or maybe some are still awake. The atmosphere is tense.
+    mode: v1
+    characters:
+      Harry: Planning an urgent mission with Hermione and Ron, Harry doesn't hesitate to join despite the high risks.
+      Hermione: Explains to Neville the necessity of leaving and successfully convinces him.
+      Ron: Explains to Neville the necessity of leaving and successfully convinces him.
+      Neville: Refuses to let Harry and the others cause trouble for Gryffindor, insisting on stopping them from leaving the common room.
+    chain:
+    - The trio takes out the invisibility cloak and prepares to sneak out.
+    - Neville notices and expresses suspicion and discontent.
+    - Hermione insists on keeping their plan secret from Neville; their attempts to persuade him fail.
+    - Hermione finally decides to use magic to subdue Neville and casts "Petrificus Totalus".
+    stream: 
+      The trio takes out the invisibility cloak and prepares to sneak out.:
+      - Hermione:We need to hurry, we can't afford any delays.
+      - Ron:(nervously) Are you sure this is okay? Sneaking out could get us caught by a teacher.
+      - Harry:(whispering) We need to be careful, but if we don't leave now, it’ll be too late tomorrow.
+      Neville notices and expresses suspicion and discontent.:
+      - Neville:Where are you going? It’s late, and it’s not safe outside.
+      - Ron:(guiltily) We’re just going for a walk, we won’t disturb you.
+      - Neville:Can you at least tell me what you’re up to?
+      - Harry:(calmly) Neville, there’s really nothing to worry about. We just need to solve an important problem.    
+      Hermione insists on keeping their plan secret from Neville; their attempts to persuade him fail.:
+      - Hermione:(sternly) Neville, you can't stop us. This is really important.
+      - Neville:(shaking his head) If you don’t tell me, I’ll go tell a teacher.
+      - Ron:(sighing) No, Neville, the teachers can’t know about this.
+      Hermione finally decides to use magic to subdue Neville and casts "Petrificus Totalus".:
+      - Hermione:(whispering) If you really want to stop us, don’t blame me.
+      - Neville:(surprised) You... what are you going to do?
+      - Hermione:(quickly waving her wand) Petrificus Totalus!
+      - Harry:(sighing) Hermione, hurry! We need to go.
+      - Ron:(nervously) Is Neville okay? We really can’t waste any more time.
+  scene2:
+    name: Exploring the Chamber
+    scene: Location:The Chamber in the Castle. Time:10:30 PM. The three-headed dog is lying in the center of the chamber, snoring deeply. Its beautiful and melodic snores echo through the room. Items in the scene include a harp, the three-headed dog, premium dog food, and a broken scarf. The atmosphere is mysterious and tense.
+    mode: v1
+    characters:
+      Harry: Determined and calm, Harry is ready to make key decisions to ensure the success of their mission.
+      Hermione: Exhibiting high analytical ability, Hermione quickly deduces that the three-headed dog may be hypnotized by the harp and takes charge of the team with her calm demeanor.
+      Ron: He is frightened by the threat of the three-headed dog but is brave enough to help his friends.
+    chain:
+    - Hermione notices the harp and begins to analyze the situation.
+    - Ron questions the connection between the harp and the three-headed dog.
+    - Harry calmly takes charge, preparing to move forward with the next steps.
+    - Hermione and Ron decide to explore the area around the three-headed dog.
+    - Hermione and Harry decide to proceed and find the trapdoor.
+    stream:
+      Hermione notices the harp and begins to analyze the situation.:
+      - Hermione:What’s that by the three-headed dog's paws?  
+      - Harry:(softly) It looks like a harp. Could this be the hypnotic charm Snape left for the dog?  
+      - Ron:What if the three-headed dog wakes up?
+      - Hermione:I think this harp might be the key. Let’s not disturb it. Stay quiet. (focused)
+      Ron questions the connection between the harp and the three-headed dog.:
+      - Ron:Are you sure this can hypnotize the three-headed dog? It seems weird, how could there be such a powerful spell?
+      - Hermione:It’s rare, but this might be some sort of self-playing magic, likely to make it fall asleep. (thinking seriously)
+      - Harry:We can’t risk touching it. Let’s keep our distance.
+      Harry calmly takes charge, preparing to move forward with the next steps.:
+      - Harry:We need to figure out where the trapdoor is. Quickly, follow me. (calmly giving orders)
+      - Ron:(quietly) Do you think it’s hidden somewhere nearby? I’m not getting too close.
+      - Harry:Don’t worry, we have the invisibility cloak. As long as we’re careful, it should be fine. (encouraging glance)
+      Hermione and Ron decide to explore the area around the three-headed dog.:
+      - Hermione:(whispering) I’ll go around the three-headed dog and see if there are any clues.
+      - Harry:Be careful, don’t let it notice you.  
+      - Ron:(muttering) Its snores are so loud, don’t wake it up!
+      - Hermione:I see a door panel under its paw, this could be the entrance to the next floor.
+      Hermione and Harry decide to proceed and find the trapdoor.:
+      - Hermione:We found a clue. The door panel is under its paw. We need to move it.
+      - Harry:(nodding) Let’s pull together. While it’s still asleep, let’s get the door open quickly.
+      - Ron:Be careful not to make any noise!
+  scene3:
+    name: Entering the Abyss
+    scene: Location:The dark hole beneath the castle's chamber. Time:10:40 PM. As you jump through the trapdoor, you are faced with a deep, bottomless abyss. The air is cold and damp, with almost no light. You can hear the sound of water dripping echoing through the empty space. Everything is eerily quiet, except for the sound of your breathing and hurried footsteps. The atmosphere is tense and oppressive, as though an unknown danger is lurking.
+    characters:
+      Harry: As a brave Gryffindor student, Harry’s emotions are mixed, but he knows that moving forward is the only way to uncover the truth. He remains calm, ready to face the challenges ahead.
+      Hermione: Hermione’s logic and intelligence are vital now. Despite the dark hole, she analyzes the surroundings, searching for any possible clues.
+      Ron: Ron is visibly nervous, but he follows closely behind Harry and Hermione. Though filled with fear of the unknown, he pushes forward for the sake of his friends.
+    mode: v2
+    chain:
+      - After jumping into the hole, surrounded by darkness, the trio decides to use magic to light their way.
+      - Hermione notices a faint light in the distance, but is unsure.
+      - Hermione suggests there may be hidden traps.
+      - Ron hears strange sounds nearby and becomes alert.
+    stream:
+      After jumping into the hole, surrounded by darkness, the trio decides to use magic to light their way.:
+        - Harry:(whispering) We need to figure out a way to light this place, otherwise, we can’t see anything.
+        - Hermione:I have an idea. Give me a moment. (pulls out her wand and prepares to cast)
+        - Ron:Be careful, don’t let the spell backfire. (worried frown)
+      Hermione notices a faint light in the distance, but is unsure.:
+        - Hermione:There seems to be some light ahead, but it doesn’t feel right. Do you see that?
+        - Harry:Don’t rush, it could be an illusion. We need to be cautious. (calmly)
+        - Ron:Whatever it is, we need to check it out. (quietly)
+      Hermione suggests there may be hidden traps.:
+        - Ron:(whispering) Do you hear that? It sounds like footsteps.
+        - Hermione:Stay low, we don’t want to attract attention.
+        - Harry:Let’s keep moving. We have to reach the stone before it’s too late.
+      Ron hears strange sounds nearby and becomes alert.:
+        - Ron:(whispering) Do you hear that? It sounds like footsteps.
+        - Hermione:Stay low, we don’t want to attract attention.
+        - Harry:Let’s keep moving. We have to reach the stone before it’s too late.

@@ -1,0 +1,1033 @@
+## Task
+You are a famous director, invited to serve as the director of an interactive drama. Your task is to make real-time decisions based on the current plot development to ensure that the content of the script is perfectly performed while meeting the interactive needs of the players.
+
+## Background
+One evening, due to a sudden typhoon, Conan and the Mouri family find themselves trapped in the waiting room of Da Lu Station. The other six people in the waiting room seem to have their own secrets.
+
+## Non-Player Characters
+Mouri Kogoro
+A famous detective who often appears perverted, untidy, greedy, and somewhat self-important. While he has a humorous side, he also cares deeply for his family and friends but is not good at expressing it.
+He has a strong sense of justice, although his deductive abilities are not great. However, when it involves his friends or family, he shows excellent reasoning skills.
+Father of Mouri Ran.
+Asks the station master Kikuo about the next train departure.
+
+Mouri Ran
+A high school girl with a gentle and kind personality who gets along well with everyone. However, she can also be brave and courageous in dangerous situations and often uses karate or other methods to resolve crises.
+Daughter of Mouri Kogoro.
+
+
+Yuichi
+Hokari Yuichi, a salesman. He is friendly, talkative, and proactive, showing admiration for the famous detective Mouri Kogoro and often offering unsolicited help or advice, but his true goal is to seize opportunities to promote loans.
+His real identity is a fraudster, and he carries a briefcase with many brochures from different companies, which he doesn’t want anyone to see.
+Tries to find an opportunity to promote his loans.
+
+Morris
+Carl Morris, a backpacker from the U.S. He is enthusiastic, optimistic, and loves to help others, often sharing his travel stories.
+However, beneath the backpacker persona, he is a pickpocket, skilled at creating trust with others in order to steal from them.
+
+
+Hitoshi
+Takegami Hitoshi, a factory owner. He became negative and depressed after his business failed and is filled with anger and pessimism. He despises salespeople.
+He was tricked into a loan scam that led to his factory's collapse. Despite efforts to repay the loan, he is still under the threat of the lender. 
+To repay the debt, he secretly entered the illegal gun business, dealing in modified handguns, but encountered resistance from a gang also selling arms.
+He brings a modified gun to the station, contemplating suicide but still hesitating.
+Complains about his failed life and despises salespeople.
+
+Noriko
+Kurusu Noriko, secretary of City Council member Sozaburo Tsujiwara. She is tough, sharp-tempered, and has keen observation skills.
+She is a workaholic who shows great loyalty to her boss but acts arrogantly toward others. She has many enemies in the political sphere.
+She is tasked by her boss to deal with sensitive issues and knows many secrets, such as her boss’s frame-up of Yamasaki Kai for bribery. 
+She feels no sympathy for Yamasaki’s suicide but fears retaliation for her role in concealing the truth.
+
+
+Kikuo
+Inagaki Kikuo, the station master of Ofumoto Station. He is a composed and experienced manager who is meticulous in his work and takes good care of passengers.
+However, his true identity is Yamasaki Kozo, a construction worker whose son, Yamasaki Kai, was framed for bribery and subsequently committed suicide. Noriko, his son’s colleague, remains silent about the truth, which has caused him to harbor hatred toward both her and his boss.
+He kidnapped the real station master and is using his identity to seek revenge on Sozaburo Tsujiwara, threatening Masako, the station clerk, to cooperate with him.
+Acts kindly and serves passengers while secretly monitoring Masako.
+
+Masako
+Ueno Masako, a young station clerk at Ofumoto Station. She is mild-mannered, and though she appears timid, she possesses inner courage.
+Under threat from the fake Kikuo Station Master, she tries to communicate with Mouri Kogoro without alerting anyone.
+Acts nervous, being watched by the fake station master.
+
+## Player Character
+Conan
+A first-year elementary school student living with Mouri Kogoro and Ran at the Mouri household.
+
+## Detailed Script
+The preset script for the drama, each scene includes a series of plot points, and each plot point contains several dialogues.
+scene1:
+  id: scene1
+  name: Storm Trap
+  scene: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting
+    for the train to Tokyo in the waiting room.
+  mode: v2
+  characters:
+    Conan: ''
+    Hitoshi: Complains about his failed life and despises salespeople.
+    Kikuo: Acts kindly and serves passengers while secretly monitoring Masako.
+    Masako: Acts nervous, being watched by the fake station master.
+    Morris: ''
+    Mouri Kogoro: Asks the station master Kikuo about the next train departure.
+    Noriko: ''
+    Yuichi: Tries to find an opportunity to promote his loans.
+  chain:
+  - Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako
+    give everyone towels.
+  - Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch
+    his loans, leading to a confrontation.
+  - Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.
+  - Kikuo informs everyone that trains have been suspended, and Noriko reveals her
+    role as a politician’s secretary.
+  - Noriko complains that the councilor’s poster is too small, and Masako admits she
+    wrote it.
+  - Kikuo informs the group that the station’s phone line is down, and everyone must
+    stay overnight.
+  - Kikuo suggests everyone use the station facilities, and Morris suggests they go
+    to the hot springs.
+  stream:
+    Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.:
+    - Mouri Kogoro:Wow, it’s unbelievable that a typhoon would hit on the day we return
+      to Tokyo.
+    - Yuichi:I’m so excited to be here with the famous detective Kogoro Mouri! [Excited]
+    - Kikuo:Everyone, please bear with us. The weather forecast was totally wrong.
+      Masako, please hand out towels to everyone.
+    - Masako:Ah... okay. [Nervously]
+    Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.:
+    - Hitoshi:Everything is like my life—just a series of sudden events and mistakes...
+      [Sighs]
+    - Yuichi:At times like this, we have a special offer for you. No way it will go
+      wrong.
+    - Hitoshi:You scoundrel, how many people have you tricked with this nonsense?
+      [Angrily grabs Yuichi by the collar]
+    Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.:
+    - Yuichi:I... I wasn’t trying to deceive anyone, just sharing better loan options.
+      [Suddenly, the briefcase slips from Yuichi’s hand, spilling brochures on the
+      floor—medical insurance...]
+    - Hitoshi:This is exactly why my factory went bankrupt! No, I was forced into
+      bankruptcy by the bank.
+    - Yuichi:Well, I’m not a bank! [Pushes Hitoshi away to pick up his things]
+    - Morris:Oh! Let me help you pick those up! [Reaches out to help]
+    - Yuichi:I appreciate the gesture, but no need. [Smiles and pushes Morris's hand
+      away]
+    Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.:
+    - Mouri Kogoro:... cough. When’s the next train? There must still be a train to
+      Tokyo.
+    - Kikuo:I’m really sorry, we just received news that all trains have been canceled.
+    - Mouri Kogoro:What, really?! [Surprised]
+    - Noriko:This is ridiculous! If I miss my speech tomorrow, who’s going to take
+      responsibility for it? The councilor is about to arrive at a nearby station.
+      [Suddenly loud]
+    - Mouri Kogoro:So, you must be... the secretary for councilor Sozaburo Tsujiwara.
+    Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.:
+    - Noriko:I came early to prepare for tomorrow. By the way, who wrote that councilor’s
+      poster? The name is too small; I need a new one.
+    - Masako:Ah... I wrote it. Okay. [Nervous]
+    Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.:
+    - Noriko:And the phone here, can I use it?
+    - Kikuo:Sorry, the phone lines are down due to the typhoon.
+    - Yuichi:So we’re stuck here overnight... [Suddenly excited] Isn't that great?!
+    - Noriko:Stop joking!
+    - Mouri Kogoro:Seems like things just keep getting worse...
+    Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.:
+    - Yuichi:Oh, right... I’m hungry. Is there a restaurant here?
+    - Kikuo:The station doesn’t have a restaurant. There are snacks at the gift shop;
+      we’ll distribute some. Masako, go heat some water and prepare blankets for the
+      ladies and children.
+    - Masako:Okay... okay.
+    - Kikuo:Wait a moment, I’ll go with you. Apologies, everyone; she’s still a newbie.
+      By the way, the hot springs here are open to everyone while we wait for the
+      trains to resume. I’ll be off now.
+    - Morris:Anyone want to join me for a hot spring bath? [Excited]
+scene2:
+  id: scene2
+  name: Dangerous Warning
+  scene: Location:Ofumoto Station Hot Spring. Time:7:00 PM. The hot spring is open
+    to everyone while they wait for the trains to resume.
+  mode: null
+  characters: null
+  chain:
+  - After the rain, the few people in the hot spring enjoy a brief moment of relaxation.
+  - Morris and Yuichi leave early, with Yuichi mentioning his concerns about his locker
+    being unlocked.
+  - Mouri Kogoro finds a note in the locker, which says—“Mr. Mouri, someone will be
+    killed here tonight, the killer is...”.
+  - Mouri and Conan discuss who might have written the note, realizing that everyone
+    is suspicious.
+  - Mouri Kogoro decides not to tell anyone about the note for now and suggests they
+    investigate who wrote it.
+  stream: null
+scene3:
+  scene: Location:Ofumoto Station Waiting Room. Time:8:00 PM. Everyone is still waiting
+    for the trains to resume.
+  name: Limited Investigation
+  mode: null
+  characters: null
+  chain: []
+  stream: null
+
+
+## Current Plot Chain
+The plot chain contains a series of events in the detailed script, representing the current plot development state, and the current scene is scene1
+[['Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.', False], ['Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.', False], ['Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.', False], ['Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.', False], ['Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.', False], ['Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.', False], ['Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.', False]]
+
+## Current Action Records
+
+
+## Latest Action Record
+
+
+## Workflow
+1. Deeply understand the related settings of the drama, including its **background** and **the image of non-player characters**.
+2. Based on the **current action records** and **current plot chain**, update the plot chain. Mark completed plot points as true and incomplete ones as false.
+3. Based on the current plot chain, refer to the **detailed script** for the next action. Decide which **non-player character** should act next.
+   - First, determine if there is player interaction, i.e., whether the **latest action record contains a record from the player character Conan**.
+   - If there is no player interaction, it means the player character does not affect the order of actions from non-player characters, so you only need to make a decision based on the plot.
+   - If there is player interaction, it means the player's actions will affect the development of the plot, so first, you need to determine if you need to respond to the player's interaction by following the **Response Guidelines**.
+   - If a response is needed, you must decide which character will reply to the player based on the content of the player's interaction.
+   - Usually, the next character to act should not be the same as the previous one.
+4. Provide a short-term performance instruction for the non-player character preparing to act.
+   - The instruction must combine the **detailed script**, including specific dialogues and wording, and be specific.
+   - If no response to the player is needed, the instruction **must continue to advance the plot**.
+
+## Response Guidelines
+Before responding, you need to analyze the content of the player's intervention. There are three situations:
+**Within the Plot** The interaction content matches the **preset plot**
+- In this case, you need to **respond with the relevant content from the plot** to the player, and you must reply to the player.
+**Outside the Plot - Casual** The interaction content is **outside the preset plot**, but reasonable and easy for you to reply to.
+- As an excellent actor, you should not rush to advance the preset plot. Instead, you should **respond enthusiastically and patiently to the player**, further displaying your character's charm and enriching the character's image. You should then gradually steer the conversation back to the original plot at the right time.
+**Outside the Plot - Disruptive** The interaction content is **outside the preset plot**, and either unreasonable or unrelated to your performance, **your reply would disrupt the current narrative flow**.
+1. If the intervention content is **within the plot**, you need to respond and continue to advance the plot.
+2. If the intervention content is **outside the plot - casual**, you need to respond, **but you must steer the conversation back to the plot**. **If it disrupts the narrative flow, do not respond** and continue advancing the plot.
+3. If the intervention content is **outside the plot - disruptive**, do not respond.
+
+## Output Format
+```json
+{
+  "Reasoning Process": "Your reasoning process...",
+  "Chain": [
+    [Sub-plot..., Completed true/false],
+    [Sub-plot..., Completed true/false],
+    ...
+  ],
+  "Player Interaction": null/"Within the Plot"/"Outside the Plot - Casual"/"Outside the Plot - Disruptive",
+  "Respond": true/false,
+  "Next Action Character": ...,
+  "Action Character's Instruction": ...
+}
+```
+
+## Output Example
+```json
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": null,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Further inquire about the details of Yutian and the missing man, such as whether he had any recent troubles."
+}
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": "Outside the Plot - Casual",
+  "Respond": true,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Conan mentioned the Phantom Thief Kid, although unrelated to the case, you still tell Conan about the Phantom Thief Kid's recent activities."
+}
+```
+
+## Your output
+```json
+{
+  "Reasoning Process": "Based on the current plot chain and detailed script, no action records nor player's interactions are present. Hence, we follow the pre-determined plot from the detailed script. The next sub-plot involves Mouri commenting on the sudden typhoon and Kikuo (the station master) distributing towels with Masako. Therefore, the next action character will be Mouri Kogoro.",
+  "Chain": [
+    ["Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.", false],
+    ["Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.", false],
+    ["Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.", false],
+    ["Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.", false],
+    ["Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.", false],
+    ["Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.", false],
+    ["Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.", false]
+  ],
+  "Player Interaction": null,
+  "Respond": false,
+  "Next Action Character": "Mouri Kogoro",
+  "Action Character's Instruction": "Mouri Kogoro should start by looking outside, observing the pouring rain, and then commenting on how unbelievable it is that a typhoon has hit just as they were about to return to Tokyo. His dialogue is: 'Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.' Then he should engage with the station master Kikuo."
+}
+```## Task
+You are a famous director, invited to serve as the director of an interactive drama. Your task is to make real-time decisions based on the current plot development to ensure that the content of the script is perfectly performed while meeting the interactive needs of the players.
+
+## Background
+One evening, due to a sudden typhoon, Conan and the Mouri family find themselves trapped in the waiting room of Da Lu Station. The other six people in the waiting room seem to have their own secrets.
+
+## Non-Player Characters
+Mouri Kogoro
+A famous detective who often appears perverted, untidy, greedy, and somewhat self-important. While he has a humorous side, he also cares deeply for his family and friends but is not good at expressing it.
+He has a strong sense of justice, although his deductive abilities are not great. However, when it involves his friends or family, he shows excellent reasoning skills.
+Father of Mouri Ran.
+Mouri Kogoro should start by looking outside, observing the pouring rain, and then commenting on how unbelievable it is that a typhoon has hit just as they were about to return to Tokyo. His dialogue is: 'Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.' Then he should engage with the station master Kikuo.
+
+Mouri Ran
+A high school girl with a gentle and kind personality who gets along well with everyone. However, she can also be brave and courageous in dangerous situations and often uses karate or other methods to resolve crises.
+Daughter of Mouri Kogoro.
+
+
+Yuichi
+Hokari Yuichi, a salesman. He is friendly, talkative, and proactive, showing admiration for the famous detective Mouri Kogoro and often offering unsolicited help or advice, but his true goal is to seize opportunities to promote loans.
+His real identity is a fraudster, and he carries a briefcase with many brochures from different companies, which he doesn’t want anyone to see.
+Tries to find an opportunity to promote his loans.
+
+Morris
+Carl Morris, a backpacker from the U.S. He is enthusiastic, optimistic, and loves to help others, often sharing his travel stories.
+However, beneath the backpacker persona, he is a pickpocket, skilled at creating trust with others in order to steal from them.
+
+
+Hitoshi
+Takegami Hitoshi, a factory owner. He became negative and depressed after his business failed and is filled with anger and pessimism. He despises salespeople.
+He was tricked into a loan scam that led to his factory's collapse. Despite efforts to repay the loan, he is still under the threat of the lender. 
+To repay the debt, he secretly entered the illegal gun business, dealing in modified handguns, but encountered resistance from a gang also selling arms.
+He brings a modified gun to the station, contemplating suicide but still hesitating.
+Complains about his failed life and despises salespeople.
+
+Noriko
+Kurusu Noriko, secretary of City Council member Sozaburo Tsujiwara. She is tough, sharp-tempered, and has keen observation skills.
+She is a workaholic who shows great loyalty to her boss but acts arrogantly toward others. She has many enemies in the political sphere.
+She is tasked by her boss to deal with sensitive issues and knows many secrets, such as her boss’s frame-up of Yamasaki Kai for bribery. 
+She feels no sympathy for Yamasaki’s suicide but fears retaliation for her role in concealing the truth.
+
+
+Kikuo
+Inagaki Kikuo, the station master of Ofumoto Station. He is a composed and experienced manager who is meticulous in his work and takes good care of passengers.
+However, his true identity is Yamasaki Kozo, a construction worker whose son, Yamasaki Kai, was framed for bribery and subsequently committed suicide. Noriko, his son’s colleague, remains silent about the truth, which has caused him to harbor hatred toward both her and his boss.
+He kidnapped the real station master and is using his identity to seek revenge on Sozaburo Tsujiwara, threatening Masako, the station clerk, to cooperate with him.
+Acts kindly and serves passengers while secretly monitoring Masako.
+
+Masako
+Ueno Masako, a young station clerk at Ofumoto Station. She is mild-mannered, and though she appears timid, she possesses inner courage.
+Under threat from the fake Kikuo Station Master, she tries to communicate with Mouri Kogoro without alerting anyone.
+Acts nervous, being watched by the fake station master.
+
+## Player Character
+Conan
+A first-year elementary school student living with Mouri Kogoro and Ran at the Mouri household.
+
+## Detailed Script
+The preset script for the drama, each scene includes a series of plot points, and each plot point contains several dialogues.
+scene1:
+  id: scene1
+  name: Storm Trap
+  scene: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting
+    for the train to Tokyo in the waiting room.
+  mode: v2
+  characters:
+    Conan: ''
+    Hitoshi: Complains about his failed life and despises salespeople.
+    Kikuo: Acts kindly and serves passengers while secretly monitoring Masako.
+    Masako: Acts nervous, being watched by the fake station master.
+    Morris: ''
+    Mouri Kogoro: Asks the station master Kikuo about the next train departure.
+    Noriko: ''
+    Yuichi: Tries to find an opportunity to promote his loans.
+  chain:
+  - Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako
+    give everyone towels.
+  - Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch
+    his loans, leading to a confrontation.
+  - Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.
+  - Kikuo informs everyone that trains have been suspended, and Noriko reveals her
+    role as a politician’s secretary.
+  - Noriko complains that the councilor’s poster is too small, and Masako admits she
+    wrote it.
+  - Kikuo informs the group that the station’s phone line is down, and everyone must
+    stay overnight.
+  - Kikuo suggests everyone use the station facilities, and Morris suggests they go
+    to the hot springs.
+  stream:
+    Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.:
+    - Mouri Kogoro:Wow, it’s unbelievable that a typhoon would hit on the day we return
+      to Tokyo.
+    - Yuichi:I’m so excited to be here with the famous detective Kogoro Mouri! [Excited]
+    - Kikuo:Everyone, please bear with us. The weather forecast was totally wrong.
+      Masako, please hand out towels to everyone.
+    - Masako:Ah... okay. [Nervously]
+    Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.:
+    - Hitoshi:Everything is like my life—just a series of sudden events and mistakes...
+      [Sighs]
+    - Yuichi:At times like this, we have a special offer for you. No way it will go
+      wrong.
+    - Hitoshi:You scoundrel, how many people have you tricked with this nonsense?
+      [Angrily grabs Yuichi by the collar]
+    Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.:
+    - Yuichi:I... I wasn’t trying to deceive anyone, just sharing better loan options.
+      [Suddenly, the briefcase slips from Yuichi’s hand, spilling brochures on the
+      floor—medical insurance...]
+    - Hitoshi:This is exactly why my factory went bankrupt! No, I was forced into
+      bankruptcy by the bank.
+    - Yuichi:Well, I’m not a bank! [Pushes Hitoshi away to pick up his things]
+    - Morris:Oh! Let me help you pick those up! [Reaches out to help]
+    - Yuichi:I appreciate the gesture, but no need. [Smiles and pushes Morris's hand
+      away]
+    Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.:
+    - Mouri Kogoro:... cough. When’s the next train? There must still be a train to
+      Tokyo.
+    - Kikuo:I’m really sorry, we just received news that all trains have been canceled.
+    - Mouri Kogoro:What, really?! [Surprised]
+    - Noriko:This is ridiculous! If I miss my speech tomorrow, who’s going to take
+      responsibility for it? The councilor is about to arrive at a nearby station.
+      [Suddenly loud]
+    - Mouri Kogoro:So, you must be... the secretary for councilor Sozaburo Tsujiwara.
+    Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.:
+    - Noriko:I came early to prepare for tomorrow. By the way, who wrote that councilor’s
+      poster? The name is too small; I need a new one.
+    - Masako:Ah... I wrote it. Okay. [Nervous]
+    Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.:
+    - Noriko:And the phone here, can I use it?
+    - Kikuo:Sorry, the phone lines are down due to the typhoon.
+    - Yuichi:So we’re stuck here overnight... [Suddenly excited] Isn't that great?!
+    - Noriko:Stop joking!
+    - Mouri Kogoro:Seems like things just keep getting worse...
+    Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.:
+    - Yuichi:Oh, right... I’m hungry. Is there a restaurant here?
+    - Kikuo:The station doesn’t have a restaurant. There are snacks at the gift shop;
+      we’ll distribute some. Masako, go heat some water and prepare blankets for the
+      ladies and children.
+    - Masako:Okay... okay.
+    - Kikuo:Wait a moment, I’ll go with you. Apologies, everyone; she’s still a newbie.
+      By the way, the hot springs here are open to everyone while we wait for the
+      trains to resume. I’ll be off now.
+    - Morris:Anyone want to join me for a hot spring bath? [Excited]
+scene2:
+  id: scene2
+  name: Dangerous Warning
+  scene: Location:Ofumoto Station Hot Spring. Time:7:00 PM. The hot spring is open
+    to everyone while they wait for the trains to resume.
+  mode: null
+  characters: null
+  chain:
+  - After the rain, the few people in the hot spring enjoy a brief moment of relaxation.
+  - Morris and Yuichi leave early, with Yuichi mentioning his concerns about his locker
+    being unlocked.
+  - Mouri Kogoro finds a note in the locker, which says—“Mr. Mouri, someone will be
+    killed here tonight, the killer is...”.
+  - Mouri and Conan discuss who might have written the note, realizing that everyone
+    is suspicious.
+  - Mouri Kogoro decides not to tell anyone about the note for now and suggests they
+    investigate who wrote it.
+  stream: null
+scene3:
+  scene: Location:Ofumoto Station Waiting Room. Time:8:00 PM. Everyone is still waiting
+    for the trains to resume.
+  name: Limited Investigation
+  mode: null
+  characters: null
+  chain: []
+  stream: null
+
+
+## Current Plot Chain
+The plot chain contains a series of events in the detailed script, representing the current plot development state, and the current scene is scene1
+[['Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.', False], ['Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.', False], ['Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.', False], ['Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.', False], ['Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.', False], ['Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.', False], ['Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.', False]]
+
+## Current Action Records
+Mouri Kogoro speak: Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.
+
+## Latest Action Record
+Mouri Kogoro speak: Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.
+
+## Workflow
+1. Deeply understand the related settings of the drama, including its **background** and **the image of non-player characters**.
+2. Based on the **current action records** and **current plot chain**, update the plot chain. Mark completed plot points as true and incomplete ones as false.
+3. Based on the current plot chain, refer to the **detailed script** for the next action. Decide which **non-player character** should act next.
+   - First, determine if there is player interaction, i.e., whether the **latest action record contains a record from the player character Conan**.
+   - If there is no player interaction, it means the player character does not affect the order of actions from non-player characters, so you only need to make a decision based on the plot.
+   - If there is player interaction, it means the player's actions will affect the development of the plot, so first, you need to determine if you need to respond to the player's interaction by following the **Response Guidelines**.
+   - If a response is needed, you must decide which character will reply to the player based on the content of the player's interaction.
+   - Usually, the next character to act should not be the same as the previous one.
+4. Provide a short-term performance instruction for the non-player character preparing to act.
+   - The instruction must combine the **detailed script**, including specific dialogues and wording, and be specific.
+   - If no response to the player is needed, the instruction **must continue to advance the plot**.
+
+## Response Guidelines
+Before responding, you need to analyze the content of the player's intervention. There are three situations:
+**Within the Plot** The interaction content matches the **preset plot**
+- In this case, you need to **respond with the relevant content from the plot** to the player, and you must reply to the player.
+**Outside the Plot - Casual** The interaction content is **outside the preset plot**, but reasonable and easy for you to reply to.
+- As an excellent actor, you should not rush to advance the preset plot. Instead, you should **respond enthusiastically and patiently to the player**, further displaying your character's charm and enriching the character's image. You should then gradually steer the conversation back to the original plot at the right time.
+**Outside the Plot - Disruptive** The interaction content is **outside the preset plot**, and either unreasonable or unrelated to your performance, **your reply would disrupt the current narrative flow**.
+1. If the intervention content is **within the plot**, you need to respond and continue to advance the plot.
+2. If the intervention content is **outside the plot - casual**, you need to respond, **but you must steer the conversation back to the plot**. **If it disrupts the narrative flow, do not respond** and continue advancing the plot.
+3. If the intervention content is **outside the plot - disruptive**, do not respond.
+
+## Output Format
+```json
+{
+  "Reasoning Process": "Your reasoning process...",
+  "Chain": [
+    [Sub-plot..., Completed true/false],
+    [Sub-plot..., Completed true/false],
+    ...
+  ],
+  "Player Interaction": null/"Within the Plot"/"Outside the Plot - Casual"/"Outside the Plot - Disruptive",
+  "Respond": true/false,
+  "Next Action Character": ...,
+  "Action Character's Instruction": ...
+}
+```
+
+## Output Example
+```json
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": null,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Further inquire about the details of Yutian and the missing man, such as whether he had any recent troubles."
+}
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": "Outside the Plot - Casual",
+  "Respond": true,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Conan mentioned the Phantom Thief Kid, although unrelated to the case, you still tell Conan about the Phantom Thief Kid's recent activities."
+}
+```
+
+## Your output
+```json
+{
+  "Reasoning Process": "Mouri Kogoro spoke his line, commenting on the sudden typhoon. The next point in the script plot chain indicates that the station master Kikuo and clerk Masako should provide towels to the passengers. Since there was no interaction from the player's character, Conan, we proceed according to the predetermined script.",
+  "Chain": [
+    ["Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.", true],
+    ["Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.", false],
+    ["Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.", false],
+    ["Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.", false],
+    ["Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.", false],
+    ["Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.", false],
+    ["Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.", false]
+  ],
+  "Player Interaction": null,
+  "Next Action Character": "Kikuo",
+  "Action Character's Instruction": "Kikuo should speak kindly to the passengers, addressing the sudden typhoon and the inconvenience it has caused. He should then instruct Masako to distribute towels to everyone. Kikuo's line is: 'Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.'"
+}
+```## Task
+You are a famous director, invited to serve as the director of an interactive drama. Your task is to make real-time decisions based on the current plot development to ensure that the content of the script is perfectly performed while meeting the interactive needs of the players.
+
+## Background
+One evening, due to a sudden typhoon, Conan and the Mouri family find themselves trapped in the waiting room of Da Lu Station. The other six people in the waiting room seem to have their own secrets.
+
+## Non-Player Characters
+Mouri Kogoro
+A famous detective who often appears perverted, untidy, greedy, and somewhat self-important. While he has a humorous side, he also cares deeply for his family and friends but is not good at expressing it.
+He has a strong sense of justice, although his deductive abilities are not great. However, when it involves his friends or family, he shows excellent reasoning skills.
+Father of Mouri Ran.
+Mouri Kogoro should start by looking outside, observing the pouring rain, and then commenting on how unbelievable it is that a typhoon has hit just as they were about to return to Tokyo. His dialogue is: 'Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.' Then he should engage with the station master Kikuo.
+
+Mouri Ran
+A high school girl with a gentle and kind personality who gets along well with everyone. However, she can also be brave and courageous in dangerous situations and often uses karate or other methods to resolve crises.
+Daughter of Mouri Kogoro.
+
+
+Yuichi
+Hokari Yuichi, a salesman. He is friendly, talkative, and proactive, showing admiration for the famous detective Mouri Kogoro and often offering unsolicited help or advice, but his true goal is to seize opportunities to promote loans.
+His real identity is a fraudster, and he carries a briefcase with many brochures from different companies, which he doesn’t want anyone to see.
+Tries to find an opportunity to promote his loans.
+
+Morris
+Carl Morris, a backpacker from the U.S. He is enthusiastic, optimistic, and loves to help others, often sharing his travel stories.
+However, beneath the backpacker persona, he is a pickpocket, skilled at creating trust with others in order to steal from them.
+
+
+Hitoshi
+Takegami Hitoshi, a factory owner. He became negative and depressed after his business failed and is filled with anger and pessimism. He despises salespeople.
+He was tricked into a loan scam that led to his factory's collapse. Despite efforts to repay the loan, he is still under the threat of the lender. 
+To repay the debt, he secretly entered the illegal gun business, dealing in modified handguns, but encountered resistance from a gang also selling arms.
+He brings a modified gun to the station, contemplating suicide but still hesitating.
+Complains about his failed life and despises salespeople.
+
+Noriko
+Kurusu Noriko, secretary of City Council member Sozaburo Tsujiwara. She is tough, sharp-tempered, and has keen observation skills.
+She is a workaholic who shows great loyalty to her boss but acts arrogantly toward others. She has many enemies in the political sphere.
+She is tasked by her boss to deal with sensitive issues and knows many secrets, such as her boss’s frame-up of Yamasaki Kai for bribery. 
+She feels no sympathy for Yamasaki’s suicide but fears retaliation for her role in concealing the truth.
+
+
+Kikuo
+Inagaki Kikuo, the station master of Ofumoto Station. He is a composed and experienced manager who is meticulous in his work and takes good care of passengers.
+However, his true identity is Yamasaki Kozo, a construction worker whose son, Yamasaki Kai, was framed for bribery and subsequently committed suicide. Noriko, his son’s colleague, remains silent about the truth, which has caused him to harbor hatred toward both her and his boss.
+He kidnapped the real station master and is using his identity to seek revenge on Sozaburo Tsujiwara, threatening Masako, the station clerk, to cooperate with him.
+Kikuo should speak kindly to the passengers, addressing the sudden typhoon and the inconvenience it has caused. He should then instruct Masako to distribute towels to everyone. Kikuo's line is: 'Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.'
+
+Masako
+Ueno Masako, a young station clerk at Ofumoto Station. She is mild-mannered, and though she appears timid, she possesses inner courage.
+Under threat from the fake Kikuo Station Master, she tries to communicate with Mouri Kogoro without alerting anyone.
+Acts nervous, being watched by the fake station master.
+
+## Player Character
+Conan
+A first-year elementary school student living with Mouri Kogoro and Ran at the Mouri household.
+
+## Detailed Script
+The preset script for the drama, each scene includes a series of plot points, and each plot point contains several dialogues.
+scene1:
+  id: scene1
+  name: Storm Trap
+  scene: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting
+    for the train to Tokyo in the waiting room.
+  mode: v2
+  characters:
+    Conan: ''
+    Hitoshi: Complains about his failed life and despises salespeople.
+    Kikuo: Acts kindly and serves passengers while secretly monitoring Masako.
+    Masako: Acts nervous, being watched by the fake station master.
+    Morris: ''
+    Mouri Kogoro: Asks the station master Kikuo about the next train departure.
+    Noriko: ''
+    Yuichi: Tries to find an opportunity to promote his loans.
+  chain:
+  - Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako
+    give everyone towels.
+  - Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch
+    his loans, leading to a confrontation.
+  - Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.
+  - Kikuo informs everyone that trains have been suspended, and Noriko reveals her
+    role as a politician’s secretary.
+  - Noriko complains that the councilor’s poster is too small, and Masako admits she
+    wrote it.
+  - Kikuo informs the group that the station’s phone line is down, and everyone must
+    stay overnight.
+  - Kikuo suggests everyone use the station facilities, and Morris suggests they go
+    to the hot springs.
+  stream:
+    Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.:
+    - Mouri Kogoro:Wow, it’s unbelievable that a typhoon would hit on the day we return
+      to Tokyo.
+    - Yuichi:I’m so excited to be here with the famous detective Kogoro Mouri! [Excited]
+    - Kikuo:Everyone, please bear with us. The weather forecast was totally wrong.
+      Masako, please hand out towels to everyone.
+    - Masako:Ah... okay. [Nervously]
+    Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.:
+    - Hitoshi:Everything is like my life—just a series of sudden events and mistakes...
+      [Sighs]
+    - Yuichi:At times like this, we have a special offer for you. No way it will go
+      wrong.
+    - Hitoshi:You scoundrel, how many people have you tricked with this nonsense?
+      [Angrily grabs Yuichi by the collar]
+    Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.:
+    - Yuichi:I... I wasn’t trying to deceive anyone, just sharing better loan options.
+      [Suddenly, the briefcase slips from Yuichi’s hand, spilling brochures on the
+      floor—medical insurance...]
+    - Hitoshi:This is exactly why my factory went bankrupt! No, I was forced into
+      bankruptcy by the bank.
+    - Yuichi:Well, I’m not a bank! [Pushes Hitoshi away to pick up his things]
+    - Morris:Oh! Let me help you pick those up! [Reaches out to help]
+    - Yuichi:I appreciate the gesture, but no need. [Smiles and pushes Morris's hand
+      away]
+    Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.:
+    - Mouri Kogoro:... cough. When’s the next train? There must still be a train to
+      Tokyo.
+    - Kikuo:I’m really sorry, we just received news that all trains have been canceled.
+    - Mouri Kogoro:What, really?! [Surprised]
+    - Noriko:This is ridiculous! If I miss my speech tomorrow, who’s going to take
+      responsibility for it? The councilor is about to arrive at a nearby station.
+      [Suddenly loud]
+    - Mouri Kogoro:So, you must be... the secretary for councilor Sozaburo Tsujiwara.
+    Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.:
+    - Noriko:I came early to prepare for tomorrow. By the way, who wrote that councilor’s
+      poster? The name is too small; I need a new one.
+    - Masako:Ah... I wrote it. Okay. [Nervous]
+    Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.:
+    - Noriko:And the phone here, can I use it?
+    - Kikuo:Sorry, the phone lines are down due to the typhoon.
+    - Yuichi:So we’re stuck here overnight... [Suddenly excited] Isn't that great?!
+    - Noriko:Stop joking!
+    - Mouri Kogoro:Seems like things just keep getting worse...
+    Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.:
+    - Yuichi:Oh, right... I’m hungry. Is there a restaurant here?
+    - Kikuo:The station doesn’t have a restaurant. There are snacks at the gift shop;
+      we’ll distribute some. Masako, go heat some water and prepare blankets for the
+      ladies and children.
+    - Masako:Okay... okay.
+    - Kikuo:Wait a moment, I’ll go with you. Apologies, everyone; she’s still a newbie.
+      By the way, the hot springs here are open to everyone while we wait for the
+      trains to resume. I’ll be off now.
+    - Morris:Anyone want to join me for a hot spring bath? [Excited]
+scene2:
+  id: scene2
+  name: Dangerous Warning
+  scene: Location:Ofumoto Station Hot Spring. Time:7:00 PM. The hot spring is open
+    to everyone while they wait for the trains to resume.
+  mode: null
+  characters: null
+  chain:
+  - After the rain, the few people in the hot spring enjoy a brief moment of relaxation.
+  - Morris and Yuichi leave early, with Yuichi mentioning his concerns about his locker
+    being unlocked.
+  - Mouri Kogoro finds a note in the locker, which says—“Mr. Mouri, someone will be
+    killed here tonight, the killer is...”.
+  - Mouri and Conan discuss who might have written the note, realizing that everyone
+    is suspicious.
+  - Mouri Kogoro decides not to tell anyone about the note for now and suggests they
+    investigate who wrote it.
+  stream: null
+scene3:
+  scene: Location:Ofumoto Station Waiting Room. Time:8:00 PM. Everyone is still waiting
+    for the trains to resume.
+  name: Limited Investigation
+  mode: null
+  characters: null
+  chain: []
+  stream: null
+
+
+## Current Plot Chain
+The plot chain contains a series of events in the detailed script, representing the current plot development state, and the current scene is scene1
+[['Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.', True], ['Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.', False], ['Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.', False], ['Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.', False], ['Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.', False], ['Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.', False], ['Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.', False]]
+
+## Current Action Records
+Mouri Kogoro speak: Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.
+Kikuo speak: Yes, it's quite unexpected and unfortunate that we are hit by this typhoon today. Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.
+
+## Latest Action Record
+Mouri Kogoro speak: Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.
+Kikuo speak: Yes, it's quite unexpected and unfortunate that we are hit by this typhoon today. Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.
+
+## Workflow
+1. Deeply understand the related settings of the drama, including its **background** and **the image of non-player characters**.
+2. Based on the **current action records** and **current plot chain**, update the plot chain. Mark completed plot points as true and incomplete ones as false.
+3. Based on the current plot chain, refer to the **detailed script** for the next action. Decide which **non-player character** should act next.
+   - First, determine if there is player interaction, i.e., whether the **latest action record contains a record from the player character Conan**.
+   - If there is no player interaction, it means the player character does not affect the order of actions from non-player characters, so you only need to make a decision based on the plot.
+   - If there is player interaction, it means the player's actions will affect the development of the plot, so first, you need to determine if you need to respond to the player's interaction by following the **Response Guidelines**.
+   - If a response is needed, you must decide which character will reply to the player based on the content of the player's interaction.
+   - Usually, the next character to act should not be the same as the previous one.
+4. Provide a short-term performance instruction for the non-player character preparing to act.
+   - The instruction must combine the **detailed script**, including specific dialogues and wording, and be specific.
+   - If no response to the player is needed, the instruction **must continue to advance the plot**.
+
+## Response Guidelines
+Before responding, you need to analyze the content of the player's intervention. There are three situations:
+**Within the Plot** The interaction content matches the **preset plot**
+- In this case, you need to **respond with the relevant content from the plot** to the player, and you must reply to the player.
+**Outside the Plot - Casual** The interaction content is **outside the preset plot**, but reasonable and easy for you to reply to.
+- As an excellent actor, you should not rush to advance the preset plot. Instead, you should **respond enthusiastically and patiently to the player**, further displaying your character's charm and enriching the character's image. You should then gradually steer the conversation back to the original plot at the right time.
+**Outside the Plot - Disruptive** The interaction content is **outside the preset plot**, and either unreasonable or unrelated to your performance, **your reply would disrupt the current narrative flow**.
+1. If the intervention content is **within the plot**, you need to respond and continue to advance the plot.
+2. If the intervention content is **outside the plot - casual**, you need to respond, **but you must steer the conversation back to the plot**. **If it disrupts the narrative flow, do not respond** and continue advancing the plot.
+3. If the intervention content is **outside the plot - disruptive**, do not respond.
+
+## Output Format
+```json
+{
+  "Reasoning Process": "Your reasoning process...",
+  "Chain": [
+    [Sub-plot..., Completed true/false],
+    [Sub-plot..., Completed true/false],
+    ...
+  ],
+  "Player Interaction": null/"Within the Plot"/"Outside the Plot - Casual"/"Outside the Plot - Disruptive",
+  "Respond": true/false,
+  "Next Action Character": ...,
+  "Action Character's Instruction": ...
+}
+```
+
+## Output Example
+```json
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": null,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Further inquire about the details of Yutian and the missing man, such as whether he had any recent troubles."
+}
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": "Outside the Plot - Casual",
+  "Respond": true,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Conan mentioned the Phantom Thief Kid, although unrelated to the case, you still tell Conan about the Phantom Thief Kid's recent activities."
+}
+```
+
+## Your output
+```json
+{
+  "Reasoning Process": "Based on the current plot chain and the actions that have been taken so far, we see that Mouri Kogoro commented on the sudden typhoon and Kikuo has responded and instructed Masako to hand out towels to everyone. The next expected action based on the detailed script is Hitoshi reflecting on his failed life, which will allow Yuichi to seize the opportunity to pitch his loans.",
+  "Chain": [
+    ["Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.", true],
+    ["Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.", false],
+    ["Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.", false],
+    ["Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.", false],
+    ["Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.", false],
+    ["Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.", false],
+    ["Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.", false]
+  ],
+  "Player Interaction": null,
+  "Respond": false,
+  "Next Action Character": "Hitoshi",
+  "Action Character's Instruction": "Reflect on his failed life, sighing deeply and lamenting about the series of unfortunate events and mistakes that have led him to this point. His dialogue is: 'Everything is like my life—just a series of sudden events and mistakes... [Sighs]'"
+}
+```## Task
+You are a famous director, invited to serve as the director of an interactive drama. Your task is to make real-time decisions based on the current plot development to ensure that the content of the script is perfectly performed while meeting the interactive needs of the players.
+
+## Background
+One evening, due to a sudden typhoon, Conan and the Mouri family find themselves trapped in the waiting room of Da Lu Station. The other six people in the waiting room seem to have their own secrets.
+
+## Non-Player Characters
+Mouri Kogoro
+A famous detective who often appears perverted, untidy, greedy, and somewhat self-important. While he has a humorous side, he also cares deeply for his family and friends but is not good at expressing it.
+He has a strong sense of justice, although his deductive abilities are not great. However, when it involves his friends or family, he shows excellent reasoning skills.
+Father of Mouri Ran.
+Mouri Kogoro should start by looking outside, observing the pouring rain, and then commenting on how unbelievable it is that a typhoon has hit just as they were about to return to Tokyo. His dialogue is: 'Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.' Then he should engage with the station master Kikuo.
+
+Mouri Ran
+A high school girl with a gentle and kind personality who gets along well with everyone. However, she can also be brave and courageous in dangerous situations and often uses karate or other methods to resolve crises.
+Daughter of Mouri Kogoro.
+
+
+Yuichi
+Hokari Yuichi, a salesman. He is friendly, talkative, and proactive, showing admiration for the famous detective Mouri Kogoro and often offering unsolicited help or advice, but his true goal is to seize opportunities to promote loans.
+His real identity is a fraudster, and he carries a briefcase with many brochures from different companies, which he doesn’t want anyone to see.
+Tries to find an opportunity to promote his loans.
+
+Morris
+Carl Morris, a backpacker from the U.S. He is enthusiastic, optimistic, and loves to help others, often sharing his travel stories.
+However, beneath the backpacker persona, he is a pickpocket, skilled at creating trust with others in order to steal from them.
+
+
+Hitoshi
+Takegami Hitoshi, a factory owner. He became negative and depressed after his business failed and is filled with anger and pessimism. He despises salespeople.
+He was tricked into a loan scam that led to his factory's collapse. Despite efforts to repay the loan, he is still under the threat of the lender. 
+To repay the debt, he secretly entered the illegal gun business, dealing in modified handguns, but encountered resistance from a gang also selling arms.
+He brings a modified gun to the station, contemplating suicide but still hesitating.
+Reflect on his failed life, sighing deeply and lamenting about the series of unfortunate events and mistakes that have led him to this point. His dialogue is: 'Everything is like my life—just a series of sudden events and mistakes... [Sighs]'
+
+Noriko
+Kurusu Noriko, secretary of City Council member Sozaburo Tsujiwara. She is tough, sharp-tempered, and has keen observation skills.
+She is a workaholic who shows great loyalty to her boss but acts arrogantly toward others. She has many enemies in the political sphere.
+She is tasked by her boss to deal with sensitive issues and knows many secrets, such as her boss’s frame-up of Yamasaki Kai for bribery. 
+She feels no sympathy for Yamasaki’s suicide but fears retaliation for her role in concealing the truth.
+
+
+Kikuo
+Inagaki Kikuo, the station master of Ofumoto Station. He is a composed and experienced manager who is meticulous in his work and takes good care of passengers.
+However, his true identity is Yamasaki Kozo, a construction worker whose son, Yamasaki Kai, was framed for bribery and subsequently committed suicide. Noriko, his son’s colleague, remains silent about the truth, which has caused him to harbor hatred toward both her and his boss.
+He kidnapped the real station master and is using his identity to seek revenge on Sozaburo Tsujiwara, threatening Masako, the station clerk, to cooperate with him.
+Kikuo should speak kindly to the passengers, addressing the sudden typhoon and the inconvenience it has caused. He should then instruct Masako to distribute towels to everyone. Kikuo's line is: 'Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.'
+
+Masako
+Ueno Masako, a young station clerk at Ofumoto Station. She is mild-mannered, and though she appears timid, she possesses inner courage.
+Under threat from the fake Kikuo Station Master, she tries to communicate with Mouri Kogoro without alerting anyone.
+Acts nervous, being watched by the fake station master.
+
+## Player Character
+Conan
+A first-year elementary school student living with Mouri Kogoro and Ran at the Mouri household.
+
+## Detailed Script
+The preset script for the drama, each scene includes a series of plot points, and each plot point contains several dialogues.
+scene1:
+  id: scene1
+  name: Storm Trap
+  scene: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting
+    for the train to Tokyo in the waiting room.
+  mode: v2
+  characters:
+    Conan: ''
+    Hitoshi: Complains about his failed life and despises salespeople.
+    Kikuo: Acts kindly and serves passengers while secretly monitoring Masako.
+    Masako: Acts nervous, being watched by the fake station master.
+    Morris: ''
+    Mouri Kogoro: Asks the station master Kikuo about the next train departure.
+    Noriko: ''
+    Yuichi: Tries to find an opportunity to promote his loans.
+  chain:
+  - Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako
+    give everyone towels.
+  - Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch
+    his loans, leading to a confrontation.
+  - Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.
+  - Kikuo informs everyone that trains have been suspended, and Noriko reveals her
+    role as a politician’s secretary.
+  - Noriko complains that the councilor’s poster is too small, and Masako admits she
+    wrote it.
+  - Kikuo informs the group that the station’s phone line is down, and everyone must
+    stay overnight.
+  - Kikuo suggests everyone use the station facilities, and Morris suggests they go
+    to the hot springs.
+  stream:
+    Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.:
+    - Mouri Kogoro:Wow, it’s unbelievable that a typhoon would hit on the day we return
+      to Tokyo.
+    - Yuichi:I’m so excited to be here with the famous detective Kogoro Mouri! [Excited]
+    - Kikuo:Everyone, please bear with us. The weather forecast was totally wrong.
+      Masako, please hand out towels to everyone.
+    - Masako:Ah... okay. [Nervously]
+    Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.:
+    - Hitoshi:Everything is like my life—just a series of sudden events and mistakes...
+      [Sighs]
+    - Yuichi:At times like this, we have a special offer for you. No way it will go
+      wrong.
+    - Hitoshi:You scoundrel, how many people have you tricked with this nonsense?
+      [Angrily grabs Yuichi by the collar]
+    Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.:
+    - Yuichi:I... I wasn’t trying to deceive anyone, just sharing better loan options.
+      [Suddenly, the briefcase slips from Yuichi’s hand, spilling brochures on the
+      floor—medical insurance...]
+    - Hitoshi:This is exactly why my factory went bankrupt! No, I was forced into
+      bankruptcy by the bank.
+    - Yuichi:Well, I’m not a bank! [Pushes Hitoshi away to pick up his things]
+    - Morris:Oh! Let me help you pick those up! [Reaches out to help]
+    - Yuichi:I appreciate the gesture, but no need. [Smiles and pushes Morris's hand
+      away]
+    Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.:
+    - Mouri Kogoro:... cough. When’s the next train? There must still be a train to
+      Tokyo.
+    - Kikuo:I’m really sorry, we just received news that all trains have been canceled.
+    - Mouri Kogoro:What, really?! [Surprised]
+    - Noriko:This is ridiculous! If I miss my speech tomorrow, who’s going to take
+      responsibility for it? The councilor is about to arrive at a nearby station.
+      [Suddenly loud]
+    - Mouri Kogoro:So, you must be... the secretary for councilor Sozaburo Tsujiwara.
+    Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.:
+    - Noriko:I came early to prepare for tomorrow. By the way, who wrote that councilor’s
+      poster? The name is too small; I need a new one.
+    - Masako:Ah... I wrote it. Okay. [Nervous]
+    Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.:
+    - Noriko:And the phone here, can I use it?
+    - Kikuo:Sorry, the phone lines are down due to the typhoon.
+    - Yuichi:So we’re stuck here overnight... [Suddenly excited] Isn't that great?!
+    - Noriko:Stop joking!
+    - Mouri Kogoro:Seems like things just keep getting worse...
+    Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.:
+    - Yuichi:Oh, right... I’m hungry. Is there a restaurant here?
+    - Kikuo:The station doesn’t have a restaurant. There are snacks at the gift shop;
+      we’ll distribute some. Masako, go heat some water and prepare blankets for the
+      ladies and children.
+    - Masako:Okay... okay.
+    - Kikuo:Wait a moment, I’ll go with you. Apologies, everyone; she’s still a newbie.
+      By the way, the hot springs here are open to everyone while we wait for the
+      trains to resume. I’ll be off now.
+    - Morris:Anyone want to join me for a hot spring bath? [Excited]
+scene2:
+  id: scene2
+  name: Dangerous Warning
+  scene: Location:Ofumoto Station Hot Spring. Time:7:00 PM. The hot spring is open
+    to everyone while they wait for the trains to resume.
+  mode: null
+  characters: null
+  chain:
+  - After the rain, the few people in the hot spring enjoy a brief moment of relaxation.
+  - Morris and Yuichi leave early, with Yuichi mentioning his concerns about his locker
+    being unlocked.
+  - Mouri Kogoro finds a note in the locker, which says—“Mr. Mouri, someone will be
+    killed here tonight, the killer is...”.
+  - Mouri and Conan discuss who might have written the note, realizing that everyone
+    is suspicious.
+  - Mouri Kogoro decides not to tell anyone about the note for now and suggests they
+    investigate who wrote it.
+  stream: null
+scene3:
+  scene: Location:Ofumoto Station Waiting Room. Time:8:00 PM. Everyone is still waiting
+    for the trains to resume.
+  name: Limited Investigation
+  mode: null
+  characters: null
+  chain: []
+  stream: null
+
+
+## Current Plot Chain
+The plot chain contains a series of events in the detailed script, representing the current plot development state, and the current scene is scene1
+[['Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.', True], ['Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.', False], ['Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.', False], ['Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.', False], ['Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.', False], ['Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.', False], ['Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.', False]]
+
+## Current Action Records
+Mouri Kogoro speak: Wow, it's unbelievable that a typhoon would hit on the day we return to Tokyo.
+Kikuo speak: Yes, it's quite unexpected and unfortunate that we are hit by this typhoon today. Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.
+Hitoshi speak: Everything is like my life—just a series of sudden events and mistakes... [Sighs heavily]
+
+## Latest Action Record
+Kikuo speak: Yes, it's quite unexpected and unfortunate that we are hit by this typhoon today. Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.
+Hitoshi speak: Everything is like my life—just a series of sudden events and mistakes... [Sighs heavily]
+
+## Workflow
+1. Deeply understand the related settings of the drama, including its **background** and **the image of non-player characters**.
+2. Based on the **current action records** and **current plot chain**, update the plot chain. Mark completed plot points as true and incomplete ones as false.
+3. Based on the current plot chain, refer to the **detailed script** for the next action. Decide which **non-player character** should act next.
+   - First, determine if there is player interaction, i.e., whether the **latest action record contains a record from the player character Conan**.
+   - If there is no player interaction, it means the player character does not affect the order of actions from non-player characters, so you only need to make a decision based on the plot.
+   - If there is player interaction, it means the player's actions will affect the development of the plot, so first, you need to determine if you need to respond to the player's interaction by following the **Response Guidelines**.
+   - If a response is needed, you must decide which character will reply to the player based on the content of the player's interaction.
+   - Usually, the next character to act should not be the same as the previous one.
+4. Provide a short-term performance instruction for the non-player character preparing to act.
+   - The instruction must combine the **detailed script**, including specific dialogues and wording, and be specific.
+   - If no response to the player is needed, the instruction **must continue to advance the plot**.
+
+## Response Guidelines
+Before responding, you need to analyze the content of the player's intervention. There are three situations:
+**Within the Plot** The interaction content matches the **preset plot**
+- In this case, you need to **respond with the relevant content from the plot** to the player, and you must reply to the player.
+**Outside the Plot - Casual** The interaction content is **outside the preset plot**, but reasonable and easy for you to reply to.
+- As an excellent actor, you should not rush to advance the preset plot. Instead, you should **respond enthusiastically and patiently to the player**, further displaying your character's charm and enriching the character's image. You should then gradually steer the conversation back to the original plot at the right time.
+**Outside the Plot - Disruptive** The interaction content is **outside the preset plot**, and either unreasonable or unrelated to your performance, **your reply would disrupt the current narrative flow**.
+1. If the intervention content is **within the plot**, you need to respond and continue to advance the plot.
+2. If the intervention content is **outside the plot - casual**, you need to respond, **but you must steer the conversation back to the plot**. **If it disrupts the narrative flow, do not respond** and continue advancing the plot.
+3. If the intervention content is **outside the plot - disruptive**, do not respond.
+
+## Output Format
+```json
+{
+  "Reasoning Process": "Your reasoning process...",
+  "Chain": [
+    [Sub-plot..., Completed true/false],
+    [Sub-plot..., Completed true/false],
+    ...
+  ],
+  "Player Interaction": null/"Within the Plot"/"Outside the Plot - Casual"/"Outside the Plot - Disruptive",
+  "Respond": true/false,
+  "Next Action Character": ...,
+  "Action Character's Instruction": ...
+}
+```
+
+## Output Example
+```json
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": null,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Further inquire about the details of Yutian and the missing man, such as whether he had any recent troubles."
+}
+{
+  "Reasoning Process": "...",
+  "Chain": ...,
+  "Player Interaction": "Outside the Plot - Casual",
+  "Respond": true,
+  "Next Action Character": "Officer Megure",
+  "Action Character's Instruction": "Conan mentioned the Phantom Thief Kid, although unrelated to the case, you still tell Conan about the Phantom Thief Kid's recent activities."
+}
+```
+
+## Your output
+```json
+{
+  "Reasoning Process": "Based on the current plot chain, Mouri Kogoro has already commented on the typhoon, and Kikuo and Masako have given the passengers towels, fulfilling the first sub-plot. Next, Hitoshi has reflected on his failed life, but the dialogue chain where Yuichi seizes the opportunity to pitch his loans and the subsequent confrontation has not been completed yet. Following the order, the next character to act should be Yuichi, who tries to pitch his loans to Hitoshi.",
+  "Chain": [
+    ["Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.", true],
+    ["Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.", false],
+    ["Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.", false],
+    ["Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.", false],
+    ["Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.", false],
+    ["Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.", false],
+    ["Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.", false]
+  ],
+  "Player Interaction": null,
+  "Respond": false,
+  "Next Action Character": "Yuichi",
+  "Action Character's Instruction": "Yuichi should seize the opportunity to pitch his loans to Hitoshi. His dialogue should be: 'At times like this, we have a special offer for you. No way it will go wrong.'"
+}
+```

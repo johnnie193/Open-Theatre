@@ -1,0 +1,91 @@
+id: Romeo and Juliet
+background:
+  player: Romeo
+  narrative: |
+    The story revolves around Romeo, the only son of the Montague family. Romeo is emotional and conflicted by the feud between his family and the Capulets. Although he still longs for love, he is deeply troubled by a recent heartbreak. With the encouragement of his cousin Benvolio, Romeo tries to calm himself and reflect on whether he has been too focused on one relationship. A conflict with the servant of the Capulets makes Romeo acutely aware of the senselessness of the family feud, and he decides to refuse to participate in this pointless conflict, seeking peace for himself.
+  characters:
+    Romeo: The only son of the Montague family, emotionally rich and conflicted, often troubled by his family’s feuds and his love life.
+    Montague: A serious and resilient middle-aged man, Romeo’s father, the leader of the Montague family, long-time enemy of the Capulet family.
+    Lady Montague: Gentle and kind, Romeo’s mother, deeply concerned about her son’s emotional changes.
+    Benvolio: Calm, kind, and helpful, a peacekeeper who adheres to rules, Romeo’s cousin and thoughtful friend.
+    Peter: Arrogant and hot-headed, an illiterate servant of the Capulet family, angered by the existence of the Montague family, quick to escalate conflicts.
+    Juliet: Romeo’s love interest, the only daughter of the Capulet family, intelligent and strong but also troubled by the family feud.
+    Francisco: Romeo’s old friend, reserved and somewhat pessimistic, tired of the family feud but feels powerless to change it.
+scenes:
+  scene1:
+    name: Dawn in Verona Square
+    mode: v1
+    scene: Location:Verona Square. Time:10 AM. Romeo is walking alone, trying to clear his mind, and spots his parents—the Montague couple. His cousin Benvolio waves at him from a distance. The atmosphere is light, but there is a subtle tension due to the family feud.
+    characters:
+      Romeo: 
+      Montague: Aware of the ongoing conflict with the Capulet family’s servants, concerned about Romeo’s mood, asks Benvolio to talk to him.
+      Lady Montague: Aware of the ongoing conflict with the Capulet family’s servants, concerned about Romeo’s mood, asks Benvolio to talk to him.
+      Benvolio: Resolves the dispute between the Montague and Capulet servants, tries to console Romeo.
+    chain:
+    - The Montagues and Benvolio meet in the square, Montague asked Benvolio to console Romeo.
+    - Benvolio talks to Romeo about his emotional troubles.
+    - Romeo and Benvolio discuss whether he is too obsessed with his feelings.
+    stream:
+      The Montagues and Benvolio meet in the square, Montague asked Benvolio to console Romeo.:
+        - Montague:(angrily adjusting his sleeves) Who started this again? Who is rekindling the feud between our families this early in the morning?
+        - Benvolio:I saw their servants fighting as soon as I arrived. I had to step in to separate them.
+        - Montague:(sighs) Forget it, we'll deal with it later. For now, stay here and hopefully, we’ll hear his true feelings.
+        - Benvolio:(laughing lightly) Here you are, Romeo. I heard you’ve been troubled by matters of the heart. Want me to help you clear your mind?
+      Benvolio talks to Romeo about his emotional troubles.:
+        - Benvolio:Romeo. I heard you’ve been troubled by matters of the heart. How are you now?
+        - Romeo:(pauses, sighs) I... I am consumed by love, unable to escape this pain. She won’t look at me.
+        - Benvolio:(smiling kindly) Romeo, there are plenty of fish in the sea. Why focus on just one flower? There are many beautiful girls waiting for you.
+        - Romeo:(shakes head) But I only care about her, Benvolio. I can’t make myself love anyone else.
+      Romeo and Benvolio discuss whether he is too obsessed with his feelings.:
+        - Romeo:Yes, I am consumed by love, and I can't suppress this pain in my heart.
+        - Benvolio:(gently pats Romeo’s shoulder) Trust me, my friend, there are many things more worth your attention. Don’t let love tie you down.
+        - Romeo:(takes a deep breath) You’re right, Benvolio. I need to let go. Perhaps I should calm down.
+  scene2:
+    name: Casual Conversation on the Street
+    mode: v1
+    scene:
+      Location:City Street. Time:Evening. Romeo and Benvolio walk side by side down a busy street. The atmosphere is lively and bustling, but amidst the crowd, Romeo can’t help but feel troubled.
+    characters:
+      Romeo:
+      Benvolio: Talks about his own experiences with heartbreak, praises Romeo’s literary talents.
+      Peter: Provokes Romeo due to the feud between the Montagues and Capulets, challenges him to recite the invitation.
+    chain:
+    - Benvolio continues to console Romeo.
+    - Peter challenges Romeo.
+    - Romeo rejects the conflict.
+    stream:
+      Benvolio continues to console Romeo.:
+        - Benvolio:(smiling) Look, Romeo, there’s so much beauty in the world for you to focus on.
+        - Romeo:(sighs) I know, but that feeling in my heart won’t let me move on, Benvolio.
+        - Benvolio:(gently pats Romeo’s shoulder) Keep yourself busy with other things. Time will heal everything.
+      Peter challenges Romeo.:
+        - Peter:(provoking) Are you scared? Just like the rest of your Montague family, always so weak.
+        - Romeo:(calmly) You don’t understand the emotions of my family, Peter. I won’t pay the price for your family’s feud.
+        - Peter:(angrily) You’re not brave enough to face me, are you?
+      Romeo rejects the conflict.:
+        - Romeo:(firmly) I refuse to participate in this meaningless feud, Peter. You can provoke me, but I won’t let you anger me.
+        - Benvolio:(lightly) See, Romeo, as the old saying goes, “Take a step back, and the sea is wide and the sky is vast.”
+  scene3:
+    name: Gazing at the Dusk
+    scene: Location:Outside the Old Church in Verona. Time:Dusk. The last rays of the sun spill over the ancient stone steps, and the church’s spire stands tall against the deep blue sky, looking particularly solemn. Romeo and Benvolio stand in front of the church, the night fog rolling in behind them, the air filled with an eerie stillness, as if the world has momentarily paused. Their eyes gaze into the distance, filled with an unsettling sense of uncertainty.
+    characters:
+      Romeo: |
+        Words
+        - The hatred between our families looms like a shadow over my heart. Can I break free from these chains and seek my own happiness?
+        - Juliet, my heart yearns for you as much as I do, but the chasm between us feels like an endless abyss.
+      Benvolio: |
+        Words
+        - (silently) But perhaps sometimes we can choose to rise above it. We don’t have to be slaves to our families’ hatred.
+        - (earnestly) You have the power of choice, Romeo. You can choose to pursue that pure love, let go of the hate, and live for your future.
+      Juliet: |
+        They meet briefly on a distant path, exchanging a brief look with Romeo.
+        Words
+        - This world is so vast, yet we are separated, destined to only find brief warmth in each other’s eyes.
+        - Romeo, our love seems destined to blossom in the darkness, yet I cannot choose a different fate.
+      Francisco: |
+        Walking past the church, appearing somewhat lost, he stops to greet Romeo.
+        Words
+        - All this fighting will only drain us in the end. The history of our families binds us so tightly; what can we possibly do to change it?
+    mode: v2
+    chain:
+    stream:
