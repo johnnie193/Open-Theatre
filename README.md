@@ -1,6 +1,8 @@
 # Open-Theatre
 
-An open-source interactive drama toolkit that enables dynamic interactive drama creation and character interaction through multiple AI architectures. Create immersive theatrical experiences with AI-driven characters and branching storylines.
+An open-source interactive drama toolkit that enables dynamic interactive drama creation and character interaction through multiple AI architectures. 
+
+Code for paper "Open-Theatre: An Open-Source Toolkit for LLM-based Interactive Drama".
 
 ## Features
 
