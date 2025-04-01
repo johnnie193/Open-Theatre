@@ -74,11 +74,27 @@ function setupInteract() {
 export function setupInteractHelper() {
     const additionalInput = document.getElementById('additional-input');
     const selectedValue = document.getElementById('action-select').value;
-    additionalInput.innerHTML = '';
-    console.log("selectedValue", selectedValue);
+    
+    // 完全清空additional-input
+    while (additionalInput.firstChild) {
+        additionalInput.removeChild(additionalInput.firstChild);
+    }
+    
     if (selectedValue === '-speak') {
         const multiSelect = document.createElement('select');
-        let options = ['default characters']; // 示例选项
+        let options = ['default characters']; 
+        
+        // 创建输入框
+        const inputField = document.createElement('input');
+        inputField.type = 'text';
+        inputField.placeholder = 'Type your message and Press Enter or submit ';
+        const submitButton = document.getElementById('submit-btn');
+        inputField.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                submitButton.click();
+            }
+        });
+
         fetch('/info', {
             method: 'POST',
             headers: {
@@ -88,47 +104,30 @@ export function setupInteractHelper() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log("received data", data);
             if(!data.error){
                 options = data.characters;
             }
-            console.log("received options", options);
+            // 清空现有选项
+            multiSelect.innerHTML = '';
+            // 添加新选项
             options.forEach(option => {
                 const opt = document.createElement('option');
                 opt.value = option;
                 opt.textContent = option;
                 multiSelect.appendChild(opt);
             });
-            additionalInput.appendChild(multiSelect);
-            const inputField = document.createElement('input');
-            inputField.type = 'text';
-            inputField.placeholder = 'Type your message and Press Enter or submit ';
-            const submitButton = document.getElementById('submit-btn');
-            inputField.addEventListener('keypress', (event) => {
-                if (event.key === 'Enter') {
-                    submitButton.click(); // simulate click button
-                }
-            });
-            additionalInput.appendChild(inputField);
+            // 只添加一次元素
+            if (!additionalInput.contains(multiSelect)) {
+                additionalInput.appendChild(multiSelect);
+            }
+            if (!additionalInput.contains(inputField)) {
+                additionalInput.appendChild(inputField);
+            }
         })
         .catch(error => {
             console.error('加载角色信息时出错:', error);
         });
-    } else if (selectedValue === '-give') {
-        // 创建输入框
-        const inputField = document.createElement('input');
-        inputField.type = 'text';
-        inputField.placeholder = 'Enter your input for -give';
-        // inputField.style.width = '100%';
-        const submitButton = document.getElementById('submit-btn');
-        inputField.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                submitButton.click(); // simulate click button
-            }
-        });
-        additionalInput.appendChild(inputField);
     }
-    // 如果是 -stay，则不需要额外内容，保持为空
 }
 
 /**
