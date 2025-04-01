@@ -76,10 +76,8 @@ export function setupInteractHelper() {
     const selectedValue = document.getElementById('action-select').value;
     
     // 完全清空additional-input
-    while (additionalInput.firstChild) {
-        additionalInput.removeChild(additionalInput.firstChild);
-    }
-    
+    document.getElementById("additional-input").innerHTML = "";
+    console.log("additionalInput", additionalInput);
     if (selectedValue === '-speak') {
         const multiSelect = document.createElement('select');
         let options = ['default characters']; 
@@ -116,11 +114,11 @@ export function setupInteractHelper() {
                 opt.textContent = option;
                 multiSelect.appendChild(opt);
             });
+            console.log("additionalInput", additionalInput);
             // 只添加一次元素
-            if (!additionalInput.contains(multiSelect)) {
+            if (!additionalInput.contains(multiSelect) || !additionalInput.contains(inputField)) {
+                additionalInput.innerHTML = "";
                 additionalInput.appendChild(multiSelect);
-            }
-            if (!additionalInput.contains(inputField)) {
                 additionalInput.appendChild(inputField);
             }
         })

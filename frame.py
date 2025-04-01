@@ -479,7 +479,6 @@ class DramaLLM(World):
         self.reacts = []
         current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]
         self.nc = [[item, False] for item in current_scene["chain"]]
-        # self.instructs = {cid : [] for cid in self.scenes["scene"+str(self.scene_cnt)].characters}
         self.prompt_v1 = PROMPT_DRAMA_V1
         self.prompt_v2 = PROMPT_DRAMA_V2
         self.mode = current_scene["mode"] if "mode" in current_scene else "v1"
@@ -638,4 +637,3 @@ class DramaLLM(World):
             current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]
             self.nc = [[item, False] for item in current_scene["chain"]]
         self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
-        # self.instructs = {cid : [] for cid in self.scenes["scene"+str(self.scene_cnt)].characters}

@@ -67,8 +67,6 @@ class DRAMA:
                 for cid in self.dramallm.script["background"]["characters"]:
                     if cid not in id_list:
                         self.dramallm.pop_characters(self.dramallm.characters[cid])
-                        if self.dramallm.mode == 'v2':
-                            self.dramallm.instructs.pop(cid)
 
                 # Case I Easy modification - change world id, player name, background narrative, character profile, scene mode, scene info, scene chain, scene stream / add initial memories, add characters
                 self.dramallm.id = self.dramallm.script["id"] = data["id"]
