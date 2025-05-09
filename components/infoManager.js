@@ -2,7 +2,7 @@ import {formatOutput, beautifyObject} from "./utils.js"
 
 export function updateCharacterInfo(characterName) {
     const infoBox = document.querySelector("#characters #info-box");
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ export function updateCharacterInfo(characterName) {
 
 function updateWorldRecord() {
     const memoryinfoBox = document.querySelector('#allmemory #info-box');
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ function updateWorldRecord() {
             }
             memoryinfoBox.innerHTML = memoryContent;
             document.getElementById('save-record').addEventListener('click', () => {
-                fetch('/info', {  
+                fetch('/api/info', {  
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ function updateWorldRecord() {
 
 function updateOpenTheatre() {
     const dramallmBox = document.querySelector('#dramallm #info-box');
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -154,7 +154,7 @@ function updateOpenTheatre() {
 
 function updateScript() {
     const scriptBox = document.querySelector('#allscript #info-box');
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

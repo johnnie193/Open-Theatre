@@ -812,12 +812,12 @@ export function updateInfoPanel(data){
         characterElement.className = "character";
         characterElement.setAttribute("data-name", name);
 
-        const characterImage = `asset/${name}.jpg`;
+        const characterImage = `assets/${name}.jpg`;
         const imgElement = document.createElement("img");
         imgElement.src = characterImage;
         imgElement.alt = name;
         imgElement.onerror = function () {
-            imgElement.src = "asset/default_agent.jpg";
+            imgElement.src = "assets/default_agent.jpg";
         };
 
         const nameElement = document.createElement("p");
@@ -841,9 +841,9 @@ export function updateInfoPanel(data){
     // 创建图片元素
     // console.log("player",data);
     const playerImage = document.createElement("img");
-    playerImage.src = `asset/${data.script.background.player}.jpg`; 
+    playerImage.src = `assets/${data.script.background.player}.jpg`; 
     playerImage.onerror = function () {
-        playerImage.src = "asset/default_player.jpg"; 
+        playerImage.src = "assets/default_player.jpg"; 
     };
     const playerName = document.createElement("p");
     playerName.textContent = data.script.background.player;

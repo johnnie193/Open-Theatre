@@ -100,32 +100,50 @@ class Scene:
         self.record.append(action_to_text(m))
 
 class World:
-    def __init__(self, config={}):
-        if "scenes" in config and isinstance(config["scenes"], dict):
-            for sid, s in config["scenes"].items():
-                if "chain" not in config["scenes"][sid] or not config["scenes"][sid]["chain"]:
-                    if "stream" in config["scenes"][sid] and config["scenes"][sid]["stream"]:
-                        config["scenes"][sid].update({"chain": get_keys(config["scenes"][sid]["stream"])})
-        self.script = config
-        background = config.get("background")
-        self.id = config.get("id")
+    def __init__(self, config):
+        self.config = config
         self.characters = {}
         self.scenes = {}
-        self.raw_records = {}
-        self.narrative = ""
-        if "narrative" in background:
-            self.narrative = background["narrative"]
-        # print("yaml_print_background", background)
-        for cid, char in background.get("characters").items():    
-            self.characters.update({cid: CharacterLLM(config = {"id": cid, "profile": char})})
-        self.player = self.characters[background.get("player")]
-        if "context" in background and isinstance(background["context"], dict):
-            for cid, message in background["context"].items():
-                self.characters[cid].update_memory(text = message)
-        self.scene_cnt = 0
-        self.add_scene("scene1")
-        self.cache = CACHE_DIR
-        self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
+        self.narrative_context = ""
+        self.scene_chain = []
+        self.current_scene = None
+        self.cache = "cache"
+        self.dramallm = None
+        self.mode = "v1"
+        self.state = {
+            "characters": {},
+            "scenes": {},
+            "narrative_context": "",
+            "scene_chain": [],
+            "current_scene": None,
+            "mode": "v1"
+        }
+        
+        # 确保缓存目录存在
+        if not os.path.exists(self.cache):
+            os.makedirs(self.cache)
+            
+        # 初始化场景链
+        if "scenes" in config:
+            for scene_id, scene_data in config["scenes"].items():
+                self.add_scene(scene_id, scene_data)
+                
+        # 初始化角色
+        if "background" in config:
+            if "characters" in config["background"]:
+                for char_id, char_data in config["background"]["characters"].items():
+                    self.characters[char_id] = {
+                        "id": char_id,
+                        "description": char_data,
+                        "state": {}
+                    }
+            if "player" in config["background"]:
+                self.player = config["background"]["player"]
+            if "narrative" in config["background"]:
+                self.narrative_context = config["background"]["narrative"]
+                
+        # 更新状态
+        self.update_state()
 
     def save(self):
         save_id = self.id+str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
@@ -159,35 +177,22 @@ class World:
         if char.loc and char.loc in self.scenes:
             self.scenes[char.loc].pop_character(char)
 
-    def add_scene(self, scene_id=None):
-        """Add a new scene to the world."""
-        last_scene = self.scenes[f"scene{self.scene_cnt}"] if len(self.scenes) else None
-        if not scene_id:
-            scene_id = f"scene{self.scene_cnt + 1}"
-            self.scene_cnt += 1
-        else:
-            match = re.search(r"scene(\d+)", scene_id)
-            if match:
-                self.scene_cnt = int(match.group(1))
-            else:
-                print("Error: Invalid scene ID format.")
-                return
-
-        if "scenes" not in self.script:
-            return
-
-        assert scene_id in self.script["scenes"], "Scene ID not found in script."
-        scene = Scene(scene_id, self.script["scenes"][scene_id])
-        self.scenes[scene.id] = scene
-
-        if "characters" in self.script["scenes"][scene_id]:
-            for cid, motivation in self.script["scenes"][scene_id]["characters"].items():
-                if last_scene and cid in last_scene.characters:
-                    last_scene.pop_character(self.characters[cid])
-                scene.add_character(self.characters[cid], motivation)
-        for cid, _ in scene.characters.items():
-            self.update_view(cid)
-        self.raw_records.update({scene.id: scene.record})
+    def add_scene(self, scene_id, scene_data):
+        """添加场景"""
+        if scene_id not in self.scenes:
+            self.scenes[scene_id] = {
+                "id": scene_id,
+                "name": scene_data.get("name", ""),
+                "scene": scene_data.get("scene", ""),
+                "mode": scene_data.get("mode", "v1"),
+                "characters": scene_data.get("characters", {}),
+                "chain": scene_data.get("chain", []),
+                "stream": scene_data.get("stream", {})
+            }
+            self.scene_chain.append(scene_id)
+            if not self.current_scene:
+                self.current_scene = scene_id
+            self.update_state()
 
     @property
     def state(self):
@@ -275,6 +280,17 @@ class World:
                     bid = bid[0]
             self._calculate(aid, x, bid, cid, **kwargs)
         
+    def update_state(self):
+        """更新状态"""
+        self.state = {
+            "characters": self.characters,
+            "scenes": self.scenes,
+            "narrative_context": self.narrative_context,
+            "scene_chain": self.scene_chain,
+            "current_scene": self.current_scene,
+            "mode": self.mode
+        }
+
 class Character:
     def __init__(self, id=None, config={}):
         self.id = id or config.get("id")

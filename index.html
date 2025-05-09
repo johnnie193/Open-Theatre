@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <title>Create your drama</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -53,7 +54,7 @@
                             <!-- <h3>角色</h3> -->
                             <div class="character-list">
                                 <div class="character" data-name="default">
-                                    <img src="asset/default_agent.jpg">
+                                    <img src="assets/default_agent.jpg">
                                     <p>Default Character</p>
                                 </div>
                                 <input type="file" id="file-input" accept="image/*" style="display: none;">
@@ -91,7 +92,7 @@
         <!-- 底部互动区域 -->
         <div id="footer">
             <div id="player">
-                <img src="asset/default_player.jpg">
+                <img src="assets/default_player.jpg">
                 <p>Player</p>
             </div>
             <div id="chat-input">
@@ -283,7 +284,7 @@
                                 radio.parentElement.classList.add('active');
                                 const agentMode = document.querySelector('input[name="agent"]:checked').value;
                                 const playerMode = document.querySelector('input[name="player"]:checked').value;
-                                fetch('/load', {
+                                fetch('/api/load', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json'

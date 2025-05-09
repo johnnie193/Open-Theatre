@@ -148,14 +148,19 @@ function preloadData(data) {
 
 export function loadScript(script) {
     console.log("Loading script for:", script.id);
-    fetch('/load', {
+    fetch('/api/load', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ script_name: script.id }),
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         resetData();
         console.log('world', data);

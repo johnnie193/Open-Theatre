@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    fetch('/prompt', {
+    fetch('/api/prompt', {
         method: 'GET',
     })
     .then(response => response.json())
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 updated_prompt[key] = input.value;
             }
         });        
-        fetch('/prompt', {
+        fetch('/api/prompt', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updated_prompt)

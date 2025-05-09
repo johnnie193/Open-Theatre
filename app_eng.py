@@ -192,6 +192,7 @@ def api_data():
 
 @app.route('/load', methods=['POST'])
 def load():
+    print("loading script")
     data = request.json
     if data.get('script_name') == 'load-script-hp':
         with open("script/Harry Potter and the Philosopher's Stone_eng.yaml", encoding = 'utf-8') as file:
@@ -366,7 +367,7 @@ def reset():
     dramaworld.reset()
     return jsonify({'message': 'World reset successfully'}), 200
 
-IMG_DIR = 'asset'
+IMG_DIR = 'assets'
 os.makedirs(IMG_DIR, exist_ok=True)  # Ensure the directory exists
 @app.route('/upload', methods=['POST'])
 def upload():

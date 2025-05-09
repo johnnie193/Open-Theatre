@@ -31,7 +31,7 @@ function setupCharacterSelection() {
                         const formData = new FormData();
                         formData.append('file', file); // `file` 是用户选择的文件
                         formData.append('name', img.alt);
-                        fetch('/upload', {
+                        fetch('/api/upload', {
                             method: 'POST',
                             body: formData,
                         })
@@ -93,7 +93,7 @@ export function setupInteractHelper() {
             }
         });
 
-        fetch('/info', {
+        fetch('/api/info', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ function setupChatSubmit() {
     const withdrawButton = document.getElementById('withdraw-btn');
 
     nextSceneButton.addEventListener('click', () => {
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ function setupChatSubmit() {
     })
 
     backSceneButton.addEventListener('click', () => {
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ function setupChatSubmit() {
     })
 
     withdrawButton.addEventListener('click', () => {
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ function setupChatSubmit() {
             message = chatInput.value.trim();
             chatInput.value = " ";
         }
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
