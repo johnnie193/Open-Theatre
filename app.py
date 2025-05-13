@@ -11,6 +11,7 @@ class DRAMA:
         self.cache = 'cache/'
 
     def init(self, script):
+        
         self.dramallm = DramaLLM(script=script)
         try:
             self.dramallm.update_view(self.dramallm.player.id)
