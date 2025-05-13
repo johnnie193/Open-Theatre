@@ -93,7 +93,7 @@ export function setupInteractHelper() {
         }
     });
 
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ function setupChatSubmit() {
     const nextSceneButton = document.getElementById('next-scene-btn');
     const backSceneButton = document.getElementById('back-scene-btn');
     const withdrawButton = document.getElementById('withdraw-btn');
-
+    const exportRecordButton = document.getElementById('save-record');
     nextSceneButton.addEventListener('click', () => {
         fetch('/interact', {
             method: 'POST',
@@ -365,5 +365,23 @@ function setupChatSubmit() {
                 setupInteractHelper();
             }
         })
+    });
+
+    exportRecordButton.addEventListener('click', () => {
+        fetch('/api/info', {  
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ help: "export_records" })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('导出失败');
+            return response.blob();
+        })
+        .catch(error => {
+            console.error('导出错误:', error);
+            alert('导出失败，请重试！');
+        });
     });
 }

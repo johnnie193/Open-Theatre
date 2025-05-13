@@ -656,89 +656,14 @@ export function saveConfig(){
     });
 }
 
-// /**
-//  * Formats and displays a structured representation of a story dataset on a web page.
-//  * 
-//  * This function takes a nested JSON object representing a story dataset and processes it 
-//  * to generate a human-readable HTML representation. It organizes the content hierarchically, 
-//  * including sections for the world name, player name, characters, story background, initial 
-//  * memory, and detailed scenes. Each scene includes its context, mode, and chains of events 
-//  * with corresponding dialogue or actions.
-//  * 
-//  * @param {Object} data - The story dataset to be formatted and displayed. 
-//  *   @property {string} data.id - The name of the story world.
-//  *   @property {string} data.background.player - The player's name.
-//  *   @property {Object} data.background.characters - A dictionary of characters and their descriptions.
-//  *   @property {string} data.background.narrative - The overarching story background.
-//  *   @property {Object|null} data.background.context - The initial memory context for characters.
-//  *   @property {Object} data.scenes - A dictionary of scenes, each containing details like scene context, mode, chains, and dialogue/actions.
-//  * 
-//  * @returns {string} - An HTML string representing the structured dataset, ready to be inserted into a web page.
-//  */
-// export function formatOutput(data) {
-//     let output = `<b>Script name：</b> ${data.id} <br>
-// <b>Player's name:</b> ${data.background.player} <br>
-// <b>Characters with their profiles:</b><br><br>`;
-//     for (const [name, description] of Object.entries(data.background.characters)) {
-//         output += `&nbsp;&nbsp;${name}: ${description ? description : " None"} <br>`;
-//     }
-//     output += `<br><b>Background narrative:</b> ${data.background.narrative} <br>
-// <b>Characters' initial memories: </b>`
-//     if(data.background.context && typeof(data.background.context) == "object"){
-//         output += `<br><br>`
-//         for (const [name, description] of Object.entries(data.background.context)) {
-//             output += `&nbsp;&nbsp;${name}: ${description ? description : " None"} <br>`;
-//         }
-//     } else {
-//         output += ` None<br>`
-//     }
-//     // output += `
-//     // <b>场景：</b><br><br>`;
-
-//     // Format scenes
-//     if(data.scenes && typeof(data.scenes) == "object"){
-//         for (const sceneKey in data.scenes) {
-//             const scene = data.scenes[sceneKey];
-//             output += `<br><b>${sceneKey}: </b> <br>
-//     <b>Scene name: </b> ${scene.name ? scene.name : " None"} <br>
-//     <b>Scene information: </b> ${scene.scene} <br>
-//     <b>Mode: </b> ${scene.mode} <br>
-//     <b>Characters in the scene with their specific settings:</b><br><br>`
-//             for (const [name, description] of Object.entries(scene.characters)) {
-//                 output += `&nbsp;&nbsp;${name}: ${description ? description : " None"} <br>`;
-//             }
-//             output += `<br>
-//     <b>Plotlines: </b><br><br>&nbsp;&nbsp;${scene.chain && scene.chain.length > 0 ? scene.chain.join(" <br>&nbsp;&nbsp;") : " None"} <br>
-//     <b>Corresponding detailed Plots: </b><br>`;
-            
-//             // Format streams
-//             // console.log("stream", scene.stream);
-//             // console.log(scene)
-//             if (scene.stream) {
-//                 for (const key in scene.stream) {
-//                     output += `<br>&nbsp;&nbsp;<i>${key}：</i><br>`;
-//                     scene.stream[key].forEach((line) => {
-//                         output += `&nbsp;&nbsp;${line} <br>`;
-//                     });
-//                 }
-//             } else {
-//                 output += "<br>&nbsp;&nbsp; None<br>";
-//             }
-//         }
-//         output += "<br>";
-//     }
-
-//     return output;
-// }
-
 export function formatOutput(data, scene_id, nc) {
-    let output = `<b>Script name：</b> ${data.id} <br>
+    let output = `<br><b>Script name：</b> ${data.id} <br>
 <b>Player's name:</b> ${data.background.player} <br>
 <b>Characters with their profiles:</b><br><br>`;
     for (const [name, description] of Object.entries(data.background.characters)) {
         output += `&nbsp;&nbsp;${name}: ${description ? description : " None"} <br>`;
     }
-    output += `<br><b>Background narrative:</b> ${data.background.narrative} <br>
+    output += `<b>Background narrative:</b> ${data.background.narrative} <br>
 <b>Characters' initial memories: </b>`
     if(data.background.context && typeof(data.background.context) == "object"){
         output += `<br><br>`
@@ -762,8 +687,7 @@ export function formatOutput(data, scene_id, nc) {
             for (const [name, description] of Object.entries(scene.characters)) {
                 output += `&nbsp;&nbsp;${name}: ${description ? description : " None"}  <br><br>`;
             }
-            output += `<br>
-    <b>Plotlines: </b><br><br>`;
+            output += `<b>Plotlines: </b><br><br>`;
             
             // Format chain with distinction
             if (scene.chain && scene.chain.length > 0) {

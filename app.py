@@ -192,7 +192,7 @@ def api_data():
         # return jsonify(response) 
     return jsonify(dramaworld.state), 200
 
-@app.route('/load', methods=['POST'])
+@app.route('/api/load', methods=['POST'])
 def load():
     data = request.json
     if data.get('script_name') == 'load-script-hp':
@@ -224,7 +224,7 @@ def load():
         return jsonify(dramaworld.state), 200
     return None, 400
 
-@app.route('/save', methods=['GET'])
+@app.route('/api/save', methods=['GET'])
 def save():
     if hasattr(dramaworld, 'dramallm'):
         try:
@@ -235,7 +235,7 @@ def save():
     else:
         return jsonify({"error": f"Save config first to create your world, then save the script file!"}), 200
 
-@app.route('/info', methods = ['POST'])
+@app.route('/api/info', methods = ['POST'])
 def get_info():
     data = request.json
     config = {
@@ -282,7 +282,7 @@ def get_info():
             print("exporting records")
             if hasattr(dramaworld, 'dramallm'):
                 save_id = dramaworld.dramallm.id + str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
-                write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/records/{save_id}.yaml')
+                write_json(dramaworld.dramallm.raw_records, f'records/{save_id}.yaml')
                 config = {
                     "allmemory": dramaworld.dramallm.raw_records
                 }                

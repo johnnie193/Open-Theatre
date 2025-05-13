@@ -148,7 +148,7 @@ function preloadData(data) {
 
 export function loadScript(script) {
     console.log("Loading script for:", script.id);
-    fetch('/load', {
+    fetch('/api/load', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

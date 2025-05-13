@@ -51,7 +51,7 @@ Code for paper "Open-Theatre: An Open-Source Toolkit for LLM-based Interactive D
    pip install -r requirements.txt
    ```
 3. Add your OPENAI_KEY:
-   You can fill in the openai_key.txt with your OPENAI_KEY directly or set the client in utils/query_gpt4 function.
+   You can create your .env file according to .env.example or set the client in utils/query_gpt4 function.
 
 4. Start the server:
    ```bash

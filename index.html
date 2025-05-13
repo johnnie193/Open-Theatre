@@ -79,7 +79,7 @@
                         <div id="memory-content">
                             <div id="info-box">
                                 <h3>Records</h3>
-                                <button id="save-record" class="export-button">Export Records</button>
+                                <!-- <button id="save-record" class="export-button">Export Records</button> -->
                                 <p>Check the records.</p>
                             </div>
                         </div>
@@ -113,7 +113,7 @@
                 <button id="withdraw-btn">withdraw</button>
                 <button id="next-scene-btn">next scene</button>
                 <button id="back-scene-btn">back scene</button>
-
+                <button id="save-record" class="export-button">export records</button>
             </div>
         <!-- 动作列表 -->
             <!-- <div id="action-list">
@@ -311,7 +311,7 @@
                                 radio.parentElement.classList.add('active');
                                 const agentMode = document.querySelector('input[name="agent"]:checked').value;
                                 const playerMode = document.querySelector('input[name="player"]:checked').value;
-                                fetch('/load', {
+                                fetch('/api/load', {
                                     method: 'POST',
                                     headers: {
                                         'Content-Type': 'application/json'

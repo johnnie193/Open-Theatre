@@ -7,7 +7,10 @@ from copy import deepcopy
 from openai import OpenAI
 from gradio_client import Client
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
 def date():
     return datetime.now().date()
@@ -73,7 +76,7 @@ def yamld(content):
     return yaml.dump(content, allow_unicode=True, indent=2, sort_keys=False)
 
 def query_gpt4(prompt, sys = None):
-    KEY = read("openai_key.txt")
+    KEY = os.getenv("OpenAI_KEY", None)
     client = OpenAI(api_key=KEY)
     if sys:
         completion = client.chat.completions.create(

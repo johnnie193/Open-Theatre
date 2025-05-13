@@ -988,9 +988,7 @@ button.add-detail {
     text-align: center;
 }
 
-#save-record {
-    display: inline-block;
-    background: linear-gradient(135deg, #60aaf9, #167fef);  /* 更改为蓝色渐变 */
+/* #save-record {
     color: #fff;
     font-weight: 500;
     border: none;
@@ -1002,13 +1000,13 @@ button.add-detail {
     box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
     margin-left: 10px;
     margin-bottom: 15px;
-}
+} */
 
 #save-config:hover {
     background-color: #e0a800;
 }
 
-#save-record:hover {
+/* #save-record:hover {
     background: linear-gradient(135deg, #318aea, #097cef);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
@@ -1018,7 +1016,7 @@ button.add-detail {
     transform: translateY(1px);
     box-shadow: 0 1px 2px rgba(0, 123, 255, 0.2);
     background: linear-gradient(135deg, #1a7de6, #0866c6);
-}
+} */
 
 /* 模式界面 */
 
@@ -1239,6 +1237,7 @@ button.add-detail {
     word-wrap: break-word;
     overflow-x: hidden;
     color: #2c3e50;
+    margin: 10px 10px 10px 10px;
 }
 
 /* Profile标题样式 */

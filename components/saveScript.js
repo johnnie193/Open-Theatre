@@ -6,7 +6,7 @@ document.querySelector(".save-script").addEventListener("click", () => saveScrip
  * This function sends a GET request to the server to save the current script and updates the UI with the result.
  */
 function saveScript(){
-    fetch('/save', {
+    fetch('/api/save', {
         method: 'GET'
     })
     .then(response => response.json())

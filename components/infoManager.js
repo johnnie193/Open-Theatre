@@ -2,7 +2,7 @@ import {formatOutput, beautifyObject} from "./utils.js"
 
 export function updateCharacterInfo(characterName) {
     const infoBox = document.querySelector("#characters #info-box");
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ export function updateCharacterInfo(characterName) {
 
 function updateWorldRecord() {
     const memoryinfoBox = document.querySelector('#allmemory #info-box');
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -61,7 +61,6 @@ function updateWorldRecord() {
             console.log("memory",data.allmemory);
             let memoryContent = `
     <h3>Records</h3>
-    <button id="save-record" class="export-button">Export Records</button>
             `
             for (let scene in data.allmemory) {
                 memoryContent += `<h4>${scene}</h4>`; 
@@ -72,23 +71,6 @@ function updateWorldRecord() {
                 memoryContent += '</ul>'; 
             }
             memoryinfoBox.innerHTML = memoryContent;
-            document.getElementById('save-record').addEventListener('click', () => {
-                fetch('/info', {  
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ help: "export_records" })
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error('导出失败');
-                    return response.blob();
-                })
-                .catch(error => {
-                    console.error('导出错误:', error);
-                    alert('导出失败，请重试！');
-                });
-            });
         }else{
             memoryinfoBox.innerHTML = `
             <h3>${data.error}</h3>
@@ -102,7 +84,7 @@ function updateWorldRecord() {
 
 function updateOpenTheatre() {
     const dramallmBox = document.querySelector('#dramallm #info-box');
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -154,7 +136,7 @@ function updateOpenTheatre() {
 
 function updateScript() {
     const scriptBox = document.querySelector('#allscript #info-box');
-    fetch('/info', {
+    fetch('/api/info', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
