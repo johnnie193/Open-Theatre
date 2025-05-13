@@ -75,6 +75,7 @@ class DRAMA:
         self.cache = 'cache/'
 
     def init(self, script):
+        
         self.dramallm = DramaLLM(script=script)
         try:
             self.dramallm.update_view(self.dramallm.player.id)
@@ -122,7 +123,7 @@ class DRAMA:
 
     def reset(self):
         self.dramallm = None
-    
+
     def update(self, data):
         if hasattr(self, 'dramallm'):
             try:
@@ -131,7 +132,7 @@ class DRAMA:
                 for cid in self.dramallm.script["background"]["characters"]:
                     if cid not in id_list:
                         self.dramallm.pop_characters(self.dramallm.characters[cid])
-                        
+
                 # Case I Easy modification - change world id, player name, background narrative, character profile, scene mode, scene info, scene chain, scene stream / add initial memories, add characters
                 self.dramallm.id = self.dramallm.script["id"] = data["id"]
                 self.dramallm.script["background"]["player"] = data["player_name"]
@@ -155,14 +156,14 @@ class DRAMA:
                 if "scene"+str(self.dramallm.scene_cnt) not in data["scenes"]:
                     self.dramallm.next_scene()
                     print("current scene deletion!")
-                
+
                 scenes_to_delete = []
                 for sid, s in self.dramallm.script["scenes"].items():
                     if sid not in data["scenes"]:
                         print(sid, "not in data")
                         scenes_to_delete.append(sid)
                         print("scene deletion!")
-                
+
                 for sid in scenes_to_delete:
                     self.dramallm.script["scenes"].pop(sid)
 
@@ -184,7 +185,7 @@ class DRAMA:
             except Exception as error:
                 print('Caught this error: ' , error)
                 print(traceback.print_exc())
-                
+
         # Case III reload
         try:
             script = {
@@ -223,7 +224,6 @@ class DRAMA:
     @property
     def state(self):        
         return self.dramallm.state
-
 
 app = FastAPI()
 
@@ -294,6 +294,7 @@ async def load_script(data: LoadRequest):
         raise HTTPException(status_code=400, detail="Invalid script name")
     except Exception as e:
         logger.error(f"Error loading script: {str(e)}")
+        logger.error(traceback.print_exc(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/save")
