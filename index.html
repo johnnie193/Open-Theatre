@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="settings-btn" onclick="toggleCodeDisplay()">
-        ⚙️
+        <img src="static/settings.svg" alt="Settings">
     </div>
     <div id="main-container">
         <div id="header">
@@ -53,7 +53,7 @@
                             <!-- <h3>角色</h3> -->
                             <div class="character-list">
                                 <div class="character" data-name="default">
-                                    <img src="asset/default_agent.jpg">
+                                    <img src="assets/default_agent.jpg">
                                     <p>Default Character</p>
                                 </div>
                                 <input type="file" id="file-input" accept="image/*" style="display: none;">
@@ -91,7 +91,7 @@
         <!-- 底部互动区域 -->
         <div id="footer">
             <div id="player">
-                <img src="asset/default_player.jpg">
+                <img src="assets/default_player.jpg">
                 <p>Player</p>
             </div>
             <div id="chat-input">
@@ -103,6 +103,10 @@
             
                 <div id="additional-input">
                     <!-- 动态生成额外输入或选择项 -->
+                    <select>
+                        <option value="default characters">null</option>
+                    </select>
+                    <input type="text" placeholder="Type your message and Press Enter or submit ">
                 </div>
                 <!-- <input type="text" placeholder="Type your message (use @char1,char2 message for private chat) and Press Enter or submit "> -->
                 <button id="submit-btn">submit</button>                
@@ -207,29 +211,53 @@
                         </div>                
                     </div> -->
                 </div>
-                <!-- 存档界面 -->
-                <div id="save-game" class="task-interface">
-                    <h2>Save drama</h2>
+                <div id="save-load-game" class="task-interface">
+                  <div id="save-game">
+                    <h2>Save Drama</h2>
                     <button class="save-script">Click to save current drama script and history</button>
                     <p></p>
-                </div>
-
-                <!-- 读档界面 -->
-                <div id="load-game" class="task-interface">
-                    <h2>Load drama</h2>
-                    <!-- <p>这里是读档操作的内容。</p> -->
+                  </div>
+                  <div id="load-game">
+                    <h2>Load Drama</h2>
                     <button class="load-script" id="load-script-station">Seven people in the waiting room</button>
                     <button class="load-script" id="load-script-hp">Harry Potter and the Philosopher's Stone</button>
                     <button class="load-script" id="load-script-romeo">Romeo and Juliet</button>
+                  </div>
                 </div>
+                <!-- 存档界面 -->
+                <!-- <div id="save-game" class="task-interface">
+                    <h2>Save drama</h2>
+                    <button class="save-script">Click to save current drama script and history</button>
+                    <p></p>
+                </div> -->
+
+                <!-- 读档界面 -->
+                <!-- <div id="load-game" class="task-interface">
+                    <h2>Load drama</h2>
+                    <button class="load-script" id="load-script-station">Seven people in the waiting room</button>
+                    <button class="load-script" id="load-script-hp">Harry Potter and the Philosopher's Stone</button>
+                    <button class="load-script" id="load-script-romeo">Romeo and Juliet</button>
+                </div> -->
             </div>
 
             <!-- 侧边栏 -->
             <div class="sidebar">
-                <div class="icon active" id="userIcon" onclick="showInterface('current-script')">📕</div>
+                <!-- <div class="icon active" id="userIcon" onclick="showInterface('current-script')">📕</div>
                 <div class="icon" id="modeIcon" onclick="showInterface('mode')">👤</div>
                 <div class="icon" id="saveIcon" onclick="showInterface('save-game')">💾</div>
-                <div class="icon" id="loadIcon" onclick="showInterface('load-game')">📂</div>
+                <div class="icon" id="loadIcon" onclick="showInterface('load-game')">📂</div> -->
+                <div class="icon active" id="userIcon" onclick="showInterface('current-script')">
+                    <img src="static/script.svg" alt="Script">
+                    <span>Script</span>
+                </div>
+                <div class="icon" id="modeIcon" onclick="showInterface('mode')">
+                    <img src="static/prompt.svg" alt="Mode">
+                    <span>Prompt</span>
+                </div>
+                <div class="icon" id="saveLoadIcon" onclick="showInterface('save-load-game')">
+                    <img src="static/manage.svg" alt="Save/Load">
+                    <span>Save/Load</span>
+                </div>
             </div>
         </div>
     </div>

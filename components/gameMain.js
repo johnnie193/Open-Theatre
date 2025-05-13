@@ -78,54 +78,54 @@ export function setupInteractHelper() {
     // 完全清空additional-input
     document.getElementById("additional-input").innerHTML = "";
     console.log("additionalInput", additionalInput);
-    if (selectedValue === '-speak') {
-        const multiSelect = document.createElement('select');
-        let options = ['default characters']; 
-        
-        // 创建输入框
-        const inputField = document.createElement('input');
-        inputField.type = 'text';
-        inputField.placeholder = 'Type your message and Press Enter or submit ';
-        const submitButton = document.getElementById('submit-btn');
-        inputField.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                submitButton.click();
-            }
-        });
+    // if (selectedValue === '-speak') {
+    const multiSelect = document.createElement('select');
+    let options = ['null']; 
+    
+    // 创建输入框
+    const inputField = document.createElement('input');
+    inputField.type = 'text';
+    inputField.placeholder = 'Type your message and Press Enter or submit ';
+    const submitButton = document.getElementById('submit-btn');
+    inputField.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            submitButton.click();
+        }
+    });
 
-        fetch('/info', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ help: "characters" }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if(!data.error){
-                options = data.characters;
-            }
-            // 清空现有选项
-            multiSelect.innerHTML = '';
-            // 添加新选项
-            options.forEach(option => {
-                const opt = document.createElement('option');
-                opt.value = option;
-                opt.textContent = option;
-                multiSelect.appendChild(opt);
-            });
-            console.log("additionalInput", additionalInput);
-            // 只添加一次元素
-            if (!additionalInput.contains(multiSelect) || !additionalInput.contains(inputField)) {
-                additionalInput.innerHTML = "";
-                additionalInput.appendChild(multiSelect);
-                additionalInput.appendChild(inputField);
-            }
-        })
-        .catch(error => {
-            console.error('加载角色信息时出错:', error);
+    fetch('/info', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ help: "characters" }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(!data.error){
+            options = data.characters;
+        }
+        // 清空现有选项
+        multiSelect.innerHTML = '';
+        // 添加新选项
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            multiSelect.appendChild(opt);
         });
-    }
+        console.log("additionalInput", additionalInput);
+        // 只添加一次元素
+        if (!additionalInput.contains(multiSelect) || !additionalInput.contains(inputField)) {
+            additionalInput.innerHTML = "";
+            additionalInput.appendChild(multiSelect);
+            additionalInput.appendChild(inputField);
+        }
+    })
+    .catch(error => {
+        console.error('加载角色信息时出错:', error);
+    });
+    // }
 }
 
 /**
