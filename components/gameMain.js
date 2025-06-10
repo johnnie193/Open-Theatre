@@ -85,7 +85,7 @@ export function setupInteractHelper() {
     // 创建输入框
     const inputField = document.createElement('input');
     inputField.type = 'text';
-    inputField.placeholder = 'Type your message and Press Enter or submit ';
+    inputField.placeholder = 'Type your message and Press Enter or submit [IF YOU SELECT SPEAK]';
     const submitButton = document.getElementById('submit-btn');
     inputField.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -140,7 +140,7 @@ function setupChatSubmit() {
     const withdrawButton = document.getElementById('withdraw-btn');
     const exportRecordButton = document.getElementById('save-record');
     nextSceneButton.addEventListener('click', () => {
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -161,7 +161,7 @@ function setupChatSubmit() {
     })
 
     backSceneButton.addEventListener('click', () => {
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ function setupChatSubmit() {
     })
 
     withdrawButton.addEventListener('click', () => {
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ function setupChatSubmit() {
             message = chatInput.value.trim();
             chatInput.value = " ";
         }
-        fetch('/interact', {
+        fetch('/api/interact', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

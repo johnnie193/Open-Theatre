@@ -11,7 +11,6 @@ class DRAMA:
         self.cache = 'cache/'
 
     def init(self, script):
-        
         self.dramallm = DramaLLM(script=script)
         try:
             self.dramallm.update_view(self.dramallm.player.id)
@@ -68,7 +67,7 @@ class DRAMA:
                 for cid in self.dramallm.script["background"]["characters"]:
                     if cid not in id_list:
                         self.dramallm.pop_characters(self.dramallm.characters[cid])
-                        
+
                 # Case I Easy modification - change world id, player name, background narrative, character profile, scene mode, scene info, scene chain, scene stream / add initial memories, add characters
                 self.dramallm.id = self.dramallm.script["id"] = data["id"]
                 self.dramallm.script["background"]["player"] = data["player_name"]
@@ -189,7 +188,6 @@ def api_data():
         error = dramaworld.update(data)
         if error:
             return jsonify({"error": error})
-        # return jsonify(response) 
     return jsonify(dramaworld.state), 200
 
 @app.route('/api/load', methods=['POST'])
@@ -251,7 +249,6 @@ def get_info():
                 }
                 if dramaworld.dramallm.mode == 'v2' or dramaworld.dramallm.mode == "v3":
                     config.update({"prompts":dramaworld.dramallm.characters[cid].reacts})
-                    print(config)
     elif data.get('help'):
         if data["help"] == "allmemory":
             if hasattr(dramaworld, 'dramallm'):
@@ -285,39 +282,10 @@ def get_info():
                 write_json(dramaworld.dramallm.raw_records, f'records/{save_id}.yaml')
                 config = {
                     "allmemory": dramaworld.dramallm.raw_records
-                }                
+                }
     return jsonify(config), 200
 
-# @app.route('/interact', methods=['POST'])
-# def interact():
-#     data = request.json
-#     print(data)
-#     if data.get('dialogue'):
-#         if hasattr(dramaworld, 'dramallm'):
-#             if data.get('dialogue') == "-stay":
-#                 act = ["-stay"]
-#             else:
-#                 action = message_to_act(data.get('dialogue'))
-#                 act = ["-speak", action["roles"], action["message"]]
-#             print(act)
-#             new_action, done, error = dramaworld.round(act)
-#             if error:
-#                 return jsonify({"error": error})
-#             return jsonify({"action": new_action, "done": done, "state": dramaworld.state}), 200
-#         else:
-#             return None, 400     
-#     else:
-#         return None, 400    
-
-# @app.route('/next', methods=['GET'])
-# def next():
-#     if hasattr(dramaworld, 'dramallm'):
-#         dramaworld.dramallm.next_scene()
-#         print(dumps(dramaworld.dramallm.state))
-#         return jsonify(dramaworld.dramallm.state), 200
-#     return None, 400
-    
-@app.route('/interact', methods=['POST'])
+@app.route('/api/interact', methods=['POST'])
 def interact():
     start_time = time.time()
     data = request.json
@@ -357,7 +325,7 @@ def interact():
             return None, 400
     return None, 400    
 
-@app.route('/prompt', methods=['POST', 'GET'])
+@app.route('/api/prompt', methods=['POST', 'GET'])
 def prompt():
     if request.method == "POST":
         data = request.json

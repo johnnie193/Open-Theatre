@@ -8,8 +8,12 @@ from openai import OpenAI
 from gradio_client import Client
 from datetime import datetime
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+logging.basicConfig(level=logging.DEBUG)  # 设置日志级别为DEBUG
+logger = logging.getLogger(__name__)
+ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
 
 def date():
     return datetime.now().date()
@@ -114,6 +118,46 @@ def query_qwen(query, history=[]):
     return response[1][-1][-1]
 
 def action_to_text(m):
+    if ENGLISH_MODE:
+        return action_to_text_eng(m)
+    else:
+        return action_to_text_cn(m)
+
+def action_to_text_eng(m):
+    text = ""
+    if "message" in m:
+        text = m["message"]
+        return text
+    if m["x"] == "-move":
+        text = "{} go to {}。".format(m["a"], m["b"])
+    elif m["x"] == "-take":
+        text = "{} take away {}。".format(m["a"], m["b"])
+    elif m["x"] == "-put":
+        if m["c"]:
+            text = "{} put {} on {}。".format(m["a"], m["b"], m["c"])
+        else:
+            text = "{} put {}。".format(m["a"], m["b"])
+    elif m["x"] == "-leave":
+        text = "{} leave the conversation.".format(m["a"])
+    elif m["x"] == "-speak":
+        # print("text_target",m["b"])
+        if "b" not in m or not m["b"] or m["b"] == "null":
+            text = "{} speak: {}".format(m["a"], m["content"])
+        elif isinstance(m["b"], list):
+            text = "{} speak to {}: {}".format(m["a"], "、".join(m["b"]), m["content"])
+        else:
+            text = "{} speak to {}: {}".format(m["a"], m["b"], m["content"])
+    elif m["x"] == "-exit":
+        text = "{} exit.".format(m["a"])
+    else:
+        if m["c"]:
+            text = "{} {} {} {}。".format(m["a"], m["c"], m["x"], m["b"])
+        else:
+            text = "{} {} {}。".format(m["a"], m["x"], m["b"])
+    return text
+
+
+def action_to_text_cn(m):
     text = ""
     if "message" in m:
         text = m["message"]
@@ -173,12 +217,57 @@ def sample_script(scene_script, x):
     return _samples.get(x, [])
 
 CACHE_DIR = "cache"
-PROMPT_DRAMA_V1 = read("prompt/prompt_drama_v1.md")
-PROMPT_DRAMA_V2 = read("prompt/prompt_drama_v2.md")
-PROMPT_CHARACTER = read("prompt/prompt_character.md")
-PROMPT_CHARACTER_V2 = read("prompt/prompt_character_v2.md")
+postdix = "" if not ENGLISH_MODE else "_eng"
+PROMPT_DRAMA_V1 = read(f"prompt/prompt_drama_v1{postdix}.md")
+PROMPT_DRAMA_V2 = read(f"prompt/prompt_drama_v2{postdix}.md")
+PROMPT_CHARACTER = read(f"prompt/prompt_character{postdix}.md")
+PROMPT_CHARACTER_V2 = read(f"prompt/prompt_character_v2{postdix}.md")
 
 def memory_to_text(m, char_id=None):
+    if ENGLISH_MODE:
+        return memory_to_text_eng(m, char_id)
+    else:
+        return memory_to_text_cn(m, char_id)
+
+def observation_to_text(o, char_id=None):
+    if ENGLISH_MODE:
+        return observation_to_text_eng(o, char_id)
+    else:
+        return observation_to_text_cn(o, char_id)
+
+def memory_to_text_eng(m, char_id=None):
+    text = ""    
+    if char_id is not None and "bid" in m:
+        m["aid"] = "you" if m["aid"] == char_id else m["aid"]
+        m["bid"] = "you" if m["bid"] == char_id else m["bid"]
+
+    if m["x"] == "-give":
+        text = "{} give {} {}。".format(m["aid"], m["bid"], m["cid"])
+    elif m["x"] == "-speak" and "bid" in m:
+        text = "{} speak: {}".format(m["aid"], m["content"])
+    elif m["x"] == "-speak":
+        text = "{} speak to {}: {}".format(m["aid"], m["bid"], m["content"])
+    elif m["x"] == "-leave":
+        text = "{} leave the conversation。".format(m["aid"])
+    elif m["x"] == "-move":
+        text = "{} go to {}。".format(m["aid"], m["bid"])
+    elif m["x"] == "-scream":
+        text = "{} scream: {}".format(m["aid"], m["content"])
+
+    return text
+
+def observation_to_text_eng(o, char_id=None):
+    o["interact_with"] = "you" if o["interact_with"] == char_id else o["interact_with"]
+    if o["status"] == "/idle/" and o["interact_with"] is None:
+        text = "{} is idle, at {}.".format(o["id"], o["loc"])
+    elif o["status"] == "/idle/" and o["interact_with"] is not None:
+        text = "{} is interacting with {}, at {}..".format(o["id"], o["interact_with"], o["loc"])
+    elif o["status"] == "/faint/":
+        text = "{} is faint, at{}.".format(o["id"], o["loc"])
+
+    return text
+
+def memory_to_text_cn(m, char_id=None):
     text = ""    
     if char_id is not None and "bid" in m:
         m["aid"] = "你" if m["aid"] == char_id else m["aid"]
@@ -199,7 +288,7 @@ def memory_to_text(m, char_id=None):
 
     return text
 
-def observation_to_text(o, char_id=None):
+def observation_to_text_cn(o, char_id=None):
     o["interact_with"] = "你" if o["interact_with"] == char_id else o["interact_with"]
 
     if o["status"] == "/idle/" and o["interact_with"] is None:

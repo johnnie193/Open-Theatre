@@ -6,6 +6,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import re
 import json
 import datetime
+from memory.memory_base import MemoryStorage, MemoryChunk
+from dotenv import load_dotenv
+
+load_dotenv()
+ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
 
 class Scene:
     def __init__(self, id = None, config={}):
@@ -36,13 +41,18 @@ class Scene:
             print("withdraw one record for -stay")
             self.record.clear()
             for _, c in self.characters.items():
-                c.memory.pop()
+                c.delete_memory()
             return 1            
         if len(self.record) >= 2:
             if mode == "v1":
                 cnt = 1
-                pattern1 = r"(\S+)对(\S+)说"
-                pattern2 = r"(\S+)说"
+                if ENGLISH_MODE:
+                    pattern1 = r"(\S+) speak to (\S+)"
+                    pattern2 = r"(\S+) speak"
+                else:
+                    pattern1 = r"(\S+)对(\S+)说"
+                    pattern2 = r"(\S+)说"
+
                 # 使用findall方法，查找所有匹配的内容
                 match = re.findall(pattern1, self.record[-2])
                 print(self.record[-2])
@@ -56,13 +66,13 @@ class Scene:
                         cnt = 2
                 for _, c in self.characters.items():
                     for _ in range(cnt):
-                        c.memory.pop()
+                        c.delete_memory()
                     c.recent_memory = c.memory[-2:]
                 for _ in range(cnt):
                     self.record.pop()                
                 return cnt
             elif mode == "v2":
-                pattern = r"(\S+)对(\S+)说"
+                pattern = r"(\S+)对(\S+)说" if not ENGLISH_MODE else r"(\S+) speak to (\S+)"
                 # 使用findall方法，查找所有匹配的内容
                 matches = [item for sublist in re.findall(pattern, self.record[-2]) for item in sublist]
                 matches += [item for sublist in re.findall(pattern, self.record[-1]) for item in sublist]
@@ -70,12 +80,12 @@ class Scene:
                 print("matches: ", matches)
                 for m in matches:
                     if m in self.characters:
-                        pattern = r"(\S+)离开了对话。"
+                        pattern = r"(\S+)离开了对话。" if not ENGLISH_MODE else r"(\S+) leave the conversation."
                         matches_2 = re.findall(pattern, self.characters[m].memory[-1])
                         if matches_2:
-                            self.characters[m].memory.pop()
-                        self.characters[m].memory.pop()
-                        self.characters[m].recent_memory.pop()
+                            self.characters[m].delete_memory()
+                        self.characters[m].delete_memory()
+                        self.characters[m].delete_recent_memory()
                 self.record.pop()
                 self.record.pop()
                 return 2
@@ -227,8 +237,8 @@ class World:
             trg.to_do = None
             src.interact_with = None
             src.to_do = None
-            trg.recent_memory.clear()
-            src.recent_memory.clear()
+            trg.clear_recent_memory()
+            src.clear_recent_memory()
         if x in ["-stay", "-leave"]:
             return
         if src.interact_with is not None:
@@ -247,8 +257,8 @@ class World:
             if bid is None:
                 src.interact(x, cid, **kwargs)
             else:
-                src.recent_memory.clear()
-                self.characters[bid].recent_memory.clear()
+                src.clear_recent_memory()
+                self.characters[bid].clear_recent_memory()
                 src.interact_with = self.characters[bid]
                 self.characters[bid].interact_with = src
                 src.interact(x, cid, **kwargs)
@@ -346,6 +356,25 @@ class Character:
         self.recent_memory.append(action_to_text(m))
         if len(self.recent_memory) > 3:
             self.recent_memory = self.recent_memory[-2:]
+
+    def delete_memory(self, text=None):
+        if text is None:
+            self.memory.pop()
+        else:
+            self.memory = [m for m in self.memory if m != text]
+
+    def delete_recent_memory(self, text=None):
+        if text is None:
+            self.recent_memory.pop()
+        else:
+            self.recent_memory = [m for m in self.recent_memory if m != text]
+
+    def clear_memory(self):
+        self.memory = []
+        self.recent_memory = []
+
+    def clear_recent_memory(self):
+        self.recent_memory = []
 
 class CharacterLLM(Character):
     def __init__(self, id=None, config={}, query_fct=query_gpt4):
@@ -448,20 +477,10 @@ class CharacterLLM(Character):
             self.log("\n".join([prompt, response]), "v2")
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = [response, prompt]
-        plan = response["预设的情节"]
-        decision = response["决策"]
+        plan = response["预设的情节"] if not ENGLISH_MODE else response["Preset Plot"]
+        decision = response["决策"] if not ENGLISH_MODE else response["Decision"]
         self.plan = plan
         self.decision += [decision]
-        # response = self.query_fct([{"role": "user", "content": prompt}])
-        # self.log("\n".join([prompt, response]), "plan")
-
-        # response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
-        # plan = response.get("当前的计划", self.plan)
-        # decision = response["决策"]
-
-        # self.plan = plan
-        # self.decision += [decision]
-
     def interact(self, x, cid=None, **kwargs):
         if x == "-speak":
             print(f"interact, x: {x}, cid: {cid}, kwargs: {kwargs}")
@@ -526,8 +545,12 @@ class DramaLLM(World):
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = ["v1", response]
         self.reacts.append(prompt)
-        self.nc = response["当前的情节链"]
-        action = response.get("决策")
+        if ENGLISH_MODE:
+            self.nc = response["Chain"]
+            action = response.get("Decision")
+        else:
+            self.nc = response["当前的情节链"]
+            action = response.get("决策")
         for char_id in self.characters:
             self.characters[char_id].to_do = True if char_id == action["aid"] else False
         self.characters.get(action["aid"]).decision.append(action)
@@ -559,11 +582,11 @@ class DramaLLM(World):
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = ["v2", response]
         self.reacts.append(prompt)
-        self.nc = response["当前的情节链"]
+        self.nc = response["当前的情节链"] if not ENGLISH_MODE else response["Chain"]
         for char_id in self.characters:
-            if char_id == response["下一个行动人"]:
+            if (not ENGLISH_MODE and char_id == response["下一个行动人"]) or (ENGLISH_MODE and char_id == response["Next Action Character"]) :
                 self.characters[char_id].to_do = True
-                self.characters[char_id].motivation = response["行动人的指令"]
+                self.characters[char_id].motivation = response["行动人的指令"] if not ENGLISH_MODE else response["Action Character's Instruction"]
                 self.characters[char_id].v2(self.narrative, self.scenes["scene"+str(self.scene_cnt)].info)
             else:
                 self.characters[char_id].to_do = False

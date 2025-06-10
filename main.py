@@ -1,9 +1,69 @@
 import traceback
-from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse, FileResponse
+from pydantic import BaseModel
+from typing import Dict, List, Optional, Any
 import yaml
-from frame_eng import *
+from frame import *
 import time
+import re
+import os
+import logging
+from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
+load_dotenv()
+ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
+
+# 定义数据模型
+class Character(BaseModel):
+    id: Optional[str] = None
+    profile: Optional[str] = None
+
+class Scene(BaseModel):
+    sceneName: Optional[str] = None
+    sceneInfo: Optional[str] = None
+    chains: Optional[List[str]] = None
+    streams: Optional[List[str]] = None
+    characters: Optional[List[str]] = None
+    mode: Optional[str] = None
+
+class ScriptData(BaseModel):
+    id: Optional[str] = None
+    player_name: Optional[str] = None
+    background_narrative: Optional[str] = None
+    characters: Optional[List[Character]] = None
+    characters_initial_memories: Optional[Dict[str, str]] = None
+    scenes: Optional[Dict[str, Scene]] = None
+
+class LoadRequest(BaseModel):
+    script_name: Optional[str] = None
+    agentMode: Optional[str] = None
+    playerMode: Optional[str] = None
+
+class Action(BaseModel):
+    x: str
+    bid: Optional[str] = None
+    content: Optional[str] = None
+
+class InteractRequest(BaseModel):
+    type: str
+    message: Optional[str] = None
+    object: Optional[str] = None
+    interact: Optional[str] = None
+
+class Prompt(BaseModel):
+    prompt_drama_v1: str
+    prompt_drama_v2: str
+    prompt_character: str
+    prompt_character_v2: str
+
+class InfoRequest(BaseModel):
+    role: Optional[str] = None
+    help: Optional[str] = None
+
 
 class DRAMA:
     def __init__(self):
@@ -11,11 +71,15 @@ class DRAMA:
         self.cache = 'cache/'
 
     def init(self, script):
+        
         self.dramallm = DramaLLM(script=script)
         try:
             self.dramallm.update_view(self.dramallm.player.id)
         except Exception as e:
-            return "You have to add the player into the current scene!"
+            if ENGLISH_MODE:
+                return "You have to add the player into the current scene!"
+            else:
+                return "你需要将玩家加入当前场景!"
 
     def round(self, act):
         action = []
@@ -58,7 +122,7 @@ class DRAMA:
 
     def reset(self):
         self.dramallm = None
-    
+
     def update(self, data):
         if hasattr(self, 'dramallm'):
             try:
@@ -91,14 +155,14 @@ class DRAMA:
                 if "scene"+str(self.dramallm.scene_cnt) not in data["scenes"]:
                     self.dramallm.next_scene()
                     print("current scene deletion!")
-                
+
                 scenes_to_delete = []
                 for sid, s in self.dramallm.script["scenes"].items():
                     if sid not in data["scenes"]:
                         print(sid, "not in data")
                         scenes_to_delete.append(sid)
                         print("scene deletion!")
-                
+
                 for sid in scenes_to_delete:
                     self.dramallm.script["scenes"].pop(sid)
 
@@ -120,7 +184,7 @@ class DRAMA:
             except Exception as error:
                 print('Caught this error: ' , error)
                 print(traceback.print_exc())
-                
+
         # Case III reload
         try:
             script = {
@@ -160,87 +224,97 @@ class DRAMA:
     def state(self):        
         return self.dramallm.state
 
+app = FastAPI()
 
-app = Flask(__name__)
-CORS(app)  
+# 配置 CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 挂载静态文件
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+app.mount("/components", StaticFiles(directory="components"), name="components")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+# 创建 DRAMA 实例
 dramaworld = DRAMA()
 
-@app.route('/')
-def serve_index():
-    return send_from_directory('.', 'index.html') 
+@app.get("/")
+async def serve_index():
+    return FileResponse("index.html")
 
-@app.route('/assets/<path:filename>')
-def serve_assets(filename):
-    return send_from_directory('assets', filename)
+@app.get("/{filename}")
+async def serve_root(filename: str):
+    return FileResponse(filename)
 
-@app.route('/components/<path:filename>')
-def serve_components(filename):
-    return send_from_directory('components', filename)
+@app.get("/api/data")
+async def api_data():
+    return dramaworld.state
 
-@app.route('/<path:filename>')
-def serve_root(filename):
-    return send_from_directory('.', filename)
+@app.post("/api/data")
+async def api_data(data: ScriptData):
+    return dramaworld.update(data)
 
-@app.route('/api/data', methods=['GET', 'POST'])
-def api_data():
-    if request.method == 'POST':
-        data = request.json
-        error = dramaworld.update(data)
-        if error:
-            return jsonify({"error": error})
-    return jsonify(dramaworld.state), 200
-
-@app.route('/api/load', methods=['POST'])
-def load():
-    data = request.json
-    if data.get('script_name') == 'load-script-hp':
-        with open("script/Harry Potter and the Philosopher's Stone_eng.yaml", encoding = 'utf-8') as file:
-            script = yaml.safe_load(file)
-        dramaworld.init(script)
-        return jsonify(dramaworld.state), 200
-    elif data.get('script_name') == 'load-script-station':
-        with open("script/Seven people in the waiting room_eng.yaml", encoding = 'utf-8') as file:
-            script = yaml.safe_load(file)
-        dramaworld.init(script)
-        return jsonify(dramaworld.state), 200
-    elif data.get('script_name') == 'load-script-romeo':
-        with open("script/Romeo and Juliet_eng.yaml", encoding = 'utf-8') as file:
-            script = yaml.safe_load(file)
-        dramaworld.init(script)
-        return jsonify(dramaworld.state), 200
-    else:
-        match = re.match(r"load-script-(.*)", data.get('script_name'))
-        if match:
-            script_id = match.group(1)
-            with open(f'{dramaworld.cache}/{script_id}.yml', encoding='utf-8') as file:
+@app.post("/api/load")
+async def load_script(data: LoadRequest):
+    """加载剧本"""
+    logger.info(f"Loading script: {data.script_name}")
+    postix = "_eng" if ENGLISH_MODE else ""    
+    try:
+        if data.script_name == 'load-script-hp':
+            with open(f"script/Harry Potter and the Philosopher's Stone{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
-            dramaworld.init(script["script"])
-            dramaworld.dramallm.load(script_id)
-            return jsonify(dramaworld.state), 200
-    if data.get('agentMode'):
-        dramaworld.mode = data.get('agentMode')
-        return jsonify(dramaworld.state), 200
-    return None, 400
+            dramaworld.init(script)
+            return dramaworld.state
+        elif data.script_name == 'load-script-station':
+            with open(f"script/Seven people in the waiting room{postix}.yaml", encoding = 'utf-8') as file:
+                script = yaml.safe_load(file)
+            dramaworld.init(script)
+            return dramaworld.state
+        elif data.script_name == 'load-script-romeo':
+            with open(f"script/Romeo and Juliet{postix}.yaml", encoding = 'utf-8') as file:
+                script = yaml.safe_load(file)
+            dramaworld.init(script)
+            return dramaworld.state
+        else:
+            match = re.match(r"load-script-(.*)", data.script_name)
+            if match:
+                script_id = match.group(1)
+                with open(f'{dramaworld.cache}/{script_id}.yml', encoding='utf-8') as file:
+                    script = yaml.safe_load(file)
+                dramaworld.init(script["script"])
+                dramaworld.dramallm.load(script_id)
+                return dramaworld.state
+        if data.agentMode:
+            dramaworld.mode = data.agentMode
+            return dramaworld.state
+        raise HTTPException(status_code=400, detail="Invalid script name")
+    except Exception as e:
+        logger.error(f"Error loading script: {str(e)}")
+        logger.error(traceback.print_exc(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
-@app.route('/api/save', methods=['GET'])
-def save():
+@app.get("/api/save")
+async def save():
     if hasattr(dramaworld, 'dramallm'):
         try:
             save_id = dramaworld.dramallm.save()
-            return jsonify({"info": f"Saved in {dramaworld.cache} as {save_id} successfully!", "save_id" : save_id}), 200
+            return {"info": f"Saved in {dramaworld.cache} as {save_id} successfully!", "save_id" : save_id}
         except Exception as e:
-            return jsonify({"error": f"Error message: {e}"}), 200
+            return {"error": f"Error message: {e}"}
     else:
-        return jsonify({"error": f"Save config first to create your world, then save the script file!"}), 200
+        return {"error": f"Save config first to create your world, then save the script file!"}
 
-@app.route('/api/info', methods = ['POST'])
-def get_info():
-    data = request.json
+@app.post("/api/info")
+async def get_info(data: InfoRequest):
     config = {
         "error": "No valid setup! "
     }
-    if data.get('role'):
-        cid = data.get('role')
+    if data.role:
+        cid = data.role
         if hasattr(dramaworld, 'dramallm'):
             if cid in dramaworld.dramallm.characters:
                 config = {
@@ -249,25 +323,26 @@ def get_info():
                 }
                 if dramaworld.dramallm.mode == 'v2' or dramaworld.dramallm.mode == "v3":
                     config.update({"prompts":dramaworld.dramallm.characters[cid].reacts})
-    elif data.get('help'):
-        if data["help"] == "allmemory":
+                    print(config)
+    elif data.help:
+        if data.help == "allmemory":
             if hasattr(dramaworld, 'dramallm'):
                 config = {
                     "allmemory": dramaworld.dramallm.raw_records
                 }
-        elif data["help"] == "dramallm":
+        elif data.help == "dramallm":
             if hasattr(dramaworld, 'dramallm'):
                 config = {
                     "dramallm": dramaworld.dramallm.reacts
                 }
-        elif data["help"] == "allscript":
+        elif data.help == "allscript":
             if hasattr(dramaworld, 'dramallm'):
                 config = {
                     "allscript": dramaworld.dramallm.script,
                     "scene_cnt": dramaworld.dramallm.scene_cnt,
                     "nc": dramaworld.dramallm.nc
                 }
-        elif data["help"] == "characters":
+        elif data.help == "characters":
             if hasattr(dramaworld, 'dramallm'):
                 character = get_keys(dramaworld.dramallm.script["scenes"]["scene"+str(dramaworld.dramallm.scene_cnt)]["characters"])
                 filtered_char = list(filter(lambda x: x != dramaworld.dramallm.player.id, character))
@@ -275,103 +350,113 @@ def get_info():
                 config = {
                     "characters": filtered_char
                 }
-        elif data["help"] == "export_records":
+        elif data.help == "export_records":
             print("exporting records")
             if hasattr(dramaworld, 'dramallm'):
                 save_id = dramaworld.dramallm.id + str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
-                write_json(dramaworld.dramallm.raw_records, f'records/{save_id}.yaml')
+                write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/records/{save_id}.yaml')
                 config = {
                     "allmemory": dramaworld.dramallm.raw_records
-                }
-    return jsonify(config), 200
-
-@app.route('/api/interact', methods=['POST'])
-def interact():
+                }                
+    return config
+    
+@app.post("/api/interact")
+async def interact(data: InteractRequest):
     start_time = time.time()
-    data = request.json
-    if data.get('type'):
+    if data.type:
         if hasattr(dramaworld, 'dramallm'):
-            input_action = {"x": data.get('type')}
-            if data.get('type') == "-stay":
+            input_action = {"x": data.type}
+            if data.type == "-stay":
                 act = ["-stay"]
-            elif data.get('type') == "-speak":
-                roles, message = message_to_act(data.get('message'))
-                if data.get('object') not in roles:
-                    roles.append(data.get('object'))
+            elif data.type == "-speak":
+                roles, message = message_to_act(data.message)
+                if data.object not in roles:
+                    roles.append(data.object)
                 character = get_keys(dramaworld.dramallm.script["scenes"]["scene"+str(dramaworld.dramallm.scene_cnt)]["characters"])
                 filtered_roles = list(filter(lambda x: x in character, roles))
                 act = ["-speak", filtered_roles, message]
-                input_action = {"x": data.get('type'), "bid": act[1], "content": act[2]}
+                input_action = {"x": data.type, "bid": act[1], "content": act[2]}
             response, done, error = dramaworld.round(act)
             if error:
-                return jsonify({"error": error})
+                return {"error": error}
             end_time = time.time()
             print(f"Interaction took {end_time - start_time:.2f} seconds")
-            return jsonify({"input": input_action,"action": response, "done": done, "state": dramaworld.state}), 200
+            return {"input": input_action,"action": response, "done": done, "state": dramaworld.state}
         else:
-            return None, 400     
-    elif data.get('interact'):
+            return None 
+    elif data.interact:
         if hasattr(dramaworld, 'dramallm'):
-            if data.get('interact') == "next":
+            if data.interact == "next":
                 dramaworld.dramallm.next_scene()
-                return jsonify(dramaworld.dramallm.state), 200
-            elif data.get('interact') == "back":
+                return dramaworld.dramallm.state
+            elif data.interact == "back":
                 dramaworld.dramallm.back_scene()
-                return jsonify(dramaworld.dramallm.state), 200
-            elif data.get('interact') == "withdraw":
+                return dramaworld.dramallm.state
+            elif data.interact == "withdraw":
                 cnt = dramaworld.dramallm.withdraw()
-                return jsonify({"state": dramaworld.dramallm.state, "cnt": cnt}), 200                                
+                return {"state": dramaworld.dramallm.state, "cnt": cnt}                                
         else:
-            return None, 400
-    return None, 400    
+            return None 
+    return None 
 
-@app.route('/api/prompt', methods=['POST', 'GET'])
-def prompt():
-    if request.method == "POST":
-        data = request.json
-        if hasattr(dramaworld, 'dramallm'):
-            dramaworld.dramallm.prompt_v1 = data['prompt_drama_v1']
-            dramaworld.dramallm.prompt_v2 = data['prompt_drama_v2']
-            for c, char in dramaworld.dramallm.characters.items():
-                char.prompt = data['prompt_character']
-                char.prompt_v2 = data['prompt_character_v2']
-        for filename, content in [
-            ("prompt/prompt_drama_v1_eng.md", data['prompt_drama_v1']),
-            ("prompt/prompt_drama_v2_eng.md", data['prompt_drama_v2']),
-            ("prompt/prompt_character_eng.md", data['prompt_character']),
-            ("prompt/prompt_character_v2_eng.md", data['prompt_character_v2'])
-        ]:
-            with open(filename, 'w', encoding='utf-8') as file:
-                file.write(content)
+@app.post("/api/prompt")
+async def post_prompt(data: Prompt):
+    postix = "_eng" if ENGLISH_MODE else ""
+    if hasattr(dramaworld, 'dramallm'):
+        dramaworld.dramallm.prompt_v1 = data.prompt_drama_v1
+        dramaworld.dramallm.prompt_v2 = data.prompt_drama_v2
+        for c, char in dramaworld.dramallm.characters.items():
+            char.prompt = data.prompt_character
+            char.prompt_v2 = data.prompt_character_v2
+    for filename, content in [
+        (f"prompt/prompt_drama_v1{postix}.md", data.prompt_drama_v1),
+        (f"prompt/prompt_drama_v2{postix}.md", data.prompt_drama_v2),
+        (f"prompt/prompt_character{postix}.md", data.prompt_character),
+        (f"prompt/prompt_character_v2{postix}.md", data.prompt_character_v2)
+    ]:
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(content)
     prompts = {}
     for key, filename in [
-        ("prompt_drama_v1", "prompt/prompt_drama_v1_eng.md"),
-        ("prompt_drama_v2", "prompt/prompt_drama_v2_eng.md"),
-        ("prompt_character", "prompt/prompt_character_eng.md"),
-        ("prompt_character_v2", "prompt/prompt_character_v2_eng.md"),
+        ("prompt_drama_v1", f"prompt/prompt_drama_v1{postix}.md"),
+        ("prompt_drama_v2", f"prompt/prompt_drama_v2{postix}.md"),
+        ("prompt_character", f"prompt/prompt_character{postix}.md"),
+        ("prompt_character_v2", f"prompt/prompt_character_v2{postix}.md"),
     ]:
         with open(filename, 'r', encoding='utf-8') as file:
             prompts[key] = file.read()
-    return jsonify(prompts), 200
+    return prompts
+
+@app.get("/api/prompt")
+async def get_prompt():
+    prompts = {}
+    postix = "_eng" if ENGLISH_MODE else ""
+    for key, filename in [
+        ("prompt_drama_v1", f"prompt/prompt_drama_v1{postix}.md"),
+        ("prompt_drama_v2", f"prompt/prompt_drama_v2{postix}.md"),
+        ("prompt_character", f"prompt/prompt_character{postix}.md"),
+        ("prompt_character_v2", f"prompt/prompt_character_v2{postix}.md"),
+    ]:
+        with open(filename, 'r', encoding='utf-8') as file:
+            prompts[key] = file.read()
+    return prompts
 
 IMG_DIR = 'assets'
 os.makedirs(IMG_DIR, exist_ok=True)  # Ensure the directory exists
-@app.route('/upload', methods=['POST'])
-def upload():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part in the request'}), 400
-    file = request.files['file']
-    name = request.form.get('name', '')  # Retrieve the name from the form data
+@app.post("/api/upload")
+async def upload(file: UploadFile = File(...)):
+    name = file.filename
     name += '.jpg'
     if not file or not name:
-        return jsonify({'error': 'Invalid file or name'}), 400
+        return {'error': 'Invalid file or name'}
     # Save the file with the provided name
     filepath = os.path.join(IMG_DIR, name)
     try:
         file.save(filepath)
-        return jsonify({'message': 'File uploaded successfully', 'path': filepath}), 200
+        return {'message': 'File uploaded successfully', 'path': filepath}
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return {'error': str(e)}
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=3000) 
