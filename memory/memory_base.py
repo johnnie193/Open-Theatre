@@ -5,7 +5,7 @@ import numpy as np
 from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 import faiss
-from memory.doc import DocumentProcessor
+from memory.document_processor import DocumentProcessor
 from utils import get_keys
 from utils import logger
 
@@ -181,3 +181,48 @@ class MemoryStorage:
         else:
             logger.warning(f"Warning: Chunk ID {chunk_id} not found for layer update.")
 
+    def update_chunk_properties(self, chunk_id, new_layer=None, new_tag=None):
+        """
+        Updates the layer and/or tag of an existing chunk, and rebuilds its embedding/index entry.
+        Designed for use in archiving.
+        """
+        chunk = self.chunks.get(chunk_id)
+        if not chunk:
+            logger.warning(f"Chunk with ID {chunk_id} not found in {type(self).__name__} for update.")
+            return False
+
+        original_layer = chunk.layer
+        original_tag = chunk.tag
+
+        if new_layer:
+            chunk.layer = new_layer
+        if new_tag:
+            chunk.tag = new_tag
+        
+        # Re-calculate embedding based on new layer/tag
+        chunk.set_embedding(self.embed_model, self.tag_embeddings)
+
+        # Update FAISS index (remove old, add new)
+        # Note: FAISS doesn't have a direct "update" for embeddings. Remove + Add is the way.
+        try:
+            self.faiss_index.remove_ids(np.array([chunk_id]))
+            vec = np.array([chunk.embedding]).astype('float32')
+            self.faiss_index.add_with_ids(vec, np.array([chunk_id]))
+            logger.debug(f"[{type(self).__name__}] FAISS entry updated for chunk {chunk_id}.")
+        except Exception as e:
+            logger.error(f"[{type(self).__name__}] Error updating FAISS for chunk {chunk_id}: {e}")
+            return False
+
+        # Update BM25 document text if layer/tag changed
+        if new_layer or new_tag:
+            bm25_internal_idx = self.chunk_id_to_bm25_internal_idx.get(chunk_id)
+            if bm25_internal_idx is not None and bm25_internal_idx < len(self.documents_for_bm25):
+                updated_bm25_doc_text = f"{chunk.layer}:{chunk.text}"
+                self.documents_for_bm25[bm25_internal_idx] = DocumentProcessor().tokenize_text(updated_bm25_doc_text)
+                self.build_bm25() # Rebuild BM25 after document change
+                logger.debug(f"[{type(self).__name__}] BM25 document updated for chunk {chunk_id}. Rebuilding BM25.")
+            else:
+                logger.warning(f"[{type(self).__name__}] BM25 internal index for chunk {chunk_id} not found or out of bounds. BM25 may be inconsistent.")
+
+        logger.info(f"[{type(self).__name__}] Chunk {chunk_id} updated: Layer {original_layer}->{chunk.layer}, Tag {original_tag}->{chunk.tag}.")
+        return True

@@ -1,7 +1,7 @@
-from memory.memory_base import MemoryStorage, LAYER_WEIGHTS
+from memory.memory_base import MemoryStorage, LAYER_WEIGHTS, TAG_WEIGHTS
 import numpy as np
 from utils import logger
-from memory.doc import DocumentProcessor
+from memory.document_processor import DocumentProcessor
 BM25_WEIGHT = 0
 VECTOR_WEIGHT = 1
 TOP_K = 10
@@ -26,24 +26,6 @@ class MemoryRetriever:
         # Debug: Log the tokenized query
         logger.debug(f"Tokenized Query: {tokenized_query}")
 
-
-        # Use BM25 to retrieve memories
-        if not self.storage.bm25 or not self.storage.documents_for_bm25:
-            logger.warning("Warning: BM25 index not built or no documents. Returning empty list.")
-            return []
-
-        bm25_scores_all = self.storage.bm25.get_scores(tokenized_query)
-        # Debug: Log BM25 scores
-        logger.debug(f"BM25 Scores: {bm25_scores_all}")
-        # Debug: Log document tokens
-        for i, doc_tokens in enumerate(self.storage.documents_for_bm25):
-            logger.debug(f"Document {i} Tokens: {doc_tokens}")
-        # Check for common words between query and documents
-        for i, doc_tokens in enumerate(self.storage.documents_for_bm25):
-            common_words = set(tokenized_query).intersection(set(doc_tokens))
-            logger.debug(f"Common words with Document {i}: {common_words}")
-
-
         # Use FAISS to retrieve memories
         query_embedding = self.storage.embed_model.encode(input_text)
         vec = np.array([query_embedding]).astype('float32')
@@ -58,7 +40,7 @@ class MemoryRetriever:
             faiss_distances, faiss_indices = self.storage.faiss_index.search(vec, actual_faiss_k)
         
         # 初始化向量得分
-        vector_scores = np.zeros(len(self.storage.documents_for_bm25))
+        vector_scores = np.zeros(len(self.storage.chunks))
         if faiss_indices.size > 0:
             valid_faiss_indices = faiss_indices[0][faiss_indices[0] < len(vector_scores)]
             valid_faiss_distances = faiss_distances[0][:len(valid_faiss_indices)]
@@ -68,26 +50,19 @@ class MemoryRetriever:
         combined_scores_with_info = []
         # Iterate based on the documents list used for BM25/FAISS, from back to front
         dialogue_turns_ago = 0
-        for i in range(len(self.storage.documents_for_bm25)-1, -1, -1):
-            if i >= len(bm25_scores_all): continue # Should ideally not happen
+        for i in range(len(vector_scores)-1, -1, -1):
+            if i >= len(vector_scores): continue # Should ideally not happen
 
             # Get the chunk object using its internal index in the BM25/FAISS ordered list
-            chunk = self.storage.get_chunk_by_bm25_faiss_internal_index(i)
-            if not chunk:
-                logger.warning(f"Warning: Could not retrieve chunk for document index {i}. Skipping.")
-                continue
+            base_score = vector_scores[i] 
 
-            bm25_s = bm25_scores_all[i]
-            vector_s = vector_scores[i] 
-
-            base_score = self.bm25_weight * bm25_s + self.vector_weight * vector_s
             logger.debug(f"  Chunk ID: {chunk.id} | Layer: {chunk.layer} | Scene: {chunk.scene_id} | Text: '{chunk.text[:40]}...'")
-            logger.debug(f"    Raw BM25 Score: {bm25_s:.4f} | Raw Vector Score: {vector_s:.4f}")
-            logger.debug(f"    Base Combined Score: {base_score:.4f} (BM25*{self.bm25_weight} + Vector*{self.vector_weight})")
+            logger.debug(f"    Raw Vector Score: {base_score:.4f}")
 
             if base_score <= 1e-6: continue
 
-            layer_weight = LAYER_WEIGHTS.get(chunk.layer, 1.0)
+            chunk = self.storage.chunks[i]
+            tag_weight = TAG_WEIGHTS.get(chunk.layer, 1.0)
             score_with_layer = base_score * layer_weight
 
             logger.debug(f"    Layer Weight ({chunk.layer}): {layer_weight:.2f} -> Score after Layer Weight: {score_with_layer:.4f}")
@@ -95,7 +70,7 @@ class MemoryRetriever:
 
             # Inter-scene recency
             if current_scene_id is not None and chunk.scene_id is not None:
-                if chunk.layer != "profile":
+                if chunk.layer != "setting" and chunk.tag != "profile":
                     scene_diff = abs(current_scene_id - chunk.scene_id)
                     inter_scene_recency_weight = 1.0 / (1 + 0.25 * scene_diff)
                     final_score *= inter_scene_recency_weight
@@ -192,15 +167,15 @@ class MemoryRetriever:
 
             if base_score <= 1e-6: continue
 
-            layer_weight = LAYER_WEIGHTS.get(chunk.layer, 1.0)
-            score_with_layer = base_score * layer_weight
+            tag_weight = TAG_WEIGHTS.get(chunk.layer, 1.0)
+            score_with_layer = base_score * tag_weight
 
-            logger.debug(f"    Layer Weight ({chunk.layer}): {layer_weight:.2f} -> Score after Layer Weight: {score_with_layer:.4f}")
+            logger.debug(f"    Tag Weight ({chunk.tag}): {tag_weight:.2f} -> Score after Tag Weight: {score_with_layer:.4f}")
             final_score = score_with_layer
 
             # Inter-scene recency
             if current_scene_id is not None and chunk.scene_id is not None:
-                if chunk.layer != "profile":
+                if chunk.layer != "setting" and chunk.tag != "profile":
                     scene_diff = abs(current_scene_id - chunk.scene_id)
                     inter_scene_recency_weight = 1.0 / (1 + 0.25 * scene_diff)
                     final_score *= inter_scene_recency_weight
