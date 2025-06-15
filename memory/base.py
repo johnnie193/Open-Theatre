@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import time 
 import numpy as np
 from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer
 import faiss
 from collections import defaultdict 
 import logging
 from memory.document_processor import DocumentProcessor
-from utils import get_keys
 # --- Setup Logging ---
 logger = logging.getLogger(__name__)
 # Optional: Set a handler if not configured elsewhere (e.g., for standalone testing)
@@ -40,8 +37,8 @@ TAG_WEIGHTS = {
     "archived_scene_init": 0.1,
     "archived_scene_objective": 0.1,
 }
-TEXT_WEIGHT = 0.5
-TAG_EMBEDDING_WEIGHT = 0.5 
+TAG_EMBEDDING_WEIGHT = 0.0 # current not used
+TEXT_WEIGHT = 1.0
 
 class MemoryPiece:
     def __init__(self, piece_id, text="", layer="global", tag="conversation", metadata=None, layer_id=None, scene_id=None):
@@ -60,7 +57,7 @@ class MemoryChunk:
     def __init__(self, chunk_id, pieces_list, layer="global", tag=None, metadata=None, layer_id=None, scene_id=None):
         self.id = chunk_id
         self.pieces = pieces_list 
-        self.text = " ".join([p.text.strip() for p in pieces_list]) 
+        self.text = "\n".join([p.text.strip() for p in pieces_list]) 
         self.layer = layer
         self.metadata = metadata or {}
         self.layer_id = layer_id
@@ -68,6 +65,7 @@ class MemoryChunk:
         self.scene_id = scene_id
         self.tag = tag if tag else layer 
         self.tag_embedding = None
+        self.importance = 0
         
         self.max_pieces = 5 
         self.max_text_length = 500 
@@ -75,36 +73,57 @@ class MemoryChunk:
     def __repr__(self):
         return f"MemoryChunk(id={self.id}, layer='{self.layer}', tag='{self.tag}', layer_id={self.layer_id}, scene_id={self.scene_id}, #pieces={len(self.pieces)}, text='{self.text[:50]}...')"
 
-    def add_piece(self, piece, embed_model, tag_embeddings):
+    @property
+    def state(self):
+        return f"MemoryChunk(id={self.id}, layer='{self.layer}', tag='{self.tag}', layer_id={self.layer_id}, scene_id={self.scene_id}, #pieces={len(self.pieces)}, text='{self.text}, metadata={self.metadata})"
+
+    def add_piece(self, piece, embed_model, tag_embeddings, next_layer_id_for_piece):
         if len(self.pieces) >= self.max_pieces or \
            len(self.text) + len(piece.text) + 1 > self.max_text_length: 
             logger.info(f"Chunk {self.id} is full (pieces:{len(self.pieces)}/{self.max_pieces}, len:{len(self.text)}/{self.max_text_length}). Cannot add piece {piece.id}.")
             return False
-        
+        piece.layer_id = next_layer_id_for_piece
         self.pieces.append(piece)
-        self.text += " " + piece.text.strip() 
+        self.text += "\n" + piece.text.strip() 
         self.set_embedding(embed_model, tag_embeddings) 
         logger.info(f"Added piece {piece.id} to chunk {self.id}. New text length: {len(self.text)}")
         return True
 
     def set_embedding(self, embed_model, tag_embeddings):
-        text_embedding = embed_model.encode(self.text).astype('float32')
+        # text_embedding = embed_model.encode(self.text).astype('float32')
         
-        if self.tag not in tag_embeddings:
-            logger.warning(f"Tag '{self.tag}' not preloaded. Encoding on the fly.")
-            tag_embeddings[self.tag] = embed_model.encode(self.tag).astype('float32')
+        # if self.tag not in tag_embeddings:
+        #     logger.warning(f"Tag '{self.tag}' not preloaded. Encoding on the fly.")
+        #     tag_embeddings[self.tag] = embed_model.encode(self.tag).astype('float32')
         
-        self.tag_embedding = tag_embeddings[self.tag]
+        # self.tag_embedding = tag_embeddings[self.tag]
         
-        self.embedding = (TEXT_WEIGHT * text_embedding + TAG_EMBEDDING_WEIGHT * self.tag_embedding).astype('float32')
+        # self.embedding = (TEXT_WEIGHT * text_embedding + TAG_EMBEDDING_WEIGHT * self.tag_embedding).astype('float32')
+        self.embedding = embed_model.encode(self.text).astype('float32')
+
+    def to_text(self):
+        # character's profile/conversation memory in a scene
+        if "character" in self.metadata:
+            scene_id = self.scene_id if self.scene_id else "global"
+            return f"""
+    {self.metadata["character"]}'s {self.tag} memory chunk in {scene_id}.
+    {self.text}
+            """
+        # event conversation memory
+        else:
+            scene_id = self.scene_id if self.scene_id else "global"
+            return f"""
+    This is a {self.tag} memory chunk in {scene_id}.
+    {self.text}
+            """
 
 # --- New: Base Memory Sub-Storage Class ---
 class BaseMemorySubStorage:
     def __init__(self, parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces):
         self.parent_storage = parent_storage
         self.chunks = {}  # {chunk_id: MemoryChunk object}
-        self.next_chunk_id = 0 
         self.all_pieces_ordered = [] # Only for overlap logic within this sub-storage
+        self.next_chunk_id_in_layer = 0
         
         self.documents_for_bm25 = []  
         self.chunk_id_to_bm25_internal_idx = {}
@@ -118,6 +137,8 @@ class BaseMemorySubStorage:
         self.chunk_max_pieces = chunk_max_pieces 
         self.chunk_overlap_pieces = min(chunk_overlap_pieces, chunk_max_pieces - 1) 
         if self.chunk_overlap_pieces < 0: self.chunk_overlap_pieces = 0
+
+    
 
     def _create_and_add_new_chunk(self, pieces_list, layer, tag, metadata, scene_id, piece_id_for_logging):
         chunk_id = self.parent_storage._get_next_global_chunk_id()
@@ -141,10 +162,10 @@ class BaseMemorySubStorage:
         logger.info(f"[{type(self).__name__}] Created new chunk {chunk.id} (L:{layer}, T:{tag}, S:{scene_id}) with {len(pieces_list)} pieces for piece {piece_id_for_logging}.")
         return chunk
 
-    def add_piece_to_sub_storage(self, piece, next_layer_id_for_piece):
+    def add_piece_to_sub_storage(self, piece):
         """Adds a piece to this sub-storage, handling chunking and overlap."""
         # Update piece's layer_id before storing globally
-        piece.layer_id = next_layer_id_for_piece # layer_id represents the order of the piece in the sub-storage
+        
         self.all_pieces_ordered.append(piece) 
 
         found_suitable_chunk = False
@@ -165,7 +186,7 @@ class BaseMemorySubStorage:
                 break 
 
         if most_recent_suitable_chunk:
-            if most_recent_suitable_chunk.add_piece(piece, self.embed_model, self.tag_embeddings):
+            if most_recent_suitable_chunk.add_piece(piece, self.embed_model, self.tag_embeddings, self.next_chunk_id_in_layer):
                 chunk_id = most_recent_suitable_chunk.id
                 vec = np.array([most_recent_suitable_chunk.embedding]).astype('float32')
                 
@@ -205,12 +226,13 @@ class BaseMemorySubStorage:
                 layer=piece.layer, tag=piece.tag, metadata=piece.metadata, scene_id=piece.scene_id,
                 piece_id_for_logging=piece.id
             )
+            self.next_chunk_id_in_layer += 1
             return new_chunk.id # Return the ID of the newly created chunk
         return None # Indicate no new chunk was created
 
-    def add_chunk_to_sub_storage(self, piece, next_layer_id_for_piece):
+    def add_chunk_to_sub_storage(self, piece):
         """Directly adds a new chunk with no overlap from previous chunks."""
-        piece.layer_id = next_layer_id_for_piece # Update piece's layer_id
+        piece.layer_id = self.next_chunk_id_in_layer # Update piece's layer_id
         self.all_pieces_ordered.append(piece) # Still add to global list for consistency
         
         chunk = self._create_and_add_new_chunk(
@@ -218,6 +240,7 @@ class BaseMemorySubStorage:
             layer=piece.layer, tag=piece.tag, metadata=piece.metadata, scene_id=piece.scene_id,
             piece_id_for_logging=piece.id
         )
+        self.next_chunk_id_in_layer += 1
         logger.info(f"[{type(self).__name__}] Directly added new chunk {chunk.id} with text '{piece.text[:30]}...'")
         return chunk.id
 
@@ -232,7 +255,7 @@ class BaseMemorySubStorage:
     def get_chunk(self, chunk_id):
         return self.chunks.get(chunk_id)
 
-    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight):
+    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight):
         """
         Retrieves relevant chunks from this sub-storage.
         This is a base retrieval, specific sub-classes might override or extend this.
@@ -270,7 +293,7 @@ class BaseMemorySubStorage:
             bm25_s = bm25_scores_by_chunk_id.get(chunk_id, 0.0)
             vector_s = vector_scores_by_chunk_id.get(chunk_id, 0.0)
 
-            base_score = (bm25_weight * bm25_s) + (vector_weight * vector_s)
+            base_score = (bm25_weight * bm25_s) + (vector_weight * vector_s) + (importance_weight * chunk.importance)
             
             if base_score <= 1e-6: 
                 continue
@@ -289,7 +312,8 @@ class BaseMemorySubStorage:
         
         # Sort and return top_k
         sorted_by_score = sorted(scored_chunks_info, key=lambda x: x['score'], reverse=True)
-        return sorted_by_score[:top_k]
+        final_retrieved_chunks = sorted_by_score[:top_k]
+        return final_retrieved_chunks
     
     def remove_chunk(self, chunk_id):
         """

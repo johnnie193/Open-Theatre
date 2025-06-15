@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 import logging
 
 load_dotenv()
-logging.basicConfig(level=logging.DEBUG)  # 设置日志级别为DEBUG
 logger = logging.getLogger(__name__)
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
 

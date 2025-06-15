@@ -12,7 +12,7 @@ import re
 import os
 import logging
 from dotenv import load_dotenv
-
+logging.basicConfig(level=logging.WARNING)  # 设置日志级别为DEBUG
 logger = logging.getLogger(__name__)
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
@@ -67,12 +67,12 @@ class InfoRequest(BaseModel):
 
 class DRAMA:
     def __init__(self):
-        super().__init__()
+        self.storage = MemoryStorage()
         self.cache = 'cache/'
 
     def init(self, script):
-        
-        self.dramallm = DramaLLM(script=script)
+        self.storage.reset()
+        self.dramallm = DramaLLM(script=script, storage_mode = True, storager = self.storage)
         try:
             self.dramallm.update_view(self.dramallm.player.id)
         except Exception as e:
@@ -80,6 +80,7 @@ class DRAMA:
                 return "You have to add the player into the current scene!"
             else:
                 return "你需要将玩家加入当前场景!"
+            
 
     def round(self, act):
         action = []
@@ -328,7 +329,8 @@ async def get_info(data: InfoRequest):
         if data.help == "allmemory":
             if hasattr(dramaworld, 'dramallm'):
                 config = {
-                    "allmemory": dramaworld.dramallm.raw_records
+                    "allmemory": dramaworld.dramallm.raw_records,
+                    "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None
                 }
         elif data.help == "dramallm":
             if hasattr(dramaworld, 'dramallm'):
@@ -356,8 +358,10 @@ async def get_info(data: InfoRequest):
                 save_id = dramaworld.dramallm.id + str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
                 write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/records/{save_id}.yaml')
                 config = {
-                    "allmemory": dramaworld.dramallm.raw_records
-                }                
+                    "allmemory": dramaworld.dramallm.raw_records,
+                    "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None
+                }
+        logger.info(config)                
     return config
     
 @app.post("/api/interact")

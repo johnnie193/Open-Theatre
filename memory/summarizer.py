@@ -47,7 +47,7 @@ class Summarizer:
         for i in range(0, len(event_chunks_to_summarize), self.summary_chunk_size):
             batch_of_chunks = event_chunks_to_summarize[i:i + self.summary_chunk_size]
             
-            combined_text = " ".join([c.text for c in batch_of_chunks])
+            combined_text = "\n".join([c.text for c in batch_of_chunks])
             
             logger.debug(f"Summarizing batch of {len(batch_of_chunks)} chunks from scene {scene_id} (IDs: {[c.id for c in batch_of_chunks]})")
             

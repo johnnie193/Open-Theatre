@@ -1,27 +1,34 @@
 # --- Main Memory Storage (Aggregator) ---
-from gemini_memory.layers import GlobalMemorySubStorage, EventMemorySubStorage, SummaryMemorySubStorage, ArchiveMemorySubStorage
-from gemini_memory.base import MemoryPiece
+from memory.layers import GlobalMemorySubStorage, EventMemorySubStorage, SummaryMemorySubStorage, ArchiveMemorySubStorage
+from memory.base import MemoryPiece
 from collections import defaultdict
 import logging
 from sentence_transformers import SentenceTransformer
 from utils import get_keys
-from gemini_memory.base import TAG_WEIGHTS, LAYER_WEIGHTS
-from gemini_memory.summarizer import Summarizer
+from memory.base import TAG_WEIGHTS, LAYER_WEIGHTS
+from memory.summarizer import Summarizer
 
 # --- Setup Logging ---
 logger = logging.getLogger(__name__)
 
+class ModelSingleton:
+    _instance = None
+
+    @staticmethod
+    def get_instance(embed_model_name="all-MiniLM-L6-v2"):
+        if ModelSingleton._instance is None:
+            ModelSingleton._instance = SentenceTransformer(embed_model_name)
+        return ModelSingleton._instance
+
 class MemoryStorage:
     def __init__(self, embed_model_name="all-MiniLM-L6-v2", chunk_max_pieces=5, chunk_overlap_pieces=1):
-        self.embed_model = SentenceTransformer(embed_model_name)
+        self.embed_model = ModelSingleton.get_instance(embed_model_name)
         self.dimension = self.embed_model.get_sentence_embedding_dimension()
         self.tag_embeddings = {}
         self._preload_tag_embeddings()
 
         self.next_piece_id = 0
-        self.next_layer_id = defaultdict(int) 
         self.next_global_chunk_id = 0 # <--- NEW: Global chunk ID counter
-
 
         self.global_storage = GlobalMemorySubStorage(self, self.embed_model, self.dimension, self.tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
         self.event_storage = EventMemorySubStorage(self, self.embed_model, self.dimension, self.tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
@@ -36,10 +43,26 @@ class MemoryStorage:
         }
 
         self.summarizer = Summarizer(self)
+        self.retriever = Retriever(self)
         # self.tag_to_storage_map = {}
         # for storage_type, sub_storage in self.all_sub_storages.items():
         #     for tag in sub_storage.supported_tags:
         #         self.tag_to_storage_map[tag] = sub_storage
+
+    def reset(self, chunk_max_pieces=5, chunk_overlap_pieces=1):
+        self.next_piece_id = 0
+        self.next_global_chunk_id = 0 # <--- NEW: Global chunk ID counter
+        self.global_storage = GlobalMemorySubStorage(self, self.embed_model, self.dimension, self.tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
+        self.event_storage = EventMemorySubStorage(self, self.embed_model, self.dimension, self.tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
+        self.summary_storage = SummaryMemorySubStorage(self, self.embed_model, self.dimension, self.tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
+        self.archive_storage = ArchiveMemorySubStorage(self, self.embed_model, self.dimension, self.tag_embeddings, chunk_max_pieces, chunk_overlap_pieces) # NEW Archive Storage
+
+        self.all_sub_storages = {
+            "global": self.global_storage,
+            "event": self.event_storage,
+            "summary": self.summary_storage,
+            "archive": self.archive_storage
+        }
 
     def _get_next_global_chunk_id(self): # <--- NEW method
         new_id = self.next_global_chunk_id
@@ -47,18 +70,16 @@ class MemoryStorage:
         return new_id
 
     def _preload_tag_embeddings(self):
-        logger.info("Preloading tag embeddings...")
-        for tag in get_keys(TAG_WEIGHTS):
-            self.tag_embeddings[tag] = self.embed_model.encode(tag).astype('float32')
-        logger.info("TAG embeddings preloaded.")
-
-    # def _get_sub_storage_for_tag(self, tag):
-    #     print(self.tag_to_storage_map)
-    #     sub_storage = self.tag_to_storage_map.get(tag)
-    #     if not sub_storage:
-    #         raise ValueError(f"No sub-storage defined for tag: {tag}")
-    #     return sub_storage
+        # logger.info("Preloading tag embeddings...")
+        # for tag in get_keys(TAG_WEIGHTS):
+        #     self.tag_embeddings[tag] = self.embed_model.encode(tag).astype('float32')
+        # logger.info("TAG embeddings preloaded.")
+        
+        
+        pass
+    
     def _get_sub_storage_for_layer(self, layer):
+        
         return self.all_sub_storages[layer]
 
     def add_piece(self, text, layer, tag=None, metadata=None, scene_id=None):
@@ -68,7 +89,12 @@ class MemoryStorage:
         piece = MemoryPiece(piece_id, text, layer, tag, metadata, layer_id=None, scene_id=scene_id)
         
         sub_storage = self._get_sub_storage_for_layer(layer)
-        return sub_storage.add_piece_to_sub_storage(piece, self.next_layer_id[layer])
+        added_piece = sub_storage.add_piece_to_sub_storage(piece)
+        return added_piece
+    
+    def delete_piece(self, piece_id, text=None):
+        pass
+    #TODO: Withdrawal is not available for memory storage now.
 
     def add_chunk(self, text, layer, tag=None, metadata=None, scene_id=None):
         piece_id = self.next_piece_id
@@ -86,6 +112,13 @@ class MemoryStorage:
             all_chunks.update(sub_storage.chunks)
         return list(all_chunks.values())
     
+    def all_chunks_values(self):
+        """Returns all chunks from all sub-storages for inspection."""
+        all_chunks = {}
+        for sub_storage in self.all_sub_storages.values():
+            all_chunks.update(sub_storage.chunks)
+        return [chunk.state for chunk in list(all_chunks.values())]
+    
     def get_chunk(self, chunk_id):
         """Attempts to get a chunk by ID from any sub-storage."""
         for sub_storage in self.all_sub_storages.values():
@@ -94,16 +127,31 @@ class MemoryStorage:
                 return chunk
         return None
     
+    def retrieve(self, input_text: str, desired_sub_storages: list[str], current_scene_id=None):
+        """
+        Retrieve memories from multiple sub-storages.
+        input_text: the query text
+        desired_sub_storages: a list of sub-storage names to retrieve from
+        current_scene_id: the current scene id
 
+        Returns a list of {'score': score, 'chunk': chunk} dicts.
+        """
+        return self.retriever.retrieve_layered(input_text, desired_sub_storages, current_scene_id)
 
+    def summarize(self, scene_id, summary_tag="summary_conversation"):
+        """
+        Summarize memories from multiple sub-storages.
+        """
+        return self.summarizer.summarize_scene_events(scene_id, summary_tag=summary_tag)
 
 # --- Retriever Class (modified to use sub-storages) ---
 class Retriever:
-    def __init__(self, storage, top_k=5, bm25_weight=0.5, vector_weight=0.5):
+    def __init__(self, storage, top_k=5, bm25_weight=0.3, vector_weight=0.5, importance_weight=0.2):
         self.storage = storage # This is now the main MemoryStorage aggregating sub-storages
         self.top_k = top_k
         self.bm25_weight = bm25_weight
         self.vector_weight = vector_weight
+        self.importance_weight = importance_weight
 
     # def retrieve_layered_draft(self, input_text, current_scene_id=None, desired_layers=None):
     #     if desired_layers is None:
@@ -178,7 +226,15 @@ class Retriever:
     #             logger.info(f"   No memories retrieved for layer '{layer}'.")
 
     #     return final_layered_results
-    def retrieve_layered(self, input_text, desired_sub_storages, current_scene_id=None):
+    def retrieve_layered(self, input_text: str, desired_sub_storages: list[str], current_scene_id=None):
+        """
+        Retrieve memories from multiple sub-storages.
+        input_text: the query text
+        desired_sub_storages: a list of sub-storage names to retrieve from
+        current_scene_id: the current scene id
+
+        Returns a list of {'score': score, 'chunk': chunk} dicts.
+        """
         sub_storage_query_list = []
         for sub_storage_name in desired_sub_storages:
             sub_storage_query_list.append(self.storage.all_sub_storages[sub_storage_name])
@@ -193,7 +249,8 @@ class Retriever:
                 current_scene_id=current_scene_id, 
                 top_k=self.top_k, # Fetch more to allow for final filtering/re-ranking
                 bm25_weight=self.bm25_weight, 
-                vector_weight=self.vector_weight
+                vector_weight=self.vector_weight,
+                importance_weight=self.importance_weight
             )
             
             # Since sub_storage.retrieve already returns a sorted list of {'score': score, 'chunk': chunk}
@@ -279,7 +336,8 @@ if __name__ == "__main__":
             print("-" * 20)
         
         print("\n\n--- All Chunks in Storage for Inspection (across all sub-storages) ---")
-        all_chunks_for_inspection = storage.all_chunks()
+        all_chunks_for_inspection = storage.all_chunks_values()
+        print(type(all_chunks_for_inspection[0]))
         for chunk in sorted(all_chunks_for_inspection, key=lambda x: x.id): # Sort by chunk_id for consistent output
             print(f"Chunk {chunk.id}: Layer='{chunk.layer}', Tag='{chunk.tag}', Scene={chunk.scene_id}, #Pieces={len(chunk.pieces)}, Text='{chunk.text[:100]}...'")
 
@@ -328,7 +386,7 @@ if __name__ == "__main__":
         print("Retrieving memories for Query: 'what happened in the last scene'")
         print("Note: Original conversation chunks should now be archived.")
         print("="*50 + "\n")
-        retriever = Retriever(storage, top_k=2, bm25_weight=0.5, vector_weight=0.5)
+        retriever = Retriever(storage, top_k=2, bm25_weight=0.4, vector_weight=0.5, importance_weight=0.1)
         query_text = "what happened in the last scene"
         retrieved_memories = retriever.retrieve_layered(
             input_text=query_text, 
@@ -355,4 +413,4 @@ if __name__ == "__main__":
         for chunk in sorted(all_chunks_for_inspection, key=lambda x: x.id): 
             print(f"Chunk {chunk.id}: Layer='{chunk.layer}', Tag='{chunk.tag}', Scene={chunk.scene_id}, #Pieces={len(chunk.pieces)}, Text='{chunk.text[:100]}...'")
 
-    test_2()
+    test_1()

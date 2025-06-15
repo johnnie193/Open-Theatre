@@ -1,9 +1,10 @@
-from gemini_memory.base import BaseMemorySubStorage
+from memory.base import BaseMemorySubStorage
 from collections import defaultdict
 import logging
 
 # --- Setup Logging ---
 logger = logging.getLogger(__name__)
+importance_addition_proportion = 0.05
 
 # --- Specific Sub-Storage Implementations ---
 class GlobalMemorySubStorage(BaseMemorySubStorage):
@@ -11,9 +12,12 @@ class GlobalMemorySubStorage(BaseMemorySubStorage):
         super().__init__(parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
         self.supported_tags = ["profile", "scene_init", "scene_objective"]
 
-    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight):
+    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight):
         # Global memories don't have scene-specific recency, so pass None for current_scene_id to super
-        return super().retrieve(query_text, None, top_k, bm25_weight, vector_weight)
+        final_retrieved_chunks = super().retrieve(query_text, None, top_k, bm25_weight, vector_weight, importance_weight)
+        for chunk in final_retrieved_chunks:
+            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        return final_retrieved_chunks
 
 
 class EventMemorySubStorage(BaseMemorySubStorage):
@@ -22,14 +26,14 @@ class EventMemorySubStorage(BaseMemorySubStorage):
         self.supported_tags = ["conversation", "action", "thought", "archived_conversation", "archived_scene_init", "archived_scene_objective"]
         self.scene_conversation_chunks = defaultdict(list) # Ordered list of conversation chunk IDs per scene
 
-    def add_piece_to_sub_storage(self, piece, next_layer_id_for_piece):
-        new_chunk_id = super().add_piece_to_sub_storage(piece, next_layer_id_for_piece)
+    def add_piece_to_sub_storage(self, piece):
+        new_chunk_id = super().add_piece_to_sub_storage(piece)
         if new_chunk_id is not None and piece.layer == "conversation":
             self.scene_conversation_chunks[piece.scene_id].append(new_chunk_id)
         return new_chunk_id
 
-    def add_chunk_to_sub_storage(self, piece, next_layer_id_for_piece):
-        new_chunk_id = super().add_chunk_to_sub_storage(piece, next_layer_id_for_piece)
+    def add_chunk_to_sub_storage(self, piece):
+        new_chunk_id = super().add_chunk_to_sub_storage(piece)
         if new_chunk_id is not None and piece.layer == "conversation":
             self.scene_conversation_chunks[piece.scene_id].append(new_chunk_id)
         return new_chunk_id
@@ -46,8 +50,8 @@ class EventMemorySubStorage(BaseMemorySubStorage):
         except ValueError:
             return 0
 
-    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight):
-        raw_results = super().retrieve(query_text, current_scene_id, top_k * 2, bm25_weight, vector_weight) # Get more candidates
+    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight):
+        raw_results = super().retrieve(query_text, current_scene_id, top_k * 2, bm25_weight, vector_weight, importance_weight) # Get more candidates
         
         final_results = []
         for item in raw_results:
@@ -74,17 +78,21 @@ class EventMemorySubStorage(BaseMemorySubStorage):
             final_results.append({'score': final_score, 'chunk': chunk})
         
         # Re-sort after applying specific weights
-        final_results_sorted = sorted(final_results, key=lambda x: x['score'], reverse=True)
-        return final_results_sorted[:top_k]
+        final_results_sorted = sorted(final_results, key=lambda x: x['score'], reverse=True)[:top_k]
+
+
+        for chunk in final_results_sorted:
+            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        return final_results_sorted
 
 class SummaryMemorySubStorage(BaseMemorySubStorage):
     def __init__(self, parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces):
         super().__init__(parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
         self.supported_tags = ["summary_conversation", "summary_scene_init", "summary_scene_objective"]
 
-    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight):
+    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight):
         # Summary memories might also benefit from inter-scene recency if they are scene-specific
-        raw_results = super().retrieve(query_text, current_scene_id, top_k * 2, bm25_weight, vector_weight)
+        raw_results = super().retrieve(query_text, current_scene_id, top_k * 2, bm25_weight, vector_weight, importance_weight)
         
         final_results = []
         for item in raw_results:
@@ -99,8 +107,11 @@ class SummaryMemorySubStorage(BaseMemorySubStorage):
             
             final_results.append({'score': final_score, 'chunk': chunk})
         
-        final_results_sorted = sorted(final_results, key=lambda x: x['score'], reverse=True)
-        return final_results_sorted[:top_k]
+        final_results_sorted = sorted(final_results, key=lambda x: x['score'], reverse=True)[:top_k]
+
+        for chunk in final_results_sorted:
+            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        return final_results_sorted
 
 class ArchiveMemorySubStorage(BaseMemorySubStorage):
     def __init__(self, parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces):
@@ -111,7 +122,10 @@ class ArchiveMemorySubStorage(BaseMemorySubStorage):
             "archived_scene_init", "archived_scene_objective" # If you ever archive these types
         ]
     
-    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight):
+    def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight):
         # Archival memories typically have low recency, so a flat retrieval might be sufficient.
         # You could add a very low recency penalty here if needed for older archives.
-        return super().retrieve(query_text, current_scene_id, top_k, bm25_weight, vector_weight)
+        final_retrieved_chunks = super().retrieve(query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight)
+        for chunk in final_retrieved_chunks:
+            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        return final_retrieved_chunks

@@ -9,9 +9,10 @@ class DRAMA:
     def __init__(self):
         super().__init__()
         self.cache = 'cache/'
+        self.storager = MemoryStorage()
 
     def init(self, script):
-        self.dramallm = DramaLLM(script=script)
+        self.dramallm = DramaLLM(script=script, storage_mode=True, storager = self.storager)
         try:
             self.dramallm.update_view(self.dramallm.player.id)
         except Exception as e:
@@ -58,6 +59,7 @@ class DRAMA:
 
     def reset(self):
         self.dramallm = None
+        self.storager.reset()
     
     def update(self, data):
         if hasattr(self, 'dramallm'):

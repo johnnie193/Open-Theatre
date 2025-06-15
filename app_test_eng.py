@@ -320,7 +320,8 @@ async def get_info(data: InfoRequest):
         if data.help == "allmemory":
             if hasattr(dramaworld, 'dramallm'):
                 config = {
-                    "allmemory": dramaworld.dramallm.raw_records
+                    "allmemory": dramaworld.dramallm.raw_records,
+                    "chunks": dramaworld.dramallm.record_storage.all_chunks() if dramaworld.dramallm.storage_mode else None
                 }
         elif data.help == "dramallm":
             if hasattr(dramaworld, 'dramallm'):

@@ -3,7 +3,6 @@ import jieba
 import re
 import json
 from typing import List, Dict, Optional
-from utils import logger
 
 class DocumentProcessor:
     """文档处理类"""

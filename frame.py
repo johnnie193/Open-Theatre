@@ -6,7 +6,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import re
 import json
 import datetime
-from memory.memory_base import MemoryStorage, MemoryChunk
+from memory.memory import MemoryStorage
+from memory.base import MemoryChunk, MemoryPiece
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -104,13 +105,18 @@ class Scene:
         char.loc = "W"
         # return char
         
-    def update_record(self, a="", x="", b="", c="", y="", **kwargs):
+    def update_dialogues_record(self, a="", x="", b="", c="", y="", **kwargs):
         m = {"a": a, "x": x, "b": b, "c": c, "y": y}
         m.update(kwargs)
         self.record.append(action_to_text(m))
 
+
 class World:
-    def __init__(self, config={}):
+    def __init__(self, config={}, storage_mode = True, storager = None):
+        self.storage_mode = storage_mode
+        self.raw_records = {}
+        self.record_storage = storager if storage_mode else None
+
         if "scenes" in config and isinstance(config["scenes"], dict):
             for sid, s in config["scenes"].items():
                 if "chain" not in config["scenes"][sid] or not config["scenes"][sid]["chain"]:
@@ -121,13 +127,12 @@ class World:
         self.id = config.get("id")
         self.characters = {}
         self.scenes = {}
-        self.raw_records = {}
         self.narrative = ""
         if "narrative" in background:
             self.narrative = background["narrative"]
         # print("yaml_print_background", background)
         for cid, char in background.get("characters").items():    
-            self.characters.update({cid: CharacterLLM(config = {"id": cid, "profile": char})})
+            self.characters.update({cid: CharacterLLM(config = {"id": cid, "profile": char}, storage_mode = storage_mode)})
         self.player = self.characters[background.get("player")]
         if "context" in background and isinstance(background["context"], dict):
             for cid, message in background["context"].items():
@@ -136,6 +141,16 @@ class World:
         self.add_scene("scene1")
         self.cache = CACHE_DIR
         self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
+
+
+        # TODO: May be added when there are too many characters, so we do rag to get the relevant characters
+        # if self.storage_mode:
+        #     for i, char in self.characters.items():
+        #         if char.profile:
+        #             if ENGLISH_MODE:
+        #                 self.record_storage.add_piece(f"{char.id}'s profile: {char.profile}", layer = "global", tag="profile")
+        #             else:
+        #                 self.record_storage.add_piece(f"{char.id}的简介: {char.profile}", layer = "global", tag="profile")
 
     def save(self):
         save_id = self.id+str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
@@ -162,7 +177,6 @@ class World:
     #     for sid, scene in self.scenes.items():
     #         scene.add_character(char)
     #         self.update_view(char)
-
     def pop_characters(self, char):
         """Remove a character from the world and its current scene."""
         self.characters.pop(char.id, None)
@@ -172,6 +186,8 @@ class World:
     def add_scene(self, scene_id=None):
         """Add a new scene to the world."""
         last_scene = self.scenes[f"scene{self.scene_cnt}"] if len(self.scenes) else None
+        if self.storage_mode and last_scene:
+                self.record_storage.summarize(last_scene.id)
         if not scene_id:
             scene_id = f"scene{self.scene_cnt + 1}"
             self.scene_cnt += 1
@@ -198,6 +214,7 @@ class World:
         for cid, _ in scene.characters.items():
             self.update_view(cid)
         self.raw_records.update({scene.id: scene.record})
+
 
     @property
     def state(self):
@@ -263,7 +280,7 @@ class World:
                 self.characters[bid].interact_with = src
                 src.interact(x, cid, **kwargs)
         scene = self.scenes[src.loc]
-        scene.update_record(aid, x, bid, cid, **kwargs)
+        self.update_dialogues_record(scene, aid, x, bid, cid, **kwargs)
 
     def calculate(self, aid, x, bid=None, cid=None, **kwargs):
         print(f"calculate, aid = {aid}, x = {x}, bid = {bid}, cid = {cid}, kwargs = {kwargs}")
@@ -276,7 +293,7 @@ class World:
             scene = self.scenes[src.loc]
             for t in scene.characters:
                 self.characters[t].update_memory(src.id, x, bid, content=kwargs["content"])
-            scene.update_record(aid, x, bid, cid, **kwargs)
+            self.update_dialogues_record(scene, aid, x, bid, cid, **kwargs)
         elif self.mode == "v3":
             if isinstance(bid, list):
                 if bid == []:
@@ -284,7 +301,18 @@ class World:
                 else:
                     bid = bid[0]
             self._calculate(aid, x, bid, cid, **kwargs)
-        
+
+    def update_dialogues_record(self, scene, a="", x="", b="", c="", y="", **kwargs):
+        # m = {"a": a, "x": x, "b": b, "c": c, "y": y}
+        # m.update(kwargs)
+        # scene.record.append(action_to_text(m))
+        if self.storage_mode:
+            m = {"a": a, "x": x, "b": b, "c": c, "y": y}
+            m.update(kwargs)
+            self.record_storage.add_piece(action_to_text(m), layer = "event", tag="conversation", scene_id=scene.id)
+        scene.update_dialogues_record(a, x, b, c, y, **kwargs)
+            
+            
 class Character:
     def __init__(self, id=None, config={}):
         self.id = id or config.get("id")
@@ -359,8 +387,12 @@ class Character:
 
     def delete_memory(self, text=None):
         if text is None:
+            if self.storage_mode:
+                self.storage.delete_piece(self.id)
             self.memory.pop()
         else:
+            if self.storage_mode:
+                self.storage.delete_piece(self.id, text)
             self.memory = [m for m in self.memory if m != text]
 
     def delete_recent_memory(self, text=None):
@@ -370,14 +402,16 @@ class Character:
             self.recent_memory = [m for m in self.recent_memory if m != text]
 
     def clear_memory(self):
-        self.memory = []
         self.recent_memory = []
+        if self.storage_mode:
+            self.storage = MemoryStorage()    
+        self.memory = []
 
     def clear_recent_memory(self):
         self.recent_memory = []
 
 class CharacterLLM(Character):
-    def __init__(self, id=None, config={}, query_fct=query_gpt4):
+    def __init__(self, id=None, config={}, query_fct=query_gpt4, storage_mode = True):
         super().__init__(id, config)
         self.query_fct = query_fct
         self.plan = []
@@ -390,6 +424,9 @@ class CharacterLLM(Character):
         self.to_do = False
         self.sum_memory = []
         self.motivation = ""
+        self.memory = []
+        self.storage_mode = storage_mode
+        self.storage = MemoryStorage() if storage_mode else None
 
     def load(self, state):
         self.status = state["status"]
@@ -415,6 +452,16 @@ class CharacterLLM(Character):
             "motivation": self.motivation
         }
         return state
+    
+    def get_memory(self, query=None):
+        if self.storage_mode:
+            return self.storage.get_memory(self.id, query)
+        return self.memory
+        
+    def into_memory(self, text, layer="event", tag=None, scene_id=None):
+        if self.storage_mode:
+            self.storage.add_piece(self.id + "'s memory: " + text, layer = layer, tag = tag, scene_id = scene_id)
+        self.memory.append(text)
 
     def act(self, narrative, info, plot = None):
         print(f"{self.id} act: {self.decision}")
@@ -427,12 +474,33 @@ class CharacterLLM(Character):
         with open(os.path.join(self.cache, f'{self.id}_{tag}.log'), "a+", encoding = 'utf-8') as f:
             f.write(content)
 
+
+    def update_memory(self, a="", x="", b="", c="", y="", **kwargs):
+        """Update the character's memory with a new action."""
+        if self.status == "/faint/":
+            return
+        if kwargs.get("text"):
+            self.into_memory(kwargs["text"])
+            return
+        if self.id == a:
+            a = "你"
+        if isinstance(b, list):
+            b = "、".join(["你" if character == self.id else character for character in b])
+        elif b == self.id:
+            b = "你"
+        m = {"a": a, "x": x, "b": b, "c": c, "y": y}
+        m.update(kwargs)
+        self.into_memory(action_to_text(m))
+        self.recent_memory.append(action_to_text(m))
+        if len(self.recent_memory) > 3:
+            self.recent_memory = self.recent_memory[-2:]
+
     def make_plan(self, narrative, info, plot = None):
         prompt = self.prompt.format(
                     id=self.id,
                     profile=self.profile,
                     motivation=self.motivation,
-                    memory=dumps(self.memory),
+                    memory=dumps(self.get_memory()),
                     narrative = narrative,
                     scene_info = info,
                     view = dumps(self.view),
@@ -450,8 +518,8 @@ class CharacterLLM(Character):
             self.log("\n".join([prompt, response]), "plan")
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = [response, prompt]
-        plan = response["预设的情节"]
-        decision = response["决策"]
+        plan = response["预设的情节"] if not ENGLISH_MODE else response["Preset Plot"]
+        decision = response["决策"] if not ENGLISH_MODE else response["Decision"]
         self.plan = plan
         self.decision += [decision]
 
@@ -459,12 +527,12 @@ class CharacterLLM(Character):
         prompt = self.prompt_v2.format(
             id=self.id,
             profile=self.profile,
-            memory=dumps(self.memory),
+            memory=dumps(self.get_memory()),
             narrative = narrative,
             scene_info = info,
             view=dumps(self.view),
             motivation=self.motivation,
-            recent=dumps(self.memory[-2:]),
+            recent=dumps(self.recent_memory),
             plot=dumps(plot)
         )
         try:
@@ -491,8 +559,8 @@ class CharacterLLM(Character):
             self.to_do = False            
 
 class DramaLLM(World):
-    def __init__(self, script, query_fct=query_gpt4):
-        super().__init__(script)
+    def __init__(self, script, query_fct=query_gpt4, storage_mode = True, storager = MemoryStorage()):
+        super().__init__(script, storage_mode, storager)
         self.query_fct = query_fct
         self.sum_records = []
         self.reacts = []
@@ -522,17 +590,37 @@ class DramaLLM(World):
             
     def v1_react(self):
         all_records = sum(self.raw_records.values(), [])
-        prompt = self.prompt_v1.format(
-            narrative = self.narrative,
-            npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
-            player_id=self.player.id,
-            player_profile = self.player.profile,
-            script = dump_script(self.script["scenes"], self.scene_cnt),
-            scene_id = "scene"+str(self.scene_cnt),
-            nc = self.nc,
-            records = "\n".join([line for line in all_records]),
-            recent = "\n".join([line for line in all_records[-2:]]),
-        )
+
+        if not self.storage_mode or len(all_records) < 20:
+            prompt = self.prompt_v1.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = "\n".join([line for line in all_records]),
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved_records = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            records += "\n".join([line["chunk"].to_text() for line in retrieved_records])
+            
+            prompt = self.prompt_v1.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = records,
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
+    
         try:
             response = self.query_fct(prompt)
             self.log("\n".join([prompt, response]), 'v1')
@@ -660,3 +748,4 @@ class DramaLLM(World):
             current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]
             self.nc = [[item, False] for item in current_scene["chain"]]
         self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
+

@@ -59,6 +59,7 @@ function updateWorldRecord() {
     .then(data => {
         if(!data.error && data.allmemory!={}){
             console.log("memory",data.allmemory);
+            console.log("chunks",data.chunks);
             let memoryContent = `
     <h3>Records</h3>
             `
@@ -69,6 +70,12 @@ function updateWorldRecord() {
                     memoryContent += `<li>${statement}</li>`; // Add each statement as a list item
                 });
                 memoryContent += '</ul>'; 
+            }
+            if(data.chunks){
+                memoryContent += '<h4>Chunks</h4>';
+                data.chunks.forEach(chunk => {
+                    memoryContent += `<li>${chunk}</li>`;
+                });
             }
             memoryinfoBox.innerHTML = memoryContent;
         }else{
