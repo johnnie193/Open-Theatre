@@ -68,7 +68,7 @@ class MemoryChunk:
         self.importance = 0
         
         self.max_pieces = 5 
-        self.max_text_length = 500 
+        self.max_text_length = 800 
 
     def __repr__(self):
         return f"MemoryChunk(id={self.id}, layer='{self.layer}', tag='{self.tag}', layer_id={self.layer_id}, scene_id={self.scene_id}, #pieces={len(self.pieces)}, text='{self.text[:50]}...')"
@@ -78,7 +78,7 @@ class MemoryChunk:
         return f"MemoryChunk(id={self.id}, layer='{self.layer}', tag='{self.tag}', layer_id={self.layer_id}, scene_id={self.scene_id}, #pieces={len(self.pieces)}, text='{self.text}, metadata={self.metadata})"
 
     def add_piece(self, piece, embed_model, tag_embeddings, next_layer_id_for_piece):
-        if len(self.pieces) >= self.max_pieces or \
+        if len(self.pieces) > self.max_pieces or \
            len(self.text) + len(piece.text) + 1 > self.max_text_length: 
             logger.info(f"Chunk {self.id} is full (pieces:{len(self.pieces)}/{self.max_pieces}, len:{len(self.text)}/{self.max_text_length}). Cannot add piece {piece.id}.")
             return False
@@ -117,7 +117,7 @@ class MemoryChunk:
     {self.text}
             """
 
-# --- New: Base Memory Sub-Storage Class ---
+# --- Base Memory Sub-Storage Class ---
 class BaseMemorySubStorage:
     def __init__(self, parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces):
         self.parent_storage = parent_storage

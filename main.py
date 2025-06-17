@@ -105,7 +105,7 @@ class DRAMA:
                     if not char.to_do:
                         continue
                     scene = self.dramallm.scenes["scene"+str(self.dramallm.scene_cnt)]
-                    decision = char.act(self.dramallm.narrative, scene.info)
+                    decision = char.act(narrative=self.dramallm.narrative, info=scene.info, scene_id="scene"+str(self.dramallm.scene_cnt))
                     decision.update({"aid":char_id})
                     if decision["x"] == "-speak":
                         self.dramallm.calculate(char_id, decision["x"], decision.get("bid",None), None, content=decision.get("content",None))
@@ -320,7 +320,9 @@ async def get_info(data: InfoRequest):
             if cid in dramaworld.dramallm.characters:
                 config = {
                     "profile": dramaworld.dramallm.characters[cid].profile,
-                    "memory": dramaworld.dramallm.characters[cid].memory
+                    "memory": dramaworld.dramallm.characters[cid].memory,
+                    "chunks": dramaworld.dramallm.characters[cid].storage.all_chunks_values() if dramaworld.dramallm.characters[cid].storage_mode else None,
+                    "retrieved":  dramaworld.dramallm.characters[cid].last_retrieved
                 }
                 if dramaworld.dramallm.mode == 'v2' or dramaworld.dramallm.mode == "v3":
                     config.update({"prompts":dramaworld.dramallm.characters[cid].reacts})
@@ -330,7 +332,8 @@ async def get_info(data: InfoRequest):
             if hasattr(dramaworld, 'dramallm'):
                 config = {
                     "allmemory": dramaworld.dramallm.raw_records,
-                    "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None
+                    "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None,
+                    "retrieved": dramaworld.dramallm.last_retrieved if dramaworld.dramallm.storage_mode else None
                 }
         elif data.help == "dramallm":
             if hasattr(dramaworld, 'dramallm'):

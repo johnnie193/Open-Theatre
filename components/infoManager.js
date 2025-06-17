@@ -16,11 +16,33 @@ export function updateCharacterInfo(characterName) {
             <h3>${characterName}</h3>
             <h4>Profile</h4>
             <p>${data.profile}</p>
-            <h4>Memory</h4>
-            <p>${data.memory.join('<br>')}</p>
-            <h4>React</h4>
             `
+            if(data){
+                infoBox.innerHTML += `
+                    <h4>Chronological Memory</h4>
+                    <p>${data.memory.join('<br>')}</p>
+                    `;
+            }
+            if(data.chunks){
+                infoBox.innerHTML += '<h4>Chunks</h4>';
+                data.chunks.forEach(chunk => {
+                    infoBox.innerHTML += `<li>${chunk}</li>`;
+                });
+            }
+            if(data.retrieved){
+                infoBox.innerHTML += '<h4>Last Retrieved Chunks</h4>'
+                console.log("retrieve", data.retrieved)
+                data.retrieved.forEach(retrieve => {
+                    infoBox.innerHTML += `
+                        <li>
+                            <strong>Score:</strong> ${retrieve.Score} &nbsp;&nbsp;&nbsp;
+                            <strong>Info:</strong> ${retrieve.Info}
+                        </li>
+                    `;                
+                    })
+            }
             if(data.prompts && Array.isArray(data.prompts) && data.prompts.length > 0){
+                infoBox.innerHTML += `<h4>React</h4>`
                 const formatContent = (str) => 
                     str.replace(/&/g, "&amp;")
                        .replace(/</g, "&lt;")
@@ -35,6 +57,7 @@ export function updateCharacterInfo(characterName) {
                 <pre>${formatContent(data.prompts[1])}</pre>
                 `;
             }
+
         }else{
             infoBox.innerHTML = `
             <h3>${data.error}</h3>
@@ -76,6 +99,17 @@ function updateWorldRecord() {
                 data.chunks.forEach(chunk => {
                     memoryContent += `<li>${chunk}</li>`;
                 });
+            }
+            if(data.retrieved){
+                memoryContent += '<h4>Last Retrieved Chunks</h4>'
+                data.retrieved.forEach(retrieve => {
+                    memoryContent += `
+                        <li>
+                            <strong>Score:</strong> ${retrieve.Score} &nbsp;&nbsp;&nbsp;
+                            <strong>Info:</strong> ${retrieve.Info}
+                        </li>
+                    `;                
+                    })
             }
             memoryinfoBox.innerHTML = memoryContent;
         }else{

@@ -4,8 +4,8 @@ import logging
 
 # --- Setup Logging ---
 logger = logging.getLogger(__name__)
-importance_addition_proportion = 0.05
-
+IMPORTANCE_ADDITION_WEIGHT = 0.05
+IMPORTANCE_ADDITION_THRESHOLD = 10
 # --- Specific Sub-Storage Implementations ---
 class GlobalMemorySubStorage(BaseMemorySubStorage):
     def __init__(self, parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces):
@@ -15,8 +15,9 @@ class GlobalMemorySubStorage(BaseMemorySubStorage):
     def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight):
         # Global memories don't have scene-specific recency, so pass None for current_scene_id to super
         final_retrieved_chunks = super().retrieve(query_text, None, top_k, bm25_weight, vector_weight, importance_weight)
-        for chunk in final_retrieved_chunks:
-            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        for chunk_info in final_retrieved_chunks:
+            chunk = chunk_info['chunk']
+            chunk.importance += min(chunk_info['score'], IMPORTANCE_ADDITION_THRESHOLD) * IMPORTANCE_ADDITION_WEIGHT # the retrieved chunks are more important
         return final_retrieved_chunks
 
 
@@ -81,8 +82,9 @@ class EventMemorySubStorage(BaseMemorySubStorage):
         final_results_sorted = sorted(final_results, key=lambda x: x['score'], reverse=True)[:top_k]
 
 
-        for chunk in final_results_sorted:
-            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        for chunk_info in final_results_sorted:
+            chunk = chunk_info['chunk']
+            chunk.importance += min(chunk_info['score'], IMPORTANCE_ADDITION_THRESHOLD) * IMPORTANCE_ADDITION_WEIGHT # the retrieved chunks are more important
         return final_results_sorted
 
 class SummaryMemorySubStorage(BaseMemorySubStorage):
@@ -109,8 +111,9 @@ class SummaryMemorySubStorage(BaseMemorySubStorage):
         
         final_results_sorted = sorted(final_results, key=lambda x: x['score'], reverse=True)[:top_k]
 
-        for chunk in final_results_sorted:
-            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        for chunk_info in final_results_sorted:
+            chunk = chunk_info['chunk']
+            chunk.importance += min(chunk_info['score'], IMPORTANCE_ADDITION_THRESHOLD) * IMPORTANCE_ADDITION_WEIGHT # the retrieved chunks are more important
         return final_results_sorted
 
 class ArchiveMemorySubStorage(BaseMemorySubStorage):
@@ -126,6 +129,7 @@ class ArchiveMemorySubStorage(BaseMemorySubStorage):
         # Archival memories typically have low recency, so a flat retrieval might be sufficient.
         # You could add a very low recency penalty here if needed for older archives.
         final_retrieved_chunks = super().retrieve(query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight)
-        for chunk in final_retrieved_chunks:
-            chunk.importance += chunk.score * importance_addition_proportion # the retrieved chunks are more important
+        for chunk_info in final_retrieved_chunks:
+            chunk = chunk_info['chunk']
+            chunk.importance += min(chunk_info['score'], IMPORTANCE_ADDITION_THRESHOLD) * IMPORTANCE_ADDITION_WEIGHT # the retrieved chunks are more important
         return final_retrieved_chunks

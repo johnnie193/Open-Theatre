@@ -411,7 +411,7 @@ class Character:
         self.recent_memory = []
 
 class CharacterLLM(Character):
-    def __init__(self, id=None, config={}, query_fct=query_gpt4, storage_mode = True):
+    def __init__(self, id=None, config={}, query_fct=query_gpt4, storage_mode = True, retrieve_threshold=1):
         super().__init__(id, config)
         self.query_fct = query_fct
         self.plan = []
@@ -427,6 +427,9 @@ class CharacterLLM(Character):
         self.memory = []
         self.storage_mode = storage_mode
         self.storage = MemoryStorage() if storage_mode else None
+        self.retrieve_threshold = retrieve_threshold
+        self.last_retrieved = []
+
 
     def load(self, state):
         self.status = state["status"]
@@ -453,20 +456,30 @@ class CharacterLLM(Character):
         }
         return state
     
-    def get_memory(self, query=None):
-        if self.storage_mode:
-            return self.storage.get_memory(self.id, query)
-        return self.memory
+    def get_memory(self, query=None, scene_id=None):
+        if self.storage_mode and len(self.memory) >= self.retrieve_threshold:
+            if not query:
+                query = self.memory[-1]
+            retrieved = self.storage.retrieve(query, ["event"], scene_id)
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                for last in last_list:
+                    print(last)
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += "\n".join([last["chunk"].to_text() for line in retrieved])
+            return records
+        return dumps(self.memory)
         
-    def into_memory(self, text, layer="event", tag=None, scene_id=None):
+    def into_memory(self, text, layer="event", tag="", scene_id=None):
         if self.storage_mode:
-            self.storage.add_piece(self.id + "'s memory: " + text, layer = layer, tag = tag, scene_id = scene_id)
+            self.storage.add_piece(f"{self.id} 's {tag} memory: {text}", layer = layer, tag = tag, scene_id = scene_id)
         self.memory.append(text)
 
-    def act(self, narrative, info, plot = None):
+    def act(self, narrative, info, scene_id=None, plot = None):
         print(f"{self.id} act: {self.decision}")
         while not self.decision:
-            self.make_plan(narrative, info, plot)        
+            self.make_plan(narrative=narrative, info=info, scene_id=scene_id,plot=plot)        
         next_act = self.decision.pop(0)
         return next_act
 
@@ -483,11 +496,14 @@ class CharacterLLM(Character):
             self.into_memory(kwargs["text"])
             return
         if self.id == a:
-            a = "你"
+            a = "你" if ENGLISH_MODE else "you"
         if isinstance(b, list):
-            b = "、".join(["你" if character == self.id else character for character in b])
+            if ENGLISH_MODE:
+                b = "、".join(["你" if character == self.id else character for character in b])
+            else:
+                b = ",".join(["you" if character == self.id else character for character in b])
         elif b == self.id:
-            b = "你"
+            b = "你" if ENGLISH_MODE else "you"
         m = {"a": a, "x": x, "b": b, "c": c, "y": y}
         m.update(kwargs)
         self.into_memory(action_to_text(m))
@@ -495,12 +511,12 @@ class CharacterLLM(Character):
         if len(self.recent_memory) > 3:
             self.recent_memory = self.recent_memory[-2:]
 
-    def make_plan(self, narrative, info, plot = None):
+    def make_plan(self, narrative, info, scene_id=None, plot = None):
         prompt = self.prompt.format(
                     id=self.id,
                     profile=self.profile,
                     motivation=self.motivation,
-                    memory=dumps(self.get_memory()),
+                    memory=self.get_memory(scene_id=scene_id),
                     narrative = narrative,
                     scene_info = info,
                     view = dumps(self.view),
@@ -523,11 +539,11 @@ class CharacterLLM(Character):
         self.plan = plan
         self.decision += [decision]
 
-    def v2(self, narrative, info, plot = None):
+    def v2(self, narrative, info, scene_id=None, plot = None):
         prompt = self.prompt_v2.format(
             id=self.id,
             profile=self.profile,
-            memory=dumps(self.get_memory()),
+            memory=self.get_memory(scene_id=scene_id),
             narrative = narrative,
             scene_info = info,
             view=dumps(self.view),
@@ -559,7 +575,7 @@ class CharacterLLM(Character):
             self.to_do = False            
 
 class DramaLLM(World):
-    def __init__(self, script, query_fct=query_gpt4, storage_mode = True, storager = MemoryStorage()):
+    def __init__(self, script, query_fct=query_gpt4, storage_mode = True, storager = MemoryStorage(), retrieve_threshold=1):
         super().__init__(script, storage_mode, storager)
         self.query_fct = query_fct
         self.sum_records = []
@@ -570,7 +586,8 @@ class DramaLLM(World):
         self.prompt_v2 = PROMPT_DRAMA_V2
         self.mode = current_scene["mode"] if "mode" in current_scene else "v1"
         self.ready_for_next_scene = False
-
+        self.last_retrieved = []
+        self.retrieve_threshold = retrieve_threshold
     @property
     def state(self):
         state = {
@@ -591,7 +608,7 @@ class DramaLLM(World):
     def v1_react(self):
         all_records = sum(self.raw_records.values(), [])
 
-        if not self.storage_mode or len(all_records) < 20:
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
             prompt = self.prompt_v1.format(
                 narrative = self.narrative,
                 npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
@@ -605,9 +622,15 @@ class DramaLLM(World):
             )
         else:
             # do rag to get the relevant records
-            retrieved_records = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            print(retrieved)
             records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
-            records += "\n".join([line["chunk"].to_text() for line in retrieved_records])
+            for _, last_list in retrieved.items():
+                for last in last_list:
+                    print(last)
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += "\n".join([last["chunk"].to_text() for line in retrieved])
             
             prompt = self.prompt_v1.format(
                 narrative = self.narrative,
@@ -675,7 +698,7 @@ class DramaLLM(World):
             if (not ENGLISH_MODE and char_id == response["下一个行动人"]) or (ENGLISH_MODE and char_id == response["Next Action Character"]) :
                 self.characters[char_id].to_do = True
                 self.characters[char_id].motivation = response["行动人的指令"] if not ENGLISH_MODE else response["Action Character's Instruction"]
-                self.characters[char_id].v2(self.narrative, self.scenes["scene"+str(self.scene_cnt)].info)
+                self.characters[char_id].v2(self.narrative, self.scenes["scene"+str(self.scene_cnt)].info, scene_id="scene"+str(self.scene_cnt))
             else:
                 self.characters[char_id].to_do = False
         if all([t == True for _, t in self.nc]):

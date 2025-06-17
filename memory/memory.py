@@ -103,7 +103,7 @@ class MemoryStorage:
         single_piece = MemoryPiece(piece_id, text, layer, tag, metadata, layer_id=None, scene_id=scene_id)
         
         sub_storage = self._get_sub_storage_for_layer(layer)
-        return sub_storage.add_chunk_to_sub_storage(single_piece, self.next_layer_id[layer])
+        return sub_storage.add_chunk_to_sub_storage(single_piece)
 
     def all_chunks(self):
         """Returns all chunks from all sub-storages for inspection."""
@@ -226,7 +226,7 @@ class Retriever:
     #             logger.info(f"   No memories retrieved for layer '{layer}'.")
 
     #     return final_layered_results
-    def retrieve_layered(self, input_text: str, desired_sub_storages: list[str], current_scene_id=None):
+    def retrieve_layered(self, input_text: str, desired_sub_storages: list[str] = None, current_scene_id=None):
         """
         Retrieve memories from multiple sub-storages.
         input_text: the query text
@@ -236,6 +236,8 @@ class Retriever:
         Returns a list of {'score': score, 'chunk': chunk} dicts.
         """
         sub_storage_query_list = []
+        if not desired_sub_storages or not isinstance(desired_sub_storages, list):
+            desired_sub_storages = ["event"]
         for sub_storage_name in desired_sub_storages:
             sub_storage_query_list.append(self.storage.all_sub_storages[sub_storage_name])
         # Perform independent retrieval for each relevant sub-storage
@@ -336,7 +338,7 @@ if __name__ == "__main__":
             print("-" * 20)
         
         print("\n\n--- All Chunks in Storage for Inspection (across all sub-storages) ---")
-        all_chunks_for_inspection = storage.all_chunks_values()
+        all_chunks_for_inspection = storage.all_chunks()
         print(type(all_chunks_for_inspection[0]))
         for chunk in sorted(all_chunks_for_inspection, key=lambda x: x.id): # Sort by chunk_id for consistent output
             print(f"Chunk {chunk.id}: Layer='{chunk.layer}', Tag='{chunk.tag}', Scene={chunk.scene_id}, #Pieces={len(chunk.pieces)}, Text='{chunk.text[:100]}...'")
