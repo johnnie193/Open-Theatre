@@ -24,13 +24,13 @@ export function updateCharacterInfo(characterName) {
                     `;
             }
             if(data.chunks){
-                infoBox.innerHTML += '<h4>Chunks</h4>';
+                infoBox.innerHTML += '<h4>System Chunks</h4>';
                 data.chunks.forEach(chunk => {
                     infoBox.innerHTML += `<li>${chunk}</li>`;
                 });
             }
             if(data.retrieved){
-                infoBox.innerHTML += '<h4>Last Retrieved Chunks</h4>'
+                infoBox.innerHTML += '<h4>System Last Retrieved Chunks</h4>'
                 console.log("retrieve", data.retrieved)
                 data.retrieved.forEach(retrieve => {
                     infoBox.innerHTML += `
@@ -95,13 +95,13 @@ function updateWorldRecord() {
                 memoryContent += '</ul>'; 
             }
             if(data.chunks){
-                memoryContent += '<h4>Chunks</h4>';
+                memoryContent += '<h3>Chunks</h3>';
                 data.chunks.forEach(chunk => {
                     memoryContent += `<li>${chunk}</li>`;
                 });
             }
             if(data.retrieved){
-                memoryContent += '<h4>Last Retrieved Chunks</h4>'
+                memoryContent += '<h3>Last Retrieved Chunks</h3>'
                 data.retrieved.forEach(retrieve => {
                     memoryContent += `
                         <li>

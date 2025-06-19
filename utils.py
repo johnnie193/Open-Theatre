@@ -78,9 +78,14 @@ def yamld(content):
     return yaml.dump(content, allow_unicode=True, indent=2, sort_keys=False)
 
 def query_gpt4(prompt, sys = None):
-    KEY = os.getenv("OpenAI_KEY", None)
-    client = OpenAI(api_key=KEY)
-
+    # KEY = os.getenv("OpenAI_KEY", None)
+    # client = OpenAI(api_key=KEY)
+    from openai import AzureOpenAI
+    client = AzureOpenAI(
+        api_key="4d6f722a1a6f47ac822c0f3c9dbcc844",
+        api_version="2024-08-01-preview",
+        azure_endpoint="https://euinstance.openai.azure.com/"
+    )
     if sys:
         completion = client.chat.completions.create(
             model="gpt-4o",

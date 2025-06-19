@@ -19,6 +19,7 @@ class Scene:
         self.name = config.get("name","")
         self.info = config.get("scene","")
         self.context = config.get("characters","")
+        self.mode = config.get("mode","v1")
         assert self.id
         self.characters =  {}
         self.record = []
@@ -30,6 +31,7 @@ class Scene:
             "name": self.name,
             "characters": {k: v.surface for k, v in self.characters.items()},
             "info": self.info,
+            "mode": self.mode,
         }
         return state
 
@@ -37,7 +39,7 @@ class Scene:
         # self.active_action = config.get("active_action")
         pass
 
-    def withdraw(self, mode, player_id):
+    def withdraw(self, player_id):
         if len(self.record) == 1:
             print("withdraw one record for -stay")
             self.record.clear()
@@ -45,7 +47,7 @@ class Scene:
                 c.delete_memory()
             return 1            
         if len(self.record) >= 2:
-            if mode == "v1":
+            if self.mode == "v1":
                 cnt = 1
                 if ENGLISH_MODE:
                     pattern1 = r"(\S+) speak to (\S+)"
@@ -72,7 +74,7 @@ class Scene:
                 for _ in range(cnt):
                     self.record.pop()                
                 return cnt
-            elif mode == "v2":
+            elif self.mode == "v2":
                 pattern = r"(\S+)对(\S+)说" if not ENGLISH_MODE else r"(\S+) speak to (\S+)"
                 # 使用findall方法，查找所有匹配的内容
                 matches = [item for sublist in re.findall(pattern, self.record[-2]) for item in sublist]
@@ -115,7 +117,7 @@ class World:
     def __init__(self, config={}, storage_mode = True, storager = None):
         self.storage_mode = storage_mode
         self.raw_records = {}
-        self.record_storage = storager if storage_mode else None
+        self.record_storage = storager
 
         if "scenes" in config and isinstance(config["scenes"], dict):
             for sid, s in config["scenes"].items():
@@ -140,7 +142,7 @@ class World:
         self.scene_cnt = 0
         self.add_scene("scene1")
         self.cache = CACHE_DIR
-        self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
+        ## self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
 
 
         # TODO: May be added when there are too many characters, so we do rag to get the relevant characters
@@ -172,11 +174,12 @@ class World:
             for sid, record in state["raw_records"].items():
                 self.scenes[sid].record = record
 
-    # def add_characters(self, char):
-    #     self.characters.update({char.id: char})
-    #     for sid, scene in self.scenes.items():
-    #         scene.add_character(char)
-    #         self.update_view(char)
+    def add_characters(self, char):
+        self.characters.update({char.id: char})
+        for sid, scene in self.scenes.items():
+            scene.add_character(char)
+            self.update_view(char)
+
     def pop_characters(self, char):
         """Remove a character from the world and its current scene."""
         self.characters.pop(char.id, None)
@@ -286,7 +289,9 @@ class World:
         print(f"calculate, aid = {aid}, x = {x}, bid = {bid}, cid = {cid}, kwargs = {kwargs}")
         if x == "-stay":
             return
-        if self.mode == "v1" or self.mode == "v2":
+        # mode = self.script["scenes"]["scene"+str(self.scene_cnt)].get("mode","v1")
+        mode = self.scenes["scene"+str(self.scene_cnt)].mode
+        if mode == "v1" or mode == "v2":
             # assert x == "-speak"
             src = self.characters[aid]
             # print("v1_from", src.id, src.loc)
@@ -294,7 +299,7 @@ class World:
             for t in scene.characters:
                 self.characters[t].update_memory(src.id, x, bid, content=kwargs["content"])
             self.update_dialogues_record(scene, aid, x, bid, cid, **kwargs)
-        elif self.mode == "v3":
+        elif mode == "v3":
             if isinstance(bid, list):
                 if bid == []:
                     bid = None
@@ -373,11 +378,11 @@ class Character:
             self.memory.append(kwargs["text"])
             return
         if self.id == a:
-            a = "你"
+            a = "你" if not ENGLISH_MODE else "you"
         if isinstance(b, list):
-            b = "、".join(["你" if character == self.id else character for character in b])
+            b = "、".join(["你" if character == self.id else character for character in b]) if not ENGLISH_MODE else "、".join(["you" if character == self.id else character for character in b])
         elif b == self.id:
-            b = "你"
+            b = "你" if not ENGLISH_MODE else "you"
         m = {"a": a, "x": x, "b": b, "c": c, "y": y}
         m.update(kwargs)
         self.memory.append(action_to_text(m))
@@ -387,12 +392,10 @@ class Character:
 
     def delete_memory(self, text=None):
         if text is None:
-            if self.storage_mode:
-                self.storage.delete_piece(self.id)
+            self.storage.delete_piece(self.id)
             self.memory.pop()
         else:
-            if self.storage_mode:
-                self.storage.delete_piece(self.id, text)
+            self.storage.delete_piece(self.id, text)
             self.memory = [m for m in self.memory if m != text]
 
     def delete_recent_memory(self, text=None):
@@ -403,8 +406,7 @@ class Character:
 
     def clear_memory(self):
         self.recent_memory = []
-        if self.storage_mode:
-            self.storage = MemoryStorage()    
+        self.storage = MemoryStorage()    
         self.memory = []
 
     def clear_recent_memory(self):
@@ -426,7 +428,7 @@ class CharacterLLM(Character):
         self.motivation = ""
         self.memory = []
         self.storage_mode = storage_mode
-        self.storage = MemoryStorage() if storage_mode else None
+        self.storage = MemoryStorage()
         self.retrieve_threshold = retrieve_threshold
         self.last_retrieved = []
 
@@ -452,7 +454,9 @@ class CharacterLLM(Character):
             "recent_memory": self.recent_memory,
             "plan": self.plan,
             "profile": self.profile,
-            "motivation": self.motivation
+            "motivation": self.motivation,
+            "chunks": self.storage.all_chunks_values(),
+            "last_retrieved": self.last_retrieved
         }
         return state
     
@@ -464,16 +468,15 @@ class CharacterLLM(Character):
             self.last_retrieved = []
             records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
             for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
                 for last in last_list:
-                    print(last)
                     self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
-                    records += "\n".join([last["chunk"].to_text() for line in retrieved])
+                    records += f"\n{last['chunk'].to_text()}"
             return records
         return dumps(self.memory)
         
     def into_memory(self, text, layer="event", tag="", scene_id=None):
-        if self.storage_mode:
-            self.storage.add_piece(f"{self.id} 's {tag} memory: {text}", layer = layer, tag = tag, scene_id = scene_id)
+        self.storage.add_piece(f"{self.id} 's {tag} memory: {text}", layer = layer, tag = tag, scene_id = scene_id)
         self.memory.append(text)
 
     def act(self, narrative, info, scene_id=None, plot = None):
@@ -496,14 +499,14 @@ class CharacterLLM(Character):
             self.into_memory(kwargs["text"])
             return
         if self.id == a:
-            a = "你" if ENGLISH_MODE else "you"
+            a = "你" if not ENGLISH_MODE else "you"
         if isinstance(b, list):
             if ENGLISH_MODE:
-                b = "、".join(["你" if character == self.id else character for character in b])
+                b = "、".join(["you" if character == self.id else character for character in b])
             else:
-                b = ",".join(["you" if character == self.id else character for character in b])
+                b = ",".join(["你" if character == self.id else character for character in b])
         elif b == self.id:
-            b = "你" if ENGLISH_MODE else "you"
+            b = "你" if not ENGLISH_MODE else "you"
         m = {"a": a, "x": x, "b": b, "c": c, "y": y}
         m.update(kwargs)
         self.into_memory(action_to_text(m))
@@ -588,16 +591,22 @@ class DramaLLM(World):
         self.ready_for_next_scene = False
         self.last_retrieved = []
         self.retrieve_threshold = retrieve_threshold
+
     @property
     def state(self):
         state = {
             "id": self.id,
+            "player_name": self.player.id,
+            "background_narrative": self.narrative,
             "raw_records": self.raw_records,
             "characters": {k: v.state for k, v in self.characters.items()},
             "scenes": {k: v.state for k, v in self.scenes.items()},
             "scene_cnt": self.scene_cnt,
             "script": self.script,
-            "nc": self.nc
+            "nc": self.nc,
+            "chunks": self.record_storage.all_chunks_values(),
+            "last_retrieved": self.last_retrieved,
+            "storageMode": self.storage_mode
         }
         return state
 
@@ -624,13 +633,12 @@ class DramaLLM(World):
             # do rag to get the relevant records
             retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
             self.last_retrieved = []
-            print(retrieved)
             records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
             for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
                 for last in last_list:
-                    print(last)
                     self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
-                    records += "\n".join([last["chunk"].to_text() for line in retrieved])
+                    records += f"\n{last['chunk'].to_text()}"
             
             prompt = self.prompt_v1.format(
                 narrative = self.narrative,
@@ -711,7 +719,7 @@ class DramaLLM(World):
             char.interact_with = None
             char.to_do = False
             char.decision = []
-        return self.scenes["scene"+str(self.scene_cnt)].withdraw(self.mode, self.player.id)
+        return self.scenes["scene"+str(self.scene_cnt)].withdraw(self.player.id)
 
     def back_scene(self):
         for _, char in self.characters.items():
@@ -722,7 +730,7 @@ class DramaLLM(World):
             self.scene_cnt -= 1
         else:
             return
-        self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
+        self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"]
         if isinstance(self.script["scenes"]["scene"+str(self.scene_cnt)]["chain"], list):
             self.nc = [[item, False] for item in self.script["scenes"]["scene"+str(self.scene_cnt)]["chain"]]
         self.ready_for_next_scene = False
@@ -740,7 +748,7 @@ class DramaLLM(World):
             char.interact_with = None
             char.to_do = False
         self.add_scene(scene_id)
-        self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
+        self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"]
         if isinstance(self.script["scenes"]["scene"+str(self.scene_cnt)]["chain"], list):
             self.nc = [[item, False] for item in self.script["scenes"]["scene"+str(self.scene_cnt)]["chain"]]
         self.ready_for_next_scene = False
@@ -770,5 +778,5 @@ class DramaLLM(World):
         else:
             current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]
             self.nc = [[item, False] for item in current_scene["chain"]]
-        self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
+        self.mode = self.scenes["scene"+str(self.scene_cnt)].mode
 

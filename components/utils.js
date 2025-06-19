@@ -49,7 +49,7 @@ function createInitialMemory(index, id="", character={}) {
     memoryDiv.className = "memory-item";
     memoryDiv.dataset.index = index;
     memoryDiv.innerHTML = `
-        <input type="text" class="initial-memory-name" readonly placeholder="角色名" />
+        <input type="text" class="initial-memory-name" readonly placeholder="Name" />
         <textarea contenteditable="true" placeholder="initial memories" class="role-profile"></textarea>
     `;
     if(id) {
@@ -531,10 +531,6 @@ export function syncToServer() {
     const scriptId = document.querySelector('#current-script #script-name').value
     const scriptBackgroundNarrative = document.querySelector('#current-script #background').value
     const playerName = document.querySelector('#current-script #player-name').value
-    const rolesData = Array.from(document.querySelectorAll(".role")).map(roleDiv => ({
-        id: roleDiv.querySelector(".role-name").value.trim(),
-        profile: roleDiv.querySelector(".role-profile").value.trim(),
-    }));
     const memoriesData = Array.from(document.querySelectorAll(".memory-item")).reduce((acc, memoryDiv) => {
         const key = memoryDiv.querySelector(".initial-memory-name").value.trim(); // 第一个输入框的值作为键
         const value = memoryDiv.querySelector(".role-profile").value.trim(); // 第二个输入框的值作为值
@@ -543,6 +539,14 @@ export function syncToServer() {
         }
         return acc;
     }, {});
+    const rolesData = Array.from(document.querySelectorAll(".role")).map(roleDiv => {
+        const roleId = roleDiv.querySelector(".role-name").value.trim();
+        return {
+            id: roleId,
+            profile: roleDiv.querySelector(".role-profile").value.trim(),
+            initial_memory: memoriesData[roleId] ? memoriesData[roleId] : ""
+        };
+    });
     const scenesData = Array.from(document.querySelectorAll(".scene")).reduce((acc, sceneDiv) => {
         const sceneTitle = sceneDiv.querySelector("h4").innerText.trim(); // 获取场景标题（如：场景1、场景2）
         const sceneName = sceneDiv.querySelector(".scene-name").value.trim(); 
@@ -589,7 +593,7 @@ export function syncToServer() {
             sceneInfo: sceneInfo,
             chains: chains,
             streams: streams,
-            jumps: jumps,
+            // jumps: jumps,
             characters: sceneMemory,
             mode: sceneMode
         };
@@ -601,10 +605,10 @@ export function syncToServer() {
         background_narrative: scriptBackgroundNarrative,
         player_name: playerName,
         characters: rolesData, 
-        characters_initial_memories: memoriesData,
-        scenes: scenesData
+        scenes: scenesData,
+        storageMode: true
     }
-
+    console.log("send data", data)
     fetch('/api/data', {
         method: 'POST',
         headers: {

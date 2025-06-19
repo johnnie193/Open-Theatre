@@ -1,58 +1,63 @@
 import traceback
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field # Import Field for Pydantic v2
 from typing import Dict, List, Optional, Any
 import yaml
-from frame import *
+from frame import * # Assuming frame.py contains DRAMALLM, CharacterLLM, MemoryStorage, etc.
 import time
 import re
 import os
 import logging
 from dotenv import load_dotenv
-logging.basicConfig(level=logging.WARNING)  # 设置日志级别为DEBUG
+import datetime # Import datetime for use in save() function
+
+logging.basicConfig(level=logging.WARNING)  # 设置日志级别为WARNING
 logger = logging.getLogger(__name__)
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
 
-# 定义数据模型
-class Character(BaseModel):
-    id: Optional[str] = None
-    profile: Optional[str] = None
+# Define data models (using Pydantic v2 conventions like Field for Optional)
+class CharacterRequest(BaseModel):
+    id: Optional[str] = Field(None)
+    profile: Optional[str] = Field(None)
+    initial_memory: Optional[str] = Field(None)
 
-class Scene(BaseModel):
-    sceneName: Optional[str] = None
-    sceneInfo: Optional[str] = None
-    chains: Optional[List[str]] = None
-    streams: Optional[List[str]] = None
-    characters: Optional[List[str]] = None
-    mode: Optional[str] = None
+class SceneRequest(BaseModel):
+    sceneName: Optional[str] = Field(None)
+    sceneInfo: Optional[str] = Field(None)
+    chains: Optional[List[str]] = Field(None)
+    streams: Optional[Dict[str, List[str]]] = Field(None)
+    characters: Optional[Dict[str, str]] = Field(None)
+    mode: Optional[str] = Field(None)
 
 class ScriptData(BaseModel):
-    id: Optional[str] = None
-    player_name: Optional[str] = None
-    background_narrative: Optional[str] = None
-    characters: Optional[List[Character]] = None
-    characters_initial_memories: Optional[Dict[str, str]] = None
-    scenes: Optional[Dict[str, Scene]] = None
+    id: Optional[str] = Field(None)
+    player_name: Optional[str] = Field(None)
+    background_narrative: Optional[str] = Field(None)
+    characters: Optional[List[CharacterRequest]] = Field(None)
+    scenes: Optional[Dict[str, SceneRequest]] = Field(None)
+    storageMode: Optional[bool] = Field(True)
 
 class LoadRequest(BaseModel):
-    script_name: Optional[str] = None
-    agentMode: Optional[str] = None
-    playerMode: Optional[str] = None
+    script_name: Optional[str] = Field(None)
+    storageMode: Optional[bool] = Field(None)
+
+class SetStorageModeRequest(BaseModel):
+    storageMode: bool
 
 class Action(BaseModel):
     x: str
-    bid: Optional[str] = None
-    content: Optional[str] = None
+    bid: Optional[str] = Field(None)
+    content: Optional[str] = Field(None)
 
 class InteractRequest(BaseModel):
     type: str
-    message: Optional[str] = None
-    object: Optional[str] = None
-    interact: Optional[str] = None
+    message: Optional[str] = Field(None)
+    object: Optional[str] = Field(None)
+    interact: Optional[str] = Field(None)
 
 class Prompt(BaseModel):
     prompt_drama_v1: str
@@ -61,173 +66,349 @@ class Prompt(BaseModel):
     prompt_character_v2: str
 
 class InfoRequest(BaseModel):
-    role: Optional[str] = None
-    help: Optional[str] = None
-
+    role: Optional[str] = Field(None)
+    help: Optional[str] = Field(None)
 
 class DRAMA:
     def __init__(self):
         self.storage = MemoryStorage()
+        self.dramallm: Optional[DramaLLM] = None # Initialize as None
         self.cache = 'cache/'
 
-    def init(self, script):
-        self.storage.reset()
-        self.dramallm = DramaLLM(script=script, storage_mode = True, storager = self.storage)
+    def init(self, script, storage_mode: bool = True):
+        self.storage.reset() # Reset the storage for a clean start
+        self.dramallm = DramaLLM(script=script, storage_mode=storage_mode, storager=self.storage)
         try:
+            # Ensure player exists before updating view
+            if not hasattr(self.dramallm, 'player') or self.dramallm.player is None:
+                raise ValueError("Player character not found after script initialization.")
             self.dramallm.update_view(self.dramallm.player.id)
         except Exception as e:
-            if ENGLISH_MODE:
-                return "You have to add the player into the current scene!"
-            else:
-                return "你需要将玩家加入当前场景!"
-            
+            error_message = "You have to add the player into the current scene!" if ENGLISH_MODE else "你需要将玩家加入当前场景!"
+            logger.error(f"DRAMA initialization error: {e}")
+            logger.error(traceback.format_exc())
+            return error_message
+        return None # No error
 
     def round(self, act):
         action = []
         error = None
-        print("mode",self.dramallm.mode)
-        while True:
-            try:
-                if len(act) == 3:
-                    self.dramallm.calculate(self.dramallm.player.id, x = act[0], bid = act[1], content = act[2])
-                elif len(act) == 1:
-                    self.dramallm.calculate(self.dramallm.player.id, x = act[0])
-                if self.dramallm.mode == 'v1':
-                    self.dramallm.v1_react()
-                elif self.dramallm.mode == "v2":
-                    self.dramallm.v2_react()
-                for char_id, char in self.dramallm.scenes["scene"+str(self.dramallm.scene_cnt)].characters.items():
-                    self.dramallm.update_view(char_id)
-                    if char_id == self.dramallm.player.id:
-                        continue
-                    if char.status == "/faint/":
-                        continue
-                    if not char.to_do:
-                        continue
-                    scene = self.dramallm.scenes["scene"+str(self.dramallm.scene_cnt)]
-                    decision = char.act(narrative=self.dramallm.narrative, info=scene.info, scene_id="scene"+str(self.dramallm.scene_cnt))
-                    decision.update({"aid":char_id})
-                    if decision["x"] == "-speak":
-                        self.dramallm.calculate(char_id, decision["x"], decision.get("bid",None), None, content=decision.get("content",None))
-                    else:
-                        self.dramallm.calculate(char_id, **decision)
-                    action.append(decision)
-                if self.dramallm.ready_for_next_scene:
-                    self.dramallm.next_scene()
-                break
-            except Exception as e:
-                error = e
-                print('Caught this error: ' , error)
-                print(traceback.print_exc())
-        return action, self.dramallm.ready_for_next_scene, error
+        if not self.dramallm:
+            return [], False, "DramaLLM not initialized. Load a script first."
+
+        print("mode", self.dramallm.mode)
+        try:
+            if len(act) == 3:
+                self.dramallm.calculate(self.dramallm.player.id, x=act[0], bid=act[1], content=act[2])
+            elif len(act) == 1:
+                self.dramallm.calculate(self.dramallm.player.id, x=act[0])
+
+            if self.dramallm.mode == 'v1':
+                self.dramallm.v1_react()
+            elif self.dramallm.mode == "v2":
+                self.dramallm.v2_react()
+
+            # Iterate through characters in the current scene
+            current_scene_key = "scene" + str(self.dramallm.scene_cnt)
+            if current_scene_key not in self.dramallm.scenes:
+                raise ValueError(f"Current scene {current_scene_key} not found.")
+
+            for char_id, char in list(self.dramallm.scenes[current_scene_key].characters.items()): # Use list() to avoid RuntimeError if dict changes during iteration
+                self.dramallm.update_view(char_id)
+                if char_id == self.dramallm.player.id:
+                    continue
+                if char.status == "/faint/":
+                    continue
+                if not char.to_do:
+                    continue
+                
+                scene = self.dramallm.scenes[current_scene_key]
+                decision = char.act(narrative=self.dramallm.narrative, info=scene.info, scene_id=current_scene_key)
+                decision.update({"aid": char_id})
+                
+                if decision["x"] == "-speak":
+                    # Ensure bid is a list if it's a single string for -speak
+                    bid_val = decision.get("bid")
+                    if isinstance(bid_val, str):
+                        bid_val = [bid_val] # Convert to list for message_to_act consistency if needed
+                    self.dramallm.calculate(char_id, decision["x"], bid_val, None, content=decision.get("content", None))
+                else:
+                    self.dramallm.calculate(char_id, **decision)
+                action.append(decision)
+
+            if self.dramallm.ready_for_next_scene:
+                self.dramallm.next_scene()
+            return action, self.dramallm.ready_for_next_scene, None # No error
+
+        except Exception as e:
+            error = e
+            logger.error(f'Caught this error in round: {error}')
+            logger.error(traceback.format_exc())
+            return action, self.dramallm.ready_for_next_scene, str(error)
 
     def reset(self):
         self.dramallm = None
+        self.storage.reset() # Also reset the storage
 
-    def update(self, data):
-        if hasattr(self, 'dramallm'):
-            try:
-                # Case II pop player
-                id_list = [character['id'] for character in data["characters"]]
-                for cid in self.dramallm.script["background"]["characters"]:
+    def update(self, data: ScriptData):
+        if not hasattr(self, 'dramallm') or self.dramallm is None:
+            # If dramallm is not initialized, treat this as a full reload
+            logger.warning("DramaLLM not initialized during update. Performing full script reload.")
+            return self._reload_script_from_data(data)
+
+        try:
+            # Handle storageMode change directly
+            if data.storageMode is not None:
+                self.dramallm.storage_mode = data.storageMode
+            
+            # Case II: Pop characters no longer in data
+            if data.characters:
+                id_list = {char.id for char in data.characters} # Use a set for faster lookup
+                # Iterate over a copy of characters to allow modification during iteration
+                for cid in list(self.dramallm.script["background"]["characters"].keys()):
                     if cid not in id_list:
+                        if cid in self.dramallm.characters:
+                            self.dramallm.pop_characters(self.dramallm.characters[cid])
+                            logger.info(f"Popped character: {cid}")
+            else: # If no characters are provided in data, consider all existing characters for removal
+                 for cid in list(self.dramallm.script["background"]["characters"].keys()):
+                    if cid in self.dramallm.characters:
                         self.dramallm.pop_characters(self.dramallm.characters[cid])
+                        logger.info(f"Popped character: {cid} (no characters provided in update data)")
 
-                # Case I Easy modification - change world id, player name, background narrative, character profile, scene mode, scene info, scene chain, scene stream / add initial memories, add characters
-                self.dramallm.id = self.dramallm.script["id"] = data["id"]
-                self.dramallm.script["background"]["player"] = data["player_name"]
-                self.dramallm.player = self.dramallm.characters[data["player_name"]]
-                self.dramallm.narrative = self.dramallm.script["background"]["narrative"] = data["background_narrative"]
-                self.dramallm.script["background"]["characters"] = {}
-                self.dramallm.script["background"]["context"] = {}
-                for characters in data["characters"]:
-                    self.dramallm.script["background"]["characters"].update({characters["id"]:characters["profile"]})
-                    if data["characters_initial_memories"][characters["id"]] and characters["id"] in self.dramallm.script["background"]["context"] and (self.dramallm.script["background"]["context"][characters["id"]] != data["characters_initial_memories"][characters["id"]]):
-                        raise Exception('Initial memories changed! reload the script!')
-                    else:
-                        self.dramallm.script["background"]["context"].update({characters["id"]:data["characters_initial_memories"][characters["id"]]})
-                    if characters["id"] not in self.dramallm.characters:
-                        character = CharacterLLM(config = characters)
-                        if data["characters_initial_memories"][characters["id"]]:
-                            character.update_memory(message = data["characters_initial_memories"][characters["id"]])
-                        self.dramallm.add_characters(character)
-                    else:
-                        self.dramallm.characters[characters["id"]].profile = characters["profile"]               
-                if "scene"+str(self.dramallm.scene_cnt) not in data["scenes"]:
-                    self.dramallm.next_scene()
-                    print("current scene deletion!")
 
+            # Case I: Easy modification - change world id, player name, background narrative,
+            # character profile, scene mode, scene info, scene chain, scene stream / add initial memories, add characters
+            if data.id is not None:
+                self.dramallm.id = self.dramallm.script["id"] = data.id
+            if data.player_name is not None:
+                self.dramallm.script["background"]["player"] = data.player_name
+                # Update player object reference if name changes and character exists
+                if data.player_name in self.dramallm.characters:
+                    self.dramallm.player = self.dramallm.characters[data.player_name]
+                else:
+                    logger.warning(f"Player '{data.player_name}' not found after update. Player object might be stale.")
+
+            if data.background_narrative is not None:
+                self.dramallm.narrative = self.dramallm.script["background"]["narrative"] = data.background_narrative
+
+            # Update characters
+            if data.characters:
+                self.dramallm.script["background"]["characters"] = {} # Clear and rebuild
+                self.dramallm.script["background"]["context"] = {} # Clear and rebuild initial contexts
+
+                for char_req in data.characters:
+                    # Update background characters in script
+                    if char_req.id:
+                        self.dramallm.script["background"]["characters"].update({char_req.id: char_req.profile})
+                        if char_req.initial_memory:
+                            self.dramallm.script["background"]["context"].update({char_req.id: char_req.initial_memory})
+
+                        if char_req.id in self.dramallm.characters:
+                            # Character exists, update profile
+                            self.dramallm.characters[char_req.id].profile = char_req.profile
+                            # Handle initial memory: if changed, it might require a full reload or careful handling
+                            # Your original code raised an exception, which is a valid strategy for immutable initial memories
+                            # For now, we'll allow it if it's the same, or handle new characters.
+                            if char_req.initial_memory and self.dramallm.script["background"]["context"].get(char_req.id) != char_req.initial_memory:
+                                logger.warning(f"Initial memory for {char_req.id} changed. Consider full script reload for consistency.")
+                        else:
+                            # New character, add to characters and scenes
+                            character = CharacterLLM(config={"id": char_req.id, "profile": char_req.profile})
+                            if char_req.initial_memory:
+                                character.update_memory(message=char_req.initial_memory)
+                            
+                            # Add to global characters list in DramaLLM
+                            self.dramallm.characters[char_req.id] = character
+
+                            # Add to relevant scenes
+                            if data.scenes: # Check provided scenes for character presence
+                                for sid, scene_req in data.scenes.items():
+                                    if scene_req.characters and char_req.id in scene_req.characters:
+                                        if sid in self.dramallm.scenes: # Only add if scene is already loaded
+                                            self.dramallm.scenes[sid].add_character(character, scene_req.characters[char_req.id])
+                                        # Also ensure script's scene config is updated
+                                        if sid not in self.dramallm.script["scenes"]:
+                                            self.dramallm.script["scenes"][sid] = {} # Initialize if new scene
+                                        if "characters" not in self.dramallm.script["scenes"][sid]:
+                                            self.dramallm.script["scenes"][sid]["characters"] = []
+                                        if char_req.id not in self.dramallm.script["scenes"][sid]["characters"]:
+                                            self.dramallm.script["scenes"][sid]["characters"].append(char_req.id)
+                            logger.info(f"Added new character: {char_req.id}")
+            
+            # Update scenes
+            if data.scenes:
+                # Remove scenes not in the update data
                 scenes_to_delete = []
-                for sid, s in self.dramallm.script["scenes"].items():
-                    if sid not in data["scenes"]:
-                        print(sid, "not in data")
-                        scenes_to_delete.append(sid)
-                        print("scene deletion!")
+                for sid_existing in self.dramallm.script["scenes"].keys():
+                    if sid_existing not in data.scenes:
+                        scenes_to_delete.append(sid_existing)
+                for sid_del in scenes_to_delete:
+                    self.dramallm.script["scenes"].pop(sid_del)
+                    if sid_del in self.dramallm.scenes: # If scene was loaded, remove it too
+                        del self.dramallm.scenes[sid_del]
+                    logger.info(f"Removed scene: {sid_del}")
 
-                for sid in scenes_to_delete:
-                    self.dramallm.script["scenes"].pop(sid)
+                # Update/add scenes
+                for sid, scenes_req in data.scenes.items():
+                    if sid not in self.dramallm.script["scenes"]:
+                        self.dramallm.script["scenes"][sid] = {} # Add new scene to script
+                        logger.info(f"Added new scene to script: {sid}")
 
-                for sid, scenes in data["scenes"].items():
-                    if sid in self.dramallm.scenes: ## for the scenes have been loaded
-                        if sid == "scene"+str(self.dramallm.scene_cnt):
-                            self.mode = scenes["mode"]
-                        self.dramallm.scenes[sid].name = scenes["sceneName"]
-                        self.dramallm.scenes[sid].info = scenes["sceneInfo"]
-                    self.dramallm.script["scenes"][sid]["scene"] = scenes["sceneName"]
-                    self.dramallm.script["scenes"][sid]["scene"] = scenes["sceneInfo"]
-                    self.dramallm.script["scenes"][sid]["chain"] = scenes["chains"]
-                    self.dramallm.script["scenes"][sid]["stream"] = scenes["streams"]
-                    self.dramallm.script["scenes"][sid]["characters"] = scenes["characters"]
-                    self.dramallm.script["scenes"][sid]["mode"] = scenes["mode"]
-                self.dramallm.mode = self.dramallm.script["scenes"]["scene"+str(self.dramallm.scene_cnt)]["mode"]
-                self.dramallm.log(dumps(self.dramallm.script), "script_new")
-                return
-            except Exception as error:
-                print('Caught this error: ' , error)
-                print(traceback.print_exc())
+                    script_scene = self.dramallm.script["scenes"][sid]
+                    if scenes_req.sceneName is not None:
+                        script_scene["name"] = scenes_req.sceneName
+                    if scenes_req.sceneInfo is not None:
+                        script_scene["info"] = scenes_req.sceneInfo
+                    if scenes_req.chains is not None:
+                        script_scene["chain"] = scenes_req.chains
+                    if scenes_req.streams is not None:
+                        script_scene["stream"] = scenes_req.streams
+                    else:
+                        script_scene["stream"] = {} # Ensure it's an empty dict if None
+                    if scenes_req.characters is not None:
+                        script_scene["characters"] = scenes_req.characters
+                    if scenes_req.mode is not None:
+                        script_scene["mode"] = scenes_req.mode
 
-        # Case III reload
+                    # If the scene is already loaded (in self.dramallm.scenes), update its properties
+                    if sid in self.dramallm.scenes:
+                        scene_obj = self.dramallm.scenes[sid]
+                        if scenes_req.sceneName is not None:
+                            scene_obj.name = scenes_req.sceneName
+                        if scenes_req.sceneInfo is not None:
+                            scene_obj.info = scenes_req.sceneInfo
+                        if scenes_req.mode is not None:
+                            scene_obj.mode = scenes_req.mode
+                        
+                        # Handle characters within the loaded scene object
+                        if scenes_req.characters is not None:
+                            # Remove characters no longer in scene_req.characters
+                            current_scene_chars = list(scene_obj.characters.keys())
+                            for char_id_in_scene in current_scene_chars:
+                                if char_id_in_scene not in scenes_req.characters:
+                                    if char_id_in_scene in scene_obj.characters:
+                                        scene_obj.pop_character(scene_obj.characters[char_id_in_scene])
+                                        logger.info(f"Removed character {char_id_in_scene} from loaded scene {sid}")
+                            # Add characters newly in scene_req.characters
+                            for char_id_req, char_profile in scenes_req.characters.items():
+                                if char_id_req not in scene_obj.characters:
+                                    if char_id_req in self.dramallm.characters:
+                                        scene_obj.add_character(self.dramallm.characters[char_id_req], char_profile)
+                                        logger.info(f"Added character {char_id_req} to loaded scene {sid}")
+                                    else:
+                                        logger.warning(f"Attempted to add non-existent character {char_id_req} to loaded scene {sid}")
+                                else:
+                                    scene_obj.characters[char_id_req].motivation = char_profile
+            # Special handling for current scene's mode (if the current scene was updated)
+            current_scene_key = "scene" + str(self.dramallm.scene_cnt)
+            if data.scenes and current_scene_key in data.scenes and data.scenes[current_scene_key].mode is not None:
+                self.dramallm.mode = data.scenes[current_scene_key].mode
+                logger.info(f"DramaLLM mode updated to: {self.dramallm.mode} based on current scene's mode.")
+
+            # If the current scene configuration was entirely removed or becomes invalid
+            if not data.scenes or current_scene_key not in data.scenes:
+                logger.warning(f"Current scene '{current_scene_key}' configuration removed or not provided. Advancing to next scene.")
+                # This could imply current scene deletion, in which case next_scene() will attempt to load a new one
+                # Or, if this is not desired, a different handling is needed (e.g., reset, error)
+                # For now, following original logic: if current scene data is gone, advance
+                if self.dramallm.ready_for_next_scene: # Only advance if game state allows
+                    self.dramallm.next_scene()
+                else:
+                    logger.warning("Not ready for next scene, cannot auto-advance after current scene config deletion.")
+            
+            # Log new script state (ensure dumps is defined or imported from somewhere)
+            # from json import dumps # Example if dumps is needed
+            # self.dramallm.log(dumps(self.dramallm.script), "script_new")
+            
+            return self.state # Return the updated state
+
+        except Exception as error:
+            logger.error(f'Caught this error during partial update: {error}')
+            logger.error(traceback.format_exc())
+            # If a partial update fails critically, fall back to full reload or return error
+            logger.info("Attempting full script reload as fallback after partial update failure.")
+            return self._reload_script_from_data(data, error_on_partial_update=str(error))
+
+    def _reload_script_from_data(self, data: ScriptData, error_on_partial_update: Optional[str] = None):
+        """Helper to fully re-initialize dramallm from ScriptData."""
         try:
             script = {
-                "id": data["id"],
-                "background": 
-                    {
-                        "player": data["player_name"],
-                        "narrative": data["background_narrative"],
-                        "characters": {},
-                        "context": {}
-                    },
+                "id": data.id if data.id is not None else "default_id",
+                "background": {
+                    "player": data.player_name if data.player_name is not None else "player",
+                    "narrative": data.background_narrative if data.background_narrative is not None else "",
+                    "characters": {},
+                    "context": {}
+                },
                 "scenes": {}
             }
-            for characters in data["characters"]:
-                script["background"]["characters"].update({characters["id"]:characters["profile"]})
-                if data["characters_initial_memories"][characters["id"]]:
-                    script["background"]["context"].update({characters["id"]:data["characters_initial_memories"][characters["id"]]}) 
-            for sid, scenes in data["scenes"].items():
-                config = {
-                    "name": scenes["sceneName"],
-                    "scene": scenes["sceneInfo"],
-                    "chain": scenes["chains"],
-                    "stream": scenes["streams"],
-                    "characters": scenes["characters"],
-                    "mode": scenes["mode"]
-                }
-                script["scenes"].update({sid: config})
-            error = self.init(script)
-            if error:
-                return f"Initialization failure: {error}"
+            if data.characters:
+                for char_req in data.characters:
+                    if char_req.id:
+                        script["background"]["characters"].update({char_req.id: char_req.profile})
+                        if char_req.initial_memory:
+                            script["background"]["context"].update({char_req.id: char_req.initial_memory}) 
+            if data.scenes:
+                for sid, scenes_req in data.scenes.items():
+                    config = {
+                        "name": scenes_req.sceneName,
+                        "scene": scenes_req.sceneInfo,
+                        "chain": scenes_req.chains,
+                        "stream": scenes_req.streams if scenes_req.streams is not None else {},
+                        "characters": scenes_req.characters,
+                        "mode": scenes_req.mode
+                    }
+                    script["scenes"].update({sid: config})
+            
+            # Reset current dramallm before initializing a new one
+            self.reset() # This sets self.dramallm to None and resets storage
+
+            init_error = self.init(script, storage_mode=data.storageMode if data.storageMode is not None else True)
+            if init_error:
+                raise Exception(init_error)
+            
+            logger.info("Full script reload successful.")
+            return self.state # Return the new state
         except Exception as e:
-            print('Caught this error: ' , e)
-            print(traceback.print_exc())
-            return f"Initialization failure: {e}"
+            logger.error(f'Caught this error during full reload: {e}')
+            logger.error(traceback.format_exc())
+            final_error_message = f"Initialization failure: {e}"
+            if error_on_partial_update:
+                final_error_message += f" (Original partial update error: {error_on_partial_update})"
+            raise HTTPException(status_code=500, detail=final_error_message)
 
     @property
-    def state(self):        
+    def state(self): 
+        if not self.dramallm:
+            return {"error": "DramaLLM not initialized."} # Handle uninitialized state
+        # Convert DramaLLM's internal state to a serializable dict
+        # state_dict = {
+        #     "id": self.dramallm.id,
+        #     "player_name": self.dramallm.script["background"]["player"],
+        #     "background_narrative": self.dramallm.narrative,
+        #     "scene_cnt": self.dramallm.scene_cnt,
+        #     "ready_for_next_scene": self.dramallm.ready_for_next_scene,
+        #     "storageMode": self.dramallm.storage_mode,
+        #     "mode": self.dramallm.mode, # Add current dramallm mode
+        #     "script": self.dramallm.script, # Full script is useful for debugging/transforming back
+        #     "characters": {cid: {"profile": char.profile} for cid, char in self.dramallm.characters.items()},
+        #     "scenes": {sid: {"name": scene.name, "info": scene.info, "mode": scene.mode, "characters": {c_id: {} for c_id in scene.characters.keys()}} 
+        #                for sid, scene in self.dramallm.scenes.items()},
+        #     "all_records": self.dramallm.raw_records # Include raw records for easier export
+        # }
         return self.dramallm.state
+
+# Initialize DRAMA globally
+_global_dramaworld_instance = DRAMA()
+
+# Dependency that provides the DRAMA instance
+def get_dramaworld() -> DRAMA:
+    return _global_dramaworld_instance
 
 app = FastAPI()
 
-# 配置 CORS
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -236,12 +417,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 挂载静态文件
+# Mount static files
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 app.mount("/components", StaticFiles(directory="components"), name="components")
 app.mount("/static", StaticFiles(directory="static"), name="static")
-# 创建 DRAMA 实例
-dramaworld = DRAMA()
 
 @app.get("/")
 async def serve_index():
@@ -252,33 +431,44 @@ async def serve_root(filename: str):
     return FileResponse(filename)
 
 @app.get("/api/data")
-async def api_data():
+async def api_data(dramaworld: DRAMA = Depends(get_dramaworld)):
     return dramaworld.state
 
 @app.post("/api/data")
-async def api_data(data: ScriptData):
-    return dramaworld.update(data)
+async def api_data_post(data: ScriptData, dramaworld: DRAMA = Depends(get_dramaworld)):
+    try:
+        updated_state = dramaworld.update(data)
+        if isinstance(updated_state, str): # If update returns an error string
+            raise HTTPException(status_code=500, detail=updated_state)
+        return updated_state
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error in /api/data POST: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to update data: {str(e)}")
 
 @app.post("/api/load")
-async def load_script(data: LoadRequest):
+async def load_script(data: LoadRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
     """加载剧本"""
-    logger.info(f"Loading script: {data.script_name}")
+    logger.info(f"Loading script: {data.script_name}, StorageMode: {data.storageMode}")
     postix = "_eng" if ENGLISH_MODE else ""    
     try:
+        storageMode = data.storageMode if data.storageMode is not None else True
         if data.script_name == 'load-script-hp':
             with open(f"script/Harry Potter and the Philosopher's Stone{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
-            dramaworld.init(script)
+            dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         elif data.script_name == 'load-script-station':
             with open(f"script/Seven people in the waiting room{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
-            dramaworld.init(script)
+            dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         elif data.script_name == 'load-script-romeo':
             with open(f"script/Romeo and Juliet{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
-            dramaworld.init(script)
+            dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         else:
             match = re.match(r"load-script-(.*)", data.script_name)
@@ -286,12 +476,9 @@ async def load_script(data: LoadRequest):
                 script_id = match.group(1)
                 with open(f'{dramaworld.cache}/{script_id}.yml', encoding='utf-8') as file:
                     script = yaml.safe_load(file)
-                dramaworld.init(script["script"])
+                dramaworld.init(script["script"], storage_mode=storageMode)
                 dramaworld.dramallm.load(script_id)
                 return dramaworld.state
-        if data.agentMode:
-            dramaworld.mode = data.agentMode
-            return dramaworld.state
         raise HTTPException(status_code=400, detail="Invalid script name")
     except Exception as e:
         logger.error(f"Error loading script: {str(e)}")
@@ -299,137 +486,178 @@ async def load_script(data: LoadRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/save")
-async def save():
-    if hasattr(dramaworld, 'dramallm'):
+async def save(dramaworld: DRAMA = Depends(get_dramaworld)):
+    if hasattr(dramaworld, 'dramallm') and dramaworld.dramallm:
         try:
             save_id = dramaworld.dramallm.save()
-            return {"info": f"Saved in {dramaworld.cache} as {save_id} successfully!", "save_id" : save_id}
+            return {"info": f"Saved in {dramaworld.cache} as {save_id} successfully!", "save_id": save_id}
         except Exception as e:
+            logger.error(f"Error saving script: {e}")
+            logger.error(traceback.format_exc())
             return {"error": f"Error message: {e}"}
     else:
-        return {"error": f"Save config first to create your world, then save the script file!"}
+        return {"error": "Save config first to create your world, then save the script file!"}
 
 @app.post("/api/info")
-async def get_info(data: InfoRequest):
-    config = {
-        "error": "No valid setup! "
-    }
+async def get_info(data: InfoRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
+    config = {"error": "No valid setup!"}
+    if not hasattr(dramaworld, 'dramallm') or dramaworld.dramallm is None:
+        return config # Return default error if dramallm is not initialized
+
     if data.role:
         cid = data.role
-        if hasattr(dramaworld, 'dramallm'):
-            if cid in dramaworld.dramallm.characters:
-                config = {
-                    "profile": dramaworld.dramallm.characters[cid].profile,
-                    "memory": dramaworld.dramallm.characters[cid].memory,
-                    "chunks": dramaworld.dramallm.characters[cid].storage.all_chunks_values() if dramaworld.dramallm.characters[cid].storage_mode else None,
-                    "retrieved":  dramaworld.dramallm.characters[cid].last_retrieved
-                }
-                if dramaworld.dramallm.mode == 'v2' or dramaworld.dramallm.mode == "v3":
-                    config.update({"prompts":dramaworld.dramallm.characters[cid].reacts})
-                    print(config)
+        if cid in dramaworld.dramallm.characters:
+            config = {
+                "profile": dramaworld.dramallm.characters[cid].profile,
+                "memory": dramaworld.dramallm.characters[cid].memory,
+                "chunks": dramaworld.dramallm.characters[cid].storage.all_chunks_values() if dramaworld.dramallm.characters[cid].storage_mode else None,
+                "retrieved": dramaworld.dramallm.characters[cid].last_retrieved
+            }
+            if dramaworld.dramallm.mode in ['v2', 'v3']:
+                config.update({"prompts": dramaworld.dramallm.characters[cid].reacts})
     elif data.help:
         if data.help == "allmemory":
-            if hasattr(dramaworld, 'dramallm'):
-                config = {
-                    "allmemory": dramaworld.dramallm.raw_records,
-                    "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None,
-                    "retrieved": dramaworld.dramallm.last_retrieved if dramaworld.dramallm.storage_mode else None
-                }
+            config = {
+                "allmemory": dramaworld.dramallm.raw_records,
+                "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None,
+                "retrieved": dramaworld.dramallm.last_retrieved if dramaworld.dramallm.storage_mode else None
+            }
         elif data.help == "dramallm":
-            if hasattr(dramaworld, 'dramallm'):
-                config = {
-                    "dramallm": dramaworld.dramallm.reacts
-                }
+            config = {"dramallm": dramaworld.dramallm.reacts}
         elif data.help == "allscript":
-            if hasattr(dramaworld, 'dramallm'):
-                config = {
-                    "allscript": dramaworld.dramallm.script,
-                    "scene_cnt": dramaworld.dramallm.scene_cnt,
-                    "nc": dramaworld.dramallm.nc
-                }
+            config = {
+                "allscript": dramaworld.dramallm.script,
+                "scene_cnt": dramaworld.dramallm.scene_cnt,
+                "nc": dramaworld.dramallm.nc
+            }
         elif data.help == "characters":
-            if hasattr(dramaworld, 'dramallm'):
-                character = get_keys(dramaworld.dramallm.script["scenes"]["scene"+str(dramaworld.dramallm.scene_cnt)]["characters"])
-                filtered_char = list(filter(lambda x: x != dramaworld.dramallm.player.id, character))
+            current_scene_key = "scene" + str(dramaworld.dramallm.scene_cnt)
+            if current_scene_key in dramaworld.dramallm.script["scenes"] and \
+               "characters" in dramaworld.dramallm.script["scenes"][current_scene_key]:
+                character_ids = dramaworld.dramallm.script["scenes"][current_scene_key]["characters"]
+                filtered_char = list(filter(lambda x: x != dramaworld.dramallm.player.id, character_ids))
                 filtered_char.append("null")
-                config = {
-                    "characters": filtered_char
-                }
+                config = {"characters": filtered_char}
+            else:
+                config = {"characters": []} # No characters in current scene or scene not found
         elif data.help == "export_records":
-            print("exporting records")
-            if hasattr(dramaworld, 'dramallm'):
-                save_id = dramaworld.dramallm.id + str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
-                write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/records/{save_id}.yaml')
-                config = {
-                    "allmemory": dramaworld.dramallm.raw_records,
-                    "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None
-                }
-        logger.info(config)                
+            logger.info("exporting records")
+            save_id = dramaworld.dramallm.id + datetime.datetime.now().strftime("_%m%d_%H%M%S")
+            # Ensure 'dumps' is imported or defined if needed by write_json
+            # from json import dumps
+            write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/record_{save_id}.yaml')
+            
+            # Assuming write_json handles the serialization
+            if not os.path.exists(dramaworld.dramallm.cache):
+                os.makedirs(dramaworld.dramallm.cache)
+            
+            # This part needs `dumps` function to be available, e.g., from `json` module
+            # If `write_json` is your custom helper, ensure it works with raw_records
+            # For demonstration, let's just make sure the records are returned.
+            config = {
+                "allmemory": dramaworld.dramallm.raw_records,
+                "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None
+            }
+    logger.info(config)                 
     return config
     
 @app.post("/api/interact")
-async def interact(data: InteractRequest):
+async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
     start_time = time.time()
+    if not hasattr(dramaworld, 'dramallm') or dramaworld.dramallm is None:
+        return {"error": "DramaLLM not initialized. Please load a script first."}
+
     if data.type:
-        if hasattr(dramaworld, 'dramallm'):
-            input_action = {"x": data.type}
-            if data.type == "-stay":
-                act = ["-stay"]
-            elif data.type == "-speak":
-                roles, message = message_to_act(data.message)
-                if data.object not in roles:
-                    roles.append(data.object)
-                character = get_keys(dramaworld.dramallm.script["scenes"]["scene"+str(dramaworld.dramallm.scene_cnt)]["characters"])
-                filtered_roles = list(filter(lambda x: x in character, roles))
-                act = ["-speak", filtered_roles, message]
-                input_action = {"x": data.type, "bid": act[1], "content": act[2]}
-            response, done, error = dramaworld.round(act)
-            if error:
-                return {"error": error}
-            end_time = time.time()
-            print(f"Interaction took {end_time - start_time:.2f} seconds")
-            return {"input": input_action,"action": response, "done": done, "state": dramaworld.state}
-        else:
-            return None 
+        input_action = {"x": data.type}
+        act = []
+        if data.type == "-stay":
+            act = ["-stay"]
+        elif data.type == "-speak":
+            # Ensure message_to_act is properly defined in frame.py or imported
+            # Assuming message_to_act handles parsing message and object
+            roles, message = message_to_act(data.message)
+            if data.object and data.object not in roles:
+                roles.append(data.object)
+            
+            current_scene_key = "scene" + str(dramaworld.dramallm.scene_cnt)
+            if current_scene_key not in dramaworld.dramallm.script["scenes"] or \
+               "characters" not in dramaworld.dramallm.script["scenes"][current_scene_key]:
+                raise HTTPException(status_code=400, detail="Current scene or its characters are not defined in script.")
+
+            # Filter roles to only include characters currently in the scene
+            scene_characters = set(dramaworld.dramallm.script["scenes"][current_scene_key]["characters"])
+            filtered_roles = [role for role in roles if role in scene_characters]
+            
+            act = ["-speak", filtered_roles, message]
+            input_action = {"x": data.type, "bid": act[1], "content": act[2]}
+        
+        response_actions, done_status, error_message = dramaworld.round(act)
+        if error_message:
+            return {"error": error_message}
+        
+        end_time = time.time()
+        response_time = end_time - start_time
+        print(f"Interaction took {response_time:.2f} seconds")
+        return {"input": input_action, "action": response_actions, "done": done_status, "state": dramaworld.state, "response_time": response_time}
+    
     elif data.interact:
-        if hasattr(dramaworld, 'dramallm'):
-            if data.interact == "next":
-                dramaworld.dramallm.next_scene()
-                return dramaworld.dramallm.state
-            elif data.interact == "back":
-                dramaworld.dramallm.back_scene()
-                return dramaworld.dramallm.state
-            elif data.interact == "withdraw":
-                cnt = dramaworld.dramallm.withdraw()
-                return {"state": dramaworld.dramallm.state, "cnt": cnt}                                
-        else:
-            return None 
-    return None 
+        if data.interact == "next":
+            dramaworld.dramallm.next_scene()
+            return dramaworld.state
+        elif data.interact == "back":
+            dramaworld.dramallm.back_scene()
+            return dramaworld.state
+        elif data.interact == "withdraw":
+            cnt = dramaworld.dramallm.withdraw()
+            return {"state": dramaworld.dramallm.state, "cnt": cnt} 
+    
+    return {"error": "Invalid interaction request."} # Default error for unhandled cases
+
+@app.post("/api/set_storage_mode")
+async def set_storage_mode(data: SetStorageModeRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
+    """
+    独立设置 DRAMALLM 的 storage_mode。
+    需要在剧本加载后调用。
+    """
+    if not hasattr(dramaworld, 'dramallm') or dramaworld.dramallm is None:
+        raise HTTPException(status_code=400, detail="DRAMA world not initialized. Please load a script first.")
+    
+    try:
+        dramaworld.dramallm.storage_mode = data.storageMode
+        logger.info(f"Storage mode successfully set to: {data.storageMode}")
+        return {"message": f"Storage mode set to {data.storageMode} successfully.", "current_storage_mode": dramaworld.dramallm.storage_mode}
+    except Exception as e:
+        logger.error(f"Error setting storage mode: {str(e)}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Failed to set storage mode: {str(e)}")
 
 @app.post("/api/prompt")
-async def post_prompt(data: Prompt):
+async def post_prompt(data: Prompt, dramaworld: DRAMA = Depends(get_dramaworld)):
     postix = "_eng" if ENGLISH_MODE else ""
-    if hasattr(dramaworld, 'dramallm'):
+    if hasattr(dramaworld, 'dramallm') and dramaworld.dramallm:
         dramaworld.dramallm.prompt_v1 = data.prompt_drama_v1
         dramaworld.dramallm.prompt_v2 = data.prompt_drama_v2
         for c, char in dramaworld.dramallm.characters.items():
             char.prompt = data.prompt_character
             char.prompt_v2 = data.prompt_character_v2
-    for filename, content in [
-        (f"prompt/prompt_drama_v1{postix}.md", data.prompt_drama_v1),
-        (f"prompt/prompt_drama_v2{postix}.md", data.prompt_drama_v2),
-        (f"prompt/prompt_character{postix}.md", data.prompt_character),
-        (f"prompt/prompt_character_v2{postix}.md", data.prompt_character_v2)
-    ]:
+    
+    # Save prompts to files
+    prompt_files = {
+        "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
+        "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
+        "prompt_character": f"prompt/prompt_character{postix}.md",
+        "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md"
+    }
+    
+    for key, filename in prompt_files.items():
+        # Ensure 'prompt' directory exists
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w', encoding='utf-8') as file:
-            file.write(content)
+            file.write(getattr(data, key)) # Access prompt data using getattr
+    
+    # Read back and return prompts (for confirmation)
     prompts = {}
-    for key, filename in [
-        ("prompt_drama_v1", f"prompt/prompt_drama_v1{postix}.md"),
-        ("prompt_drama_v2", f"prompt/prompt_drama_v2{postix}.md"),
-        ("prompt_character", f"prompt/prompt_character{postix}.md"),
-        ("prompt_character_v2", f"prompt/prompt_character_v2{postix}.md"),
-    ]:
+    for key, filename in prompt_files.items():
         with open(filename, 'r', encoding='utf-8') as file:
             prompts[key] = file.read()
     return prompts
@@ -438,14 +666,21 @@ async def post_prompt(data: Prompt):
 async def get_prompt():
     prompts = {}
     postix = "_eng" if ENGLISH_MODE else ""
-    for key, filename in [
-        ("prompt_drama_v1", f"prompt/prompt_drama_v1{postix}.md"),
-        ("prompt_drama_v2", f"prompt/prompt_drama_v2{postix}.md"),
-        ("prompt_character", f"prompt/prompt_character{postix}.md"),
-        ("prompt_character_v2", f"prompt/prompt_character_v2{postix}.md"),
-    ]:
-        with open(filename, 'r', encoding='utf-8') as file:
-            prompts[key] = file.read()
+    # Define prompt file paths
+    prompt_files = {
+        "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
+        "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
+        "prompt_character": f"prompt/prompt_character{postix}.md",
+        "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md"
+    }
+
+    for key, filename in prompt_files.items():
+        if os.path.exists(filename):
+            with open(filename, 'r', encoding='utf-8') as file:
+                prompts[key] = file.read()
+        else:
+            prompts[key] = "" # Return empty string if file not found
+            logger.warning(f"Prompt file not found: {filename}")
     return prompts
 
 IMG_DIR = 'assets'
@@ -453,17 +688,24 @@ os.makedirs(IMG_DIR, exist_ok=True)  # Ensure the directory exists
 @app.post("/api/upload")
 async def upload(file: UploadFile = File(...)):
     name = file.filename
-    name += '.jpg'
+    # No need to add '.jpg' if it's already part of the filename or not guaranteed to be jpg
+    # if you want to force .jpg, you might need to handle other extensions
+    # name += '.jpg' # Only add if you explicitly want to append .jpg
     if not file or not name:
-        return {'error': 'Invalid file or name'}
-    # Save the file with the provided name
+        raise HTTPException(status_code=400, detail='Invalid file or name')
+    
     filepath = os.path.join(IMG_DIR, name)
     try:
-        file.save(filepath)
+        # FastAPI's UploadFile has an async write method
+        with open(filepath, "wb") as buffer:
+            while contents := await file.read(1024 * 1024): # Read in chunks of 1MB
+                buffer.write(contents)
         return {'message': 'File uploaded successfully', 'path': filepath}
     except Exception as e:
-        return {'error': str(e)}
+        logger.error(f"Error uploading file: {e}")
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=3000) 
+    uvicorn.run(app, host="0.0.0.0", port=3000)

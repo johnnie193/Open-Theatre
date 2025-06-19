@@ -294,52 +294,6 @@
             icons.forEach((icon) => icon.classList.remove('active'));
             event.currentTarget.classList.add('active');
         }
-
-
-        document.addEventListener("DOMContentLoaded", () => {
-                const radioGroups = document.querySelectorAll('.radio-group');
-
-                radioGroups.forEach(group => {
-                    const radioButtons = group.querySelectorAll('input[type="radio"]');
-                    radioButtons.forEach(radio => {
-                        radio.addEventListener('change', () => {
-                            radioButtons.forEach(btn => {
-                                btn.parentElement.classList.remove('active');
-                            });
-                            if (radio.checked) {
-                                radio.parentElement.classList.add('active');
-                                const agentMode = document.querySelector('input[name="agent"]:checked').value;
-                                const playerMode = document.querySelector('input[name="player"]:checked').value;
-                                fetch('/api/load', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        agentMode: agentMode,
-                                        playerMode: playerMode
-                                    })
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    console.log("Mode changed successfully", data);
-                                })
-                                .catch(error => {
-                                    console.error("Error changing mode:", error);
-                                });
-                            }
-                        });
-                    });
-                });
-            });         
-            // function autoResizeInput(element) {
-            //     element.style.height = "auto"; // 重置高度
-            //     element.style.height = `${element.scrollHeight}px`; // 根据内容调整高度
-            //     console.log("parent-child",element);
-            // }
-            // document.querySelector('#current-script').addEventListener('input', (event) => {
-            //     autoResizeInput(event.target);
-            // });
     </script>
     <script type="module" src='components/loadScript.js'></script>
     <script type="module" src='components/saveScript.js'></script>
