@@ -85,6 +85,7 @@ export function setupInteractHelper() {
     // 创建输入框
     const inputField = document.createElement('input');
     inputField.type = 'text';
+    inputField.id = 'additional-input-text';
     inputField.placeholder = 'Type your message and Press Enter or submit [IF YOU SELECT SPEAK]';
     const submitButton = document.getElementById('submit-btn');
     inputField.addEventListener('keypress', (event) => {
@@ -161,6 +162,8 @@ function setupChatSubmit() {
     })
 
     backSceneButton.addEventListener('click', () => {
+        const messageInput = document.getElementById('additional-input-text');
+        messageInput.placeholder = "Waiting for going back (reload all the memories into the storage)...";
         fetch('/api/interact', {
             method: 'POST',
             headers: {
@@ -182,6 +185,8 @@ function setupChatSubmit() {
     })
 
     withdrawButton.addEventListener('click', () => {
+        const messageInput = document.getElementById('additional-input-text');
+        messageInput.placeholder = "Waiting for withdrawing (reload all the memories into the storage)...";
         fetch('/api/interact', {
             method: 'POST',
             headers: {
@@ -210,6 +215,10 @@ function setupChatSubmit() {
         })
         .catch(error => {
             console.error("Error fetching initial prompt:", error);
+        })
+        .finally(() => {
+            const messageInput = document.getElementById('additional-input-text');
+            messageInput.placeholder = "Type your message and Press Enter or submit [IF YOU SELECT SPEAK]";
         });
     })
 
@@ -221,11 +230,15 @@ function setupChatSubmit() {
             interaction_object = document.querySelector('#additional-input select').value;
         }
         const chatInput = document.querySelector('#additional-input input');
+        const messageInput = document.getElementById('additional-input-text');
+        messageInput.placeholder = "Loading...";
+        
         let message = "";
         if(chatInput){
             message = chatInput.value.trim();
-            chatInput.value = " ";
+            chatInput.value = "";
         }
+        chatInput.blur();
         fetch('/api/interact', {
             method: 'POST',
             headers: {
@@ -365,6 +378,10 @@ function setupChatSubmit() {
                 setupInteractHelper();
             }
         })
+        .finally(() => {
+            const messageInput = document.getElementById('additional-input-text');
+            messageInput.placeholder = "Type your message and Press Enter or submit [IF YOU SELECT SPEAK]";
+        });
     });
 
     exportRecordButton.addEventListener('click', () => {

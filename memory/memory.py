@@ -50,6 +50,7 @@ class MemoryStorage:
         #         self.tag_to_storage_map[tag] = sub_storage
 
     def reset(self, chunk_max_pieces=5, chunk_overlap_pieces=1):
+        logger.info("Resetting memory storage...")
         self.next_piece_id = 0
         self.next_global_chunk_id = 0 # <--- NEW: Global chunk ID counter
         self.global_storage = GlobalMemorySubStorage(self, self.embed_model, self.dimension, self.tag_embeddings, chunk_max_pieces, chunk_overlap_pieces)
@@ -82,6 +83,24 @@ class MemoryStorage:
         
         return self.all_sub_storages[layer]
 
+    def load_dialogues_record(self, dialogues_record, current_scene_id):
+        '''
+        输入参数：dialogues_record，一个dict，key是scene_id，value是list，list中每个元素是一个str，表示对话记录
+        输出：None
+        功能：将对话记录加载到memory中，每个对话记录作为一个piece，
+        当前场景的对话记录添加到event_storage中，
+        对其他场景的对话记录每个场景进行总结summary，将总结添加到summary_storage中，将其他场景的原始对话添加到archive_storage中
+        '''
+        logger.info(f"Loading dialogues record from empty memory storage...The current scene id is {current_scene_id}")
+        for scene_id, dialogues in dialogues_record.items():
+            if scene_id == current_scene_id:
+                for dialogue in dialogues:
+                    self.add_piece(dialogue, "event", tag="conversation", scene_id=scene_id)
+            else:
+                for dialogue in dialogues:
+                    self.add_piece(dialogue, "event", tag="conversation", scene_id=scene_id)
+                self.summarizer.summarize_scene_events(scene_id)
+
     def add_piece(self, text, layer, tag=None, metadata=None, scene_id=None):
         piece_id = self.next_piece_id
         self.next_piece_id += 1
@@ -90,11 +109,12 @@ class MemoryStorage:
         
         sub_storage = self._get_sub_storage_for_layer(layer)
         added_piece = sub_storage.add_piece_to_sub_storage(piece)
+        logger.info(f"Added piece {piece_id} to {layer} storage, the added piece is {added_piece}")
         return added_piece
     
     def delete_piece(self, piece_id, text=None):
         pass
-    #TODO: Withdrawal is not available for memory storage now.
+    #TODO: Withdrawal is not available by delete_piece for memory storage now.
 
     def add_chunk(self, text, layer, tag=None, metadata=None, scene_id=None):
         piece_id = self.next_piece_id
@@ -136,12 +156,14 @@ class MemoryStorage:
 
         Returns a list of {'score': score, 'chunk': chunk} dicts.
         """
+        logger.info(f"Retrieving memories from memory storage...The current scene id is {current_scene_id}, the desired sub-storages are {desired_sub_storages}")
         return self.retriever.retrieve_layered(input_text, desired_sub_storages, current_scene_id)
 
     def summarize(self, scene_id, summary_tag="summary_conversation"):
         """
         Summarize memories from multiple sub-storages.
         """
+        logger.info(f"Summarizing memories from memory storage...The scene id is {scene_id}")
         return self.summarizer.summarize_scene_events(scene_id, summary_tag=summary_tag)
 
 # --- Retriever Class (modified to use sub-storages) ---

@@ -45,16 +45,13 @@ class LoadRequest(BaseModel):
     script_name: Optional[str] = Field(None)
     storageMode: Optional[bool] = Field(None)
 
-class SetStorageModeRequest(BaseModel):
-    storageMode: bool
-
 class Action(BaseModel):
     x: str
     bid: Optional[str] = Field(None)
     content: Optional[str] = Field(None)
 
 class InteractRequest(BaseModel):
-    type: str
+    type: Optional[str] = Field(None)
     message: Optional[str] = Field(None)
     object: Optional[str] = Field(None)
     interact: Optional[str] = Field(None)
@@ -75,7 +72,7 @@ class DRAMA:
         self.dramallm: Optional[DramaLLM] = None # Initialize as None
         self.cache = 'cache/'
 
-    def init(self, script, storage_mode: bool = True):
+    def init(self, script, storage_mode: bool = os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"]):
         self.storage.reset() # Reset the storage for a clean start
         self.dramallm = DramaLLM(script=script, storage_mode=storage_mode, storager=self.storage)
         try:
@@ -216,7 +213,7 @@ class DRAMA:
                             # New character, add to characters and scenes
                             character = CharacterLLM(config={"id": char_req.id, "profile": char_req.profile})
                             if char_req.initial_memory:
-                                character.update_memory(message=char_req.initial_memory)
+                                character.update_memory(text=char_req.initial_memory)
                             
                             # Add to global characters list in DramaLLM
                             self.dramallm.characters[char_req.id] = character
@@ -318,8 +315,7 @@ class DRAMA:
                     logger.warning("Not ready for next scene, cannot auto-advance after current scene config deletion.")
             
             # Log new script state (ensure dumps is defined or imported from somewhere)
-            # from json import dumps # Example if dumps is needed
-            # self.dramallm.log(dumps(self.dramallm.script), "script_new")
+            self.dramallm.log(dumps(self.dramallm.script), "script_new")
             
             return self.state # Return the updated state
 
@@ -509,7 +505,7 @@ async def get_info(data: InfoRequest, dramaworld: DRAMA = Depends(get_dramaworld
         if cid in dramaworld.dramallm.characters:
             config = {
                 "profile": dramaworld.dramallm.characters[cid].profile,
-                "memory": dramaworld.dramallm.characters[cid].memory,
+                "memory": dramaworld.dramallm.characters[cid].get_memory_list_from_dict(),
                 "chunks": dramaworld.dramallm.characters[cid].storage.all_chunks_values() if dramaworld.dramallm.characters[cid].storage_mode else None,
                 "retrieved": dramaworld.dramallm.characters[cid].last_retrieved
             }
@@ -543,17 +539,12 @@ async def get_info(data: InfoRequest, dramaworld: DRAMA = Depends(get_dramaworld
         elif data.help == "export_records":
             logger.info("exporting records")
             save_id = dramaworld.dramallm.id + datetime.datetime.now().strftime("_%m%d_%H%M%S")
-            # Ensure 'dumps' is imported or defined if needed by write_json
-            # from json import dumps
             write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/record_{save_id}.yaml')
             
             # Assuming write_json handles the serialization
             if not os.path.exists(dramaworld.dramallm.cache):
                 os.makedirs(dramaworld.dramallm.cache)
             
-            # This part needs `dumps` function to be available, e.g., from `json` module
-            # If `write_json` is your custom helper, ensure it works with raw_records
-            # For demonstration, let's just make sure the records are returned.
             config = {
                 "allmemory": dramaworld.dramallm.raw_records,
                 "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None
@@ -573,8 +564,6 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
         if data.type == "-stay":
             act = ["-stay"]
         elif data.type == "-speak":
-            # Ensure message_to_act is properly defined in frame.py or imported
-            # Assuming message_to_act handles parsing message and object
             roles, message = message_to_act(data.message)
             if data.object and data.object not in roles:
                 roles.append(data.object)
@@ -613,23 +602,30 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
     
     return {"error": "Invalid interaction request."} # Default error for unhandled cases
 
-@app.post("/api/set_storage_mode")
-async def set_storage_mode(data: SetStorageModeRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
-    """
-    独立设置 DRAMALLM 的 storage_mode。
-    需要在剧本加载后调用。
-    """
-    if not hasattr(dramaworld, 'dramallm') or dramaworld.dramallm is None:
-        raise HTTPException(status_code=400, detail="DRAMA world not initialized. Please load a script first.")
+# @app.post("/api/set_storage_mode")
+# async def set_storage_mode(data: SetStorageModeRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
+#     """
+#     独立设置 DRAMALLM 的 storage_mode。
+#     需要在剧本加载后调用。
+#     """
+#     if not hasattr(dramaworld, 'dramallm') or dramaworld.dramallm is None:
+#         raise HTTPException(status_code=400, detail="DRAMA world not initialized. Please load a script first.")
     
-    try:
-        dramaworld.dramallm.storage_mode = data.storageMode
-        logger.info(f"Storage mode successfully set to: {data.storageMode}")
-        return {"message": f"Storage mode set to {data.storageMode} successfully.", "current_storage_mode": dramaworld.dramallm.storage_mode}
-    except Exception as e:
-        logger.error(f"Error setting storage mode: {str(e)}")
-        logger.error(traceback.format_exc())
-        raise HTTPException(status_code=500, detail=f"Failed to set storage mode: {str(e)}")
+#     try:
+#         dramaworld.dramallm.storage_mode = data.world_storageMode
+#         save_id = dramaworld.dramallm.save()
+#         with open(f'{dramaworld.cache}/{save_id}.yml', encoding='utf-8') as file:
+#             script = yaml.safe_load(file)
+#         dramaworld.init(script["script"], storage_mode=data.world_storageMode)
+#         dramaworld.dramallm.load(save_id)
+#         for cid, char in dramaworld.dramallm.characters.items():
+#             char.storage_mode = data.character_storageMode
+#         logger.info(f"Storage mode successfully set to: {data.world_storageMode}")
+#         return {"message": f"Storage mode set to {data.world_storageMode} successfully.", "current_storage_mode": dramaworld.dramallm.storage_mode}
+#     except Exception as e:
+#         logger.error(f"Error setting storage mode: {str(e)}")
+#         logger.error(traceback.format_exc())
+#         raise HTTPException(status_code=500, detail=f"Failed to set storage mode: {str(e)}")
 
 @app.post("/api/prompt")
 async def post_prompt(data: Prompt, dramaworld: DRAMA = Depends(get_dramaworld)):

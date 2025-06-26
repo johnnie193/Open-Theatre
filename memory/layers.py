@@ -15,6 +15,7 @@ class GlobalMemorySubStorage(BaseMemorySubStorage):
     def retrieve(self, query_text, current_scene_id, top_k, bm25_weight, vector_weight, importance_weight):
         # Global memories don't have scene-specific recency, so pass None for current_scene_id to super
         final_retrieved_chunks = super().retrieve(query_text, None, top_k, bm25_weight, vector_weight, importance_weight)
+        
         for chunk_info in final_retrieved_chunks:
             chunk = chunk_info['chunk']
             chunk.importance += min(chunk_info['score'], IMPORTANCE_ADDITION_THRESHOLD) * IMPORTANCE_ADDITION_WEIGHT # the retrieved chunks are more important

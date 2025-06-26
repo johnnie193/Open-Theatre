@@ -140,11 +140,11 @@ class BaseMemorySubStorage:
 
     
 
-    def _create_and_add_new_chunk(self, pieces_list, layer, tag, metadata, scene_id, piece_id_for_logging):
+    def _create_and_add_new_chunk(self, pieces_list, layer, tag, metadata, scene_id, piece_id_for_logging, layer_id):
         chunk_id = self.parent_storage._get_next_global_chunk_id()
 
         chunk = MemoryChunk(chunk_id, pieces_list=pieces_list, layer=layer, tag=tag, 
-                            metadata=metadata, layer_id=None, scene_id=scene_id) # layer_id handled by main storage
+                            metadata=metadata, layer_id=layer_id, scene_id=scene_id)
         
         chunk.max_pieces = self.chunk_max_pieces 
         chunk.set_embedding(self.embed_model, self.tag_embeddings)
@@ -224,7 +224,7 @@ class BaseMemorySubStorage:
             new_chunk = self._create_and_add_new_chunk(
                 pieces_list=pieces_for_new_chunk, 
                 layer=piece.layer, tag=piece.tag, metadata=piece.metadata, scene_id=piece.scene_id,
-                piece_id_for_logging=piece.id
+                piece_id_for_logging=piece.id, layer_id=self.next_chunk_id_in_layer
             )
             self.next_chunk_id_in_layer += 1
             return new_chunk.id # Return the ID of the newly created chunk
@@ -238,7 +238,7 @@ class BaseMemorySubStorage:
         chunk = self._create_and_add_new_chunk(
             pieces_list=[piece], 
             layer=piece.layer, tag=piece.tag, metadata=piece.metadata, scene_id=piece.scene_id,
-            piece_id_for_logging=piece.id
+            piece_id_for_logging=piece.id, layer_id=self.next_chunk_id_in_layer
         )
         self.next_chunk_id_in_layer += 1
         logger.info(f"[{type(self).__name__}] Directly added new chunk {chunk.id} with text '{piece.text[:30]}...'")
