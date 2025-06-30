@@ -167,6 +167,16 @@ export function addScene(index, scene_id, scene_data={}) {
                 v2 mode - Director-Actor
             </label>
             <label class="radio-option">
+                <input type="radio" name="agent-${index+1}" value="v2_plus" />
+                <span class="custom-radio"></span>
+                v2_plus mode - Director-multi-Actor
+            </label>
+            <label class="radio-option">
+                <input type="radio" name="agent-${index+1}" value="v2_prime" />
+                <span class="custom-radio"></span>
+                v2_prime mode - Director-multi-Actor
+            </label>
+            <label class="radio-option">
                 <input type="radio" name="agent-${index+1}" value="v3" />
                 <span class="custom-radio"></span>
                 v3 mode - Hybrid Architecture

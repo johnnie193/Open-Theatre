@@ -34,9 +34,6 @@ Specific actions include:
 - The current chat history is in **current interaction content**, and note that if no recipient is specified, the action defaults to all characters in the scene
 - Your reply can include some description to enhance your performance, e.g., "[nervous]"
 - Example: {{"x"="-speak", "bid"="Conan", "content"="Want to play football this afternoon? [excited]"}}
-**-give** Give an object to the recipient
-- **The item must be selected from what you are holding**, and if you don't have the item, you cannot give it.
-- Example: {{"x"="-give", "bid"="Conan", "cid"="bread"}}
 
 ## Preset Plot
 **Plot** {plot}

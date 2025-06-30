@@ -1,5 +1,5 @@
 from utils import logger
-from utils import query_gpt4
+from models import get_llm_service
 import numpy as np
 from memory.document_processor import DocumentProcessor
 
@@ -14,7 +14,7 @@ class Summarizer:
         Summarize the following text:
         {text_to_summarize}
         """
-        return query_gpt4(prompt)
+        return get_llm_service().query(prompt)
 
     def summarize_scene_events(self, scene_id, summary_tag="summary_conversation"):
         """

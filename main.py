@@ -13,11 +13,15 @@ import os
 import logging
 from dotenv import load_dotenv
 import datetime # Import datetime for use in save() function
+from models import init_llm_service, get_llm_service
 
 logging.basicConfig(level=logging.WARNING)  # 设置日志级别为WARNING
 logger = logging.getLogger(__name__)
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
+
+# 初始化全局LLM服务
+llm_service = init_llm_service()
 
 # Define data models (using Pydantic v2 conventions like Field for Optional)
 class CharacterRequest(BaseModel):
@@ -59,8 +63,11 @@ class InteractRequest(BaseModel):
 class Prompt(BaseModel):
     prompt_drama_v1: str
     prompt_drama_v2: str
+    prompt_drama_v2_plus: str
     prompt_character: str
     prompt_character_v2: str
+    prompt_global_character: str
+    prompt_global_character: str
 
 class InfoRequest(BaseModel):
     role: Optional[str] = Field(None)
@@ -104,6 +111,19 @@ class DRAMA:
                 self.dramallm.v1_react()
             elif self.dramallm.mode == "v2":
                 self.dramallm.v2_react()
+            elif self.dramallm.mode == "v2_plus":
+                self.dramallm.v2_plus_react()
+            elif self.dramallm.mode == "v2_plus_async":
+                # 异步版本的v2_plus，使用并行处理
+                import asyncio
+                try:
+                    loop = asyncio.get_event_loop()
+                    loop.run_until_complete(self.dramallm.av2_plus_react())
+                except RuntimeError:
+                    # 如果没有运行的事件循环，创建一个新的
+                    asyncio.run(self.dramallm.av2_plus_react())
+            elif self.dramallm.mode == "v2_prime":
+                self.dramallm.v2_prime_react()
 
             # Iterate through characters in the current scene
             current_scene_key = "scene" + str(self.dramallm.scene_cnt)
@@ -130,8 +150,10 @@ class DRAMA:
                         bid_val = [bid_val] # Convert to list for message_to_act consistency if needed
                     self.dramallm.calculate(char_id, decision["x"], bid_val, None, content=decision.get("content", None))
                 else:
-                    self.dramallm.calculate(char_id, **decision)
+                    # self.dramallm.calculate(char_id, **decision)
+                    pass
                 action.append(decision)
+                logger.info(f"successfully add action: {action}")
 
             if self.dramallm.ready_for_next_scene:
                 self.dramallm.next_scene()
@@ -509,7 +531,7 @@ async def get_info(data: InfoRequest, dramaworld: DRAMA = Depends(get_dramaworld
                 "chunks": dramaworld.dramallm.characters[cid].storage.all_chunks_values() if dramaworld.dramallm.characters[cid].storage_mode else None,
                 "retrieved": dramaworld.dramallm.characters[cid].last_retrieved
             }
-            if dramaworld.dramallm.mode in ['v2', 'v3']:
+            if dramaworld.dramallm.mode in ['v2', 'v2_plus', 'v3']:
                 config.update({"prompts": dramaworld.dramallm.characters[cid].reacts})
     elif data.help:
         if data.help == "allmemory":
@@ -633,16 +655,21 @@ async def post_prompt(data: Prompt, dramaworld: DRAMA = Depends(get_dramaworld))
     if hasattr(dramaworld, 'dramallm') and dramaworld.dramallm:
         dramaworld.dramallm.prompt_v1 = data.prompt_drama_v1
         dramaworld.dramallm.prompt_v2 = data.prompt_drama_v2
+        dramaworld.dramallm.prompt_v2_plus = data.prompt_drama_v2_plus
+        dramaworld.dramallm.prompt_global_character = data.prompt_global_character
         for c, char in dramaworld.dramallm.characters.items():
             char.prompt = data.prompt_character
             char.prompt_v2 = data.prompt_character_v2
+        
     
     # Save prompts to files
     prompt_files = {
         "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
         "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
+        "prompt_drama_v2_plus": f"prompt/prompt_drama_v2_plus{postix}.md",
         "prompt_character": f"prompt/prompt_character{postix}.md",
-        "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md"
+        "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md",        
+        "prompt_global_character": f"prompt/prompt_global_character{postix}.md"
     }
     
     for key, filename in prompt_files.items():
@@ -666,8 +693,10 @@ async def get_prompt():
     prompt_files = {
         "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
         "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
+        "prompt_drama_v2_plus": f"prompt/prompt_drama_v2_plus{postix}.md",
         "prompt_character": f"prompt/prompt_character{postix}.md",
-        "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md"
+        "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md",        
+        "prompt_global_character": f"prompt/prompt_global_character{postix}.md"
     }
 
     for key, filename in prompt_files.items():

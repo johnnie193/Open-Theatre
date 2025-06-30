@@ -6,9 +6,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import re
 import json
 import datetime
+import asyncio
 from memory.memory import MemoryStorage
 from memory.base import MemoryChunk, MemoryPiece
 from dotenv import load_dotenv
+from models import get_llm_service
 
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
@@ -294,7 +296,7 @@ class World:
             return
         # mode = self.script["scenes"]["scene"+str(self.scene_cnt)].get("mode","v1")
         mode = self.scenes["scene"+str(self.scene_cnt)].mode
-        if mode == "v1" or mode == "v2":
+        if mode == "v1" or mode == "v2" or mode == "v2_plus" or mode == "v2_prime":
             # assert x == "-speak"
             src = self.characters[aid]
             # print("v1_from", src.id, src.loc)
@@ -425,9 +427,8 @@ class Character:
         self.recent_memory = []
 
 class CharacterLLM(Character):
-    def __init__(self, id=None, config={}, query_fct=query_gpt4, storage_mode=False, retrieve_threshold=1):
+    def __init__(self, id=None, config={}, storage_mode=False, retrieve_threshold=1):
         super().__init__(id, config)
-        self.query_fct = query_fct
         self.plan = []
         self.decision = []
         self.prompt = PROMPT_CHARACTER
@@ -436,9 +437,9 @@ class CharacterLLM(Character):
         self.reacts = []
         self.interact_with = None
         self.to_do = False
-        self.sum_memory = []
         self.motivation = ""
         self.memory = {}
+        
         self.storage_mode = storage_mode
         self.storage = MemoryStorage()
         self.retrieve_threshold = retrieve_threshold
@@ -483,7 +484,11 @@ class CharacterLLM(Character):
     
     def get_memory_list_from_dict(self):
         memory_dict = self.memory
-        cnt = self.loc.split("scene")[1]
+        if len(self.loc.split("scene")) >= 2:
+            cnt = self.loc.split("scene")[1]
+        else:
+            logger.warning(f"Character {self.id} is not here.")
+            return []
         memory_list = []
         for i in range(int(cnt)): # from 0 to cnt-1
             scene_id = "scene"+str(i+1)
@@ -563,12 +568,12 @@ class CharacterLLM(Character):
                     plot=dumps(plot))
 
         try:
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), "plan")
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = [response, prompt]
         except:
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), "plan")
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = [response, prompt]
@@ -590,13 +595,41 @@ class CharacterLLM(Character):
             plot=dumps(plot)
         )
         try:
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), "v2")
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = [response, prompt]
         except:
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), "v2")
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            self.reacts = [response, prompt]
+        plan = response["预设的情节"] if not ENGLISH_MODE else response["Preset Plot"]
+        decision = response["决策"] if not ENGLISH_MODE else response["Decision"]
+        self.plan = plan
+        self.decision += [decision]
+
+    async def av2(self, narrative, info, scene_id=None, plot = None):
+        """异步版本的v2方法"""
+        prompt = self.prompt_v2.format(
+            id=self.id,
+            profile=self.profile,
+            memory=self.get_memory(scene_id=scene_id),
+            narrative = narrative,
+            scene_info = info,
+            view=dumps(self.view),
+            motivation=self.motivation,
+            recent=dumps(self.recent_memory),
+            plot=dumps(plot)
+        )
+        try:
+            response = await get_llm_service().aquery(prompt)
+            self.log("\n".join([prompt, response]), "av2")
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            self.reacts = [response, prompt]
+        except:
+            response = await get_llm_service().aquery(prompt)
+            self.log("\n".join([prompt, response]), "av2")
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = [response, prompt]
         plan = response["预设的情节"] if not ENGLISH_MODE else response["Preset Plot"]
@@ -614,15 +647,16 @@ class CharacterLLM(Character):
             self.to_do = False            
 
 class DramaLLM(World):
-    def __init__(self, script, query_fct=query_gpt4, storage_mode = True, storager = MemoryStorage(), retrieve_threshold=1):
+    def __init__(self, script, storage_mode = True, storager = MemoryStorage(), retrieve_threshold=1):
         super().__init__(script, storage_mode, storager)
-        self.query_fct = query_fct
         self.sum_records = []
         self.reacts = []
         current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]
         self.nc = [[item, False] for item in current_scene["chain"]]
         self.prompt_v1 = PROMPT_DRAMA_V1
         self.prompt_v2 = PROMPT_DRAMA_V2
+        self.prompt_v2_plus = PROMPT_DRAMA_V2_PLUS
+        self.prompt_global_character = PROMPT_GLOBAL_CHARACTER
         self.mode = current_scene["mode"] if "mode" in current_scene else "v1"
         self.ready_for_next_scene = False
         self.last_retrieved = []
@@ -688,13 +722,13 @@ class DramaLLM(World):
             )
     
         try:
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), 'v1')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = ["v1", response]
         except:
             print("v1 react error", response)
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), 'v1')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = ["v1", response]
@@ -713,6 +747,7 @@ class DramaLLM(World):
 
     def v2_react(self):
         all_records = sum(self.raw_records.values(), [])
+        
         prompt = self.prompt_v2.format(
             narrative = self.narrative,
             npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
@@ -725,13 +760,13 @@ class DramaLLM(World):
             recent = "\n".join([line for line in all_records[-2:]]),
         )
         try:
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), 'v2')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = ["v2", response]
         except:
             print("v2 react error", response)
-            response = self.query_fct(prompt)
+            response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), 'v2')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
             self.reacts = ["v2", response]
@@ -749,40 +784,233 @@ class DramaLLM(World):
 
     def v2_plus_react(self):
         all_records = sum(self.raw_records.values(), [])
-        prompt = self.prompt_v2.format(
+        prompt = self.prompt_v2_plus.format(
             narrative = self.narrative,
             npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
             player_id=self.player.id,
             player_profile = self.player.profile,
             script = dump_script(self.script["scenes"], self.scene_cnt),
             scene_id = "scene"+str(self.scene_cnt),
-            nc = self.nc,
+            plot_chain = self.nc,
             records = "\n".join([line for line in all_records]),
             recent = "\n".join([line for line in all_records[-2:]]),
         )
         try:
-            response = self.query_fct(prompt)
-            self.log("\n".join([prompt, response]), 'v2')
+            response = get_llm_service().query(prompt)
+            self.log("\n".join([prompt, response]), 'v2_plus')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
-            self.reacts = ["v2", response]
+            self.reacts = ["v2_plus", response]
         except:
-            print("v2 react error", response)
-            response = self.query_fct(prompt)
-            self.log("\n".join([prompt, response]), 'v2')
+            print("v2_plus react error", response)
+            response = get_llm_service().query(prompt)
+            self.log("\n".join([prompt, response]), 'v2_plus')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
-            self.reacts = ["v2", response]
+            self.reacts = ["v2_plus", response]
         self.reacts.append(prompt)
-        self.nc = response["当前的情节链"] if not ENGLISH_MODE else response["Chain"]
+        self.nc = response["当前的情节链"] if not ENGLISH_MODE else response["Current Plot Chain"]
+
+        # Reset all characters to not active
         for char_id in self.characters:
-            if (not ENGLISH_MODE and char_id == response["下一个行动人"]) or (ENGLISH_MODE and char_id == response["Next Action Character"]) :
-                self.characters[char_id].to_do = True
-                self.characters[char_id].motivation = response["行动人的指令"] if not ENGLISH_MODE else response["Action Character's Instruction"]
-                self.characters[char_id].v2(self.narrative, self.scenes["scene"+str(self.scene_cnt)].info, scene_id="scene"+str(self.scene_cnt))
-            else:
-                self.characters[char_id].to_do = False
+            self.characters[char_id].to_do = False
+
+        # Process multiple actors from the response with async parallel calls
+        actor_list_key = "行动人列表" if not ENGLISH_MODE else "Actor List"
+        if actor_list_key in response:
+            # Prepare tasks for parallel execution
+            tasks = []
+            active_characters = []
+
+            for actor_info in response[actor_list_key]:
+                char_name_key = "角色" if not ENGLISH_MODE else "Character"
+                instruction_key = "指令" if not ENGLISH_MODE else "Instruction"
+
+                char_name = actor_info.get(char_name_key)
+                instruction = actor_info.get(instruction_key)
+
+                if char_name in self.characters:
+                    self.characters[char_name].to_do = True
+                    self.characters[char_name].motivation = instruction
+                    active_characters.append(char_name)
+
+                    # Create async task for this character
+                    task = self.characters[char_name].av2(
+                        self.narrative,
+                        self.scenes["scene"+str(self.scene_cnt)].info,
+                        scene_id="scene"+str(self.scene_cnt)
+                    )
+                    tasks.append(task)
+
+            # Execute all character v2 calls in parallel
+            if tasks:
+                try:
+                    import asyncio
+                    loop = asyncio.get_event_loop()
+                    loop.run_until_complete(asyncio.gather(*tasks))
+                except RuntimeError:
+                    # If no event loop is running, create a new one
+                    asyncio.run(asyncio.gather(*tasks))
+
         if all([t == True for _, t in self.nc]):
             self.ready_for_next_scene = True
-        pass
+
+    async def av2_plus_react(self):
+        """异步版本的v2_plus_react，支持并行处理多个角色"""
+        all_records = sum(self.raw_records.values(), [])
+        prompt = self.prompt_v2_plus.format(
+            narrative = self.narrative,
+            npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+            player_id=self.player.id,
+            player_profile = self.player.profile,
+            script = dump_script(self.script["scenes"], self.scene_cnt),
+            scene_id = "scene"+str(self.scene_cnt),
+            plot_chain = self.nc,
+            records = "\n".join([line for line in all_records]),
+            recent = "\n".join([line for line in all_records[-2:]]),
+        )
+        try:
+            response = await get_llm_service().aquery(prompt)
+            self.log("\n".join([prompt, response]), 'av2_plus')
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            self.reacts = ["av2_plus", response]
+        except:
+            print("av2_plus react error", response)
+            response = await get_llm_service().aquery(prompt)
+            self.log("\n".join([prompt, response]), 'av2_plus')
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            self.reacts = ["av2_plus", response]
+        self.reacts.append(prompt)
+        self.nc = response["当前的情节链"] if not ENGLISH_MODE else response["Current Plot Chain"]
+
+        # Reset all characters to not active
+        for char_id in self.characters:
+            self.characters[char_id].to_do = False
+
+        # Process multiple actors from the response with async parallel calls
+        actor_list_key = "行动人列表" if not ENGLISH_MODE else "Actor List"
+        if actor_list_key in response:
+            # Prepare tasks for parallel execution
+            tasks = []
+
+            for actor_info in response[actor_list_key]:
+                char_name_key = "角色" if not ENGLISH_MODE else "Character"
+                instruction_key = "指令" if not ENGLISH_MODE else "Instruction"
+
+                char_name = actor_info.get(char_name_key)
+                instruction = actor_info.get(instruction_key)
+
+                if char_name in self.characters:
+                    self.characters[char_name].to_do = True
+                    self.characters[char_name].motivation = instruction
+
+                    # Create async task for this character
+                    task = self.characters[char_name].av2(
+                        self.narrative,
+                        self.scenes["scene"+str(self.scene_cnt)].info,
+                        scene_id="scene"+str(self.scene_cnt)
+                    )
+                    tasks.append(task)
+
+            # Execute all character v2 calls in parallel
+            if tasks:
+                await asyncio.gather(*tasks)
+
+        if all([t == True for _, t in self.nc]):
+            self.ready_for_next_scene = True
+
+    def v2_prime_react(self):
+        all_records = sum(self.raw_records.values(), [])
+
+        # First, get director instructions using v2_plus prompt
+        director_prompt = self.prompt_v2_plus.format(
+            narrative = self.narrative,
+            npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+            player_id=self.player.id,
+            player_profile = self.player.profile,
+            script = dump_script(self.script["scenes"], self.scene_cnt),
+            scene_id = "scene"+str(self.scene_cnt),
+            plot_chain = self.nc,
+            records = "\n".join([line for line in all_records]),
+            recent = "\n".join([line for line in all_records[-2:]]),
+        )
+
+        try:
+            director_response = get_llm_service().query(director_prompt)
+            self.log("\n".join([director_prompt, director_response]), 'v2_prime_director')
+            director_response = json.loads(director_response.split("```json\n")[-1].split("\n```")[0])
+        except:
+            print("v2_prime director react error", director_response)
+            director_response = get_llm_service().query(director_prompt)
+            self.log("\n".join([director_prompt, director_response]), 'v2_prime_director')
+            director_response = json.loads(director_response.split("```json\n")[-1].split("\n```")[0])
+
+        self.nc = director_response["当前的情节链"] if not ENGLISH_MODE else director_response["Current Plot Chain"]
+
+        # Get actor list from director response
+        actor_list_key = "行动人列表" if not ENGLISH_MODE else "Actor List"
+        if actor_list_key not in director_response:
+            return
+
+        # Prepare global character prompt
+        all_characters_info = []
+        all_memories_info = []
+        director_instructions = []
+
+        for char_id, char in self.characters.items():
+            if char_id != self.player.id:
+                all_characters_info.append(f"**{char_id}**: {char.profile}")
+                all_memories_info.append(f"**{char_id}的记忆**: {char.get_memory(scene_id="scene"+str(self.scene_cnt))}")
+
+        for actor_info in director_response[actor_list_key]:
+            char_name_key = "角色" if not ENGLISH_MODE else "Character"
+            instruction_key = "指令" if not ENGLISH_MODE else "Instruction"
+            char_name = actor_info.get(char_name_key)
+            instruction = actor_info.get(instruction_key)
+            director_instructions.append(f"**{char_name}**: {instruction}")
+
+        global_prompt = self.prompt_global_character.format(
+            narrative = self.narrative,
+            scene_info = self.scenes["scene"+str(self.scene_cnt)].info,
+            all_characters = "\n".join(all_characters_info),
+            all_memories = "\n".join(all_memories_info),
+            recent_memory = "\n".join([line for line in all_records[-5:]]),
+            director_instructions = "\n".join(director_instructions)
+        )
+
+        try:
+            global_response = get_llm_service().query(global_prompt)
+            self.log("\n".join([global_prompt, global_response]), 'v2_prime_global')
+            global_response = json.loads(global_response.split("```json\n")[-1].split("\n```")[0])
+            all_response = f"Director: {json.dumps(director_response, ensure_ascii=False)}\nGlobal Character: {json.dumps(global_response, ensure_ascii=False)}"
+            self.reacts = ["v2_prime", all_response]
+        except:
+            print("v2_prime global react error", global_response)
+            global_response = get_llm_service().query(global_prompt)
+            self.log("\n".join([global_prompt, global_response]), 'v2_prime_global')
+            global_response = json.loads(global_response.split("```json\n")[-1].split("\n```")[0])
+            all_response = f"Director: {json.dumps(director_response, ensure_ascii=False)}\nGlobal Character: {json.dumps(global_response, ensure_ascii=False)}"
+            self.reacts = ["v2_prime", all_response]
+        all_prompt = f"Director: {director_prompt}\nGlobal Character: {global_prompt}"
+        self.reacts.append(all_prompt)
+        # Reset all characters to not active
+        for char_id in self.characters:
+            self.characters[char_id].to_do = False
+
+        # Process actions from global character response
+        action_list_key = "行动列表" if not ENGLISH_MODE else "Action List"
+        if action_list_key in global_response:
+            for action_info in global_response[action_list_key]:
+                char_name_key = "角色" if not ENGLISH_MODE else "Character"
+                action_key = "行动" if not ENGLISH_MODE else "Action"
+
+                char_name = action_info.get(char_name_key)
+                action = action_info.get(action_key)
+
+                if char_name in self.characters:
+                    self.characters[char_name].to_do = True
+                    self.characters[char_name].decision.append(action)
+
+        if all([t == True for _, t in self.nc]):
+            self.ready_for_next_scene = True
 
     def withdraw(self):
         current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]

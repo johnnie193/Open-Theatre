@@ -4,7 +4,6 @@ import json
 import os
 import re
 from copy import deepcopy
-from openai import OpenAI
 from gradio_client import Client
 from datetime import datetime
 from dotenv import load_dotenv
@@ -76,42 +75,6 @@ def dumps(content):
 
 def yamld(content):
     return yaml.dump(content, allow_unicode=True, indent=2, sort_keys=False)
-
-def query_gpt4(prompt, sys = None):
-    # KEY = os.getenv("OpenAI_KEY", None)
-    # client = OpenAI(api_key=KEY)
-    from openai import AzureOpenAI
-    client = AzureOpenAI(
-        api_key="4d6f722a1a6f47ac822c0f3c9dbcc844",
-        api_version="2024-08-01-preview",
-        azure_endpoint="https://euinstance.openai.azure.com/"
-    )
-    if sys:
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "system",
-                    "content": sys,
-                },
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ]
-        )
-    else:
-        completion = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ]
-        )
-    prediction = completion.choices[0].message.content
-    return prediction
 
 def query_qwen(query, history=[]):
     response = Client("Qwen/Qwen1.5-110B-Chat-demo").predict(
@@ -224,8 +187,10 @@ CACHE_DIR = "cache"
 postdix = "" if not ENGLISH_MODE else "_eng"
 PROMPT_DRAMA_V1 = read(f"prompt/prompt_drama_v1{postdix}.md")
 PROMPT_DRAMA_V2 = read(f"prompt/prompt_drama_v2{postdix}.md")
+PROMPT_DRAMA_V2_PLUS = read(f"prompt/prompt_drama_v2_plus{postdix}.md") 
 PROMPT_CHARACTER = read(f"prompt/prompt_character{postdix}.md")
 PROMPT_CHARACTER_V2 = read(f"prompt/prompt_character_v2{postdix}.md")
+PROMPT_GLOBAL_CHARACTER = read(f"prompt/prompt_global_character{postdix}.md")
 
 def memory_to_text(m, char_id=None):
     if ENGLISH_MODE:

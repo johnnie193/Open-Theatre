@@ -26,8 +26,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let updated_prompt = {
         "prompt_drama_v1": "",
         "prompt_drama_v2": "",
+        "prompt_drama_v2_plus": "",
         "prompt_character": "",
-        "prompt_character_v2": ""
+        "prompt_character_v2": "",
+        "prompt_global_character": ""
     };
     document.getElementById("save-prompt").addEventListener("click", () => {
         Object.keys(updated_prompt).forEach(key => {

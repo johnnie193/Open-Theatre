@@ -42,7 +42,7 @@ scenes:
     id: scene1
     name: Storm Trap
     scene: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting for the train to Tokyo in the waiting room.
-    mode: v1
+    mode: v2_prime
     characters:
       Conan:
       Mouri Kogoro: Asks the station master Kikuo about the next train departure.
