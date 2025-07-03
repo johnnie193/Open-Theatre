@@ -16,7 +16,7 @@ Each scene contains a series of plots, and each plot may contain several dialogu
 
 ## Current Plot Chain
 The plot chain contains a series of plots from the detailed script, representing the current plot development status, **currently in {scene_id}**
-{plot_chain}
+{nc}
 
 ## Current Action Records
 {records}
@@ -87,7 +87,7 @@ Before you respond, you first need to make a simple analysis of the player's int
   "Reasoning Process": "...",
   "Current Plot Chain": ...,
   "Player Interaction": null,
-  "Should Respond": false,
+  "Should Respond": true,
   "Actor List": [
     {{
       "Character": "Inspector Megure",

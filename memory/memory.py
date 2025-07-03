@@ -437,4 +437,166 @@ if __name__ == "__main__":
         for chunk in sorted(all_chunks_for_inspection, key=lambda x: x.id): 
             print(f"Chunk {chunk.id}: Layer='{chunk.layer}', Tag='{chunk.tag}', Scene={chunk.scene_id}, #Pieces={len(chunk.pieces)}, Text='{chunk.text[:100]}...'")
 
-    test_1()
+    def test():
+        from utils import action_to_text
+        storage = MemoryStorage(chunk_max_pieces=5, chunk_overlap_pieces=1)
+                # scene.record.append(action_to_text(m))
+        current_scene_id = "scene1"
+
+        # Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "Wow, it’s unbelievable that a typhoon would hit on the day we return to Tokyo."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Yuichi", "x": "-speak", "b": "Excited", "content": "I’m so excited to be here with the famous detective Kogoro Mouri!"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Kikuo", "x": "-speak", "b": "", "content": "Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Masako", "x": "-speak", "b": "Nervously", "content": "Ah... okay."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.
+        m = {"a": "Hitoshi", "x": "-speak", "b": "Sighs", "content": "Everything is like my life—just a series of sudden events and mistakes..."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Yuichi", "x": "-speak", "b": "", "content": "At times like this, we have a special offer for you. No way it will go wrong."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Hitoshi", "x": "-speak", "b": "Angrily grabs Yuichi by the collar", "content": "You scoundrel, how many people have you tricked with this nonsense?"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.
+        m = {"a": "Yuichi", "x": "-speak", "b": "", "content": "I... I wasn’t trying to deceive anyone, just sharing better loan options. [Suddenly, the briefcase slips from Yuichi’s hand, spilling brochures on the floor—medical insurance...]"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Hitoshi", "x": "-speak", "b": "", "content": "This is exactly why my factory went bankrupt! No, I was forced into bankruptcy by the bank."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Yuichi", "x": "-speak", "b": "", "content": "Well, I’m not a bank! [Pushes Hitoshi away to pick up his things]"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Morris", "x": "-speak", "b": "Reaches out to help", "content": "Oh! Let me help you pick those up!"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Yuichi", "x": "-speak", "b": "Smiles and pushes Morris's hand away", "content": "I appreciate the gesture, but no need."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "... cough. When’s the next train? There must still be a train to Tokyo."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Kikuo", "x": "-speak", "b": "", "content": "I’m really sorry, we just received news that all trains have been canceled."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "Surprised", "content": "What, really?!"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Noriko", "x": "-speak", "b": "Suddenly loud", "content": "This is ridiculous! If I miss my speech tomorrow, who’s going to take responsibility for it? The councilor is about to arrive at a nearby station."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "So, you must be... the secretary for councilor Sozaburo Tsujiwara."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.
+        m = {"a": "Noriko", "x": "-speak", "b": "", "content": "I came early to prepare for tomorrow. By the way, who wrote that councilor’s poster? The name is too small; I need a new one."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Masako", "x": "-speak", "b": "Nervous", "content": "Ah... I wrote it. Okay."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.
+        m = {"a": "Noriko", "x": "-speak", "b": "", "content": "And the phone here, can I use it?"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Kikuo", "x": "-speak", "b": "", "content": "Sorry, the phone lines are down due to the typhoon."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Yuichi", "x": "-speak", "b": "Suddenly excited", "content": "So we’re stuck here overnight... Isn't that great?!"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Noriko", "x": "-speak", "b": "", "content": "Stop joking!"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "Seems like things just keep getting worse..."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.
+        m = {"a": "Yuichi", "x": "-speak", "b": "", "content": "Oh, right... I’m hungry. Is there a restaurant here?"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Kikuo", "x": "-speak", "b": "", "content": "The station doesn’t have a restaurant. There are snacks at the gift shop; we’ll distribute some. Masako, go heat some water and prepare blankets for the ladies and children."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Masako", "x": "-speak", "b": "", "content": "Okay... okay."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Kikuo", "x": "-speak", "b": "", "content": "Wait a moment, I’ll go with you. Apologies, everyone; she’s still a newbie. By the way, the hot springs here are open to everyone while we wait for the trains to resume. I’ll be off now."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Morris", "x": "-speak", "b": "Excited", "content": "Anyone want to join me for a hot spring bath?"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # query = "Can we use the phone in the typhoon?"
+        # print(storage.retrieve(query, ["event"], "scene1"))
+
+        # # --- Scene 2: Dangerous Warning ---
+        current_scene_id = "scene2"
+
+        # After the rain, the few people in the hot spring enjoy a brief moment of relaxation.
+        m = {"a": "Morris", "x": "-speak", "b": "", "content": "The sound of the rain is still drizzling while we're soaking in the hot spring."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "It would be perfect if we could have some wine right now."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Yuichi", "x": "-speak", "b": "", "content": "That would be too indulgent."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Mouri Ran", "x": "-speak", "b": "", "content": "Conan, want to come over here? I can help you scrub your back."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Morris and Yuichi leave early, with Yuichi mentioning his concerns about his locker being unlocked.
+        m = {"a": "Morris", "x": "-speak", "b": "", "content": "Sorry, I’ll get up first."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Yuichi", "x": "-speak", "b": "", "content": "In that case, I’ll get up too. The locker doesn’t have a lock, so poor travelers like me need to be extra careful."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Morris", "x": "-speak", "b": "Sweating profusely", "content": "What a bitter joke!"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Mouri Kogoro finds a note in the locker, which says—“Mr. Mouri, someone will be killed here tonight, the killer is...”.
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "Huh, how did this note end up in my pocket?"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Conan", "x": "-speak", "b": "", "content": "Let me see, what’s written on it?"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "Surprised", "content": "Mr. Mouri, someone will be killed here tonight, the killer is... what?!"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Conan", "x": "-speak", "b": "", "content": "Shh, if what’s written here is true, it will be dangerous if the criminal finds out."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "But don’t you think this is just a prank, with such a mysterious tone?"}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Conan", "x": "-speak", "b": "", "content": "They probably didn’t even have time to write the criminal’s name."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Mouri and Conan discuss who might have written the note, realizing that everyone is suspicious.
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "", "content": "So, who do you think wrote this note? I think it’s most likely one of those two who left the hot spring first."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        m = {"a": "Conan", "x": "-speak", "b": "", "content": "In my opinion, anyone in the waiting room could be the one."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        # Mouri Kogoro decides not to tell anyone about the note for now and suggests they investigate who wrote it.
+        m = {"a": "Mouri Kogoro", "x": "-speak", "b": "After thinking for a moment", "content": "Conan, let’s not tell anyone about the note for now. Let’s first check what everyone was doing earlier."}
+        storage.add_piece(action_to_text(m), layer="event", tag="conversation", scene_id=current_scene_id)
+
+        query = "Can we use the phone in the typhoon?"
+        print(storage.retrieve(query, ["event"], "scene2"))
+                    
+    test()

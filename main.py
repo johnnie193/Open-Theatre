@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field # Import Field for Pydantic v2
 from typing import Dict, List, Optional, Any
 import yaml
 from frame import * # Assuming frame.py contains DRAMALLM, CharacterLLM, MemoryStorage, etc.
+from utils import message_to_act, dumps, write_json
 import time
 import re
 import os
@@ -94,7 +95,7 @@ class DRAMA:
             return error_message
         return None # No error
 
-    def round(self, act):
+    async def round(self, act):
         action = []
         error = None
         if not self.dramallm:
@@ -111,17 +112,12 @@ class DRAMA:
                 self.dramallm.v1_react()
             elif self.dramallm.mode == "v2":
                 self.dramallm.v2_react()
+            # elif self.dramallm.mode == "v2_plus":
+            #     # 使用同步版本的v2_plus
+            #     self.dramallm.v2_plus_react()
             elif self.dramallm.mode == "v2_plus":
-                self.dramallm.v2_plus_react()
-            elif self.dramallm.mode == "v2_plus_async":
                 # 异步版本的v2_plus，使用并行处理
-                import asyncio
-                try:
-                    loop = asyncio.get_event_loop()
-                    loop.run_until_complete(self.dramallm.av2_plus_react())
-                except RuntimeError:
-                    # 如果没有运行的事件循环，创建一个新的
-                    asyncio.run(self.dramallm.av2_plus_react())
+                await self.dramallm.av2_plus_react()
             elif self.dramallm.mode == "v2_prime":
                 self.dramallm.v2_prime_react()
 
@@ -589,7 +585,7 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
             roles, message = message_to_act(data.message)
             if data.object and data.object not in roles:
                 roles.append(data.object)
-            
+
             current_scene_key = "scene" + str(dramaworld.dramallm.scene_cnt)
             if current_scene_key not in dramaworld.dramallm.script["scenes"] or \
                "characters" not in dramaworld.dramallm.script["scenes"][current_scene_key]:
@@ -598,14 +594,14 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
             # Filter roles to only include characters currently in the scene
             scene_characters = set(dramaworld.dramallm.script["scenes"][current_scene_key]["characters"])
             filtered_roles = [role for role in roles if role in scene_characters]
-            
+
             act = ["-speak", filtered_roles, message]
             input_action = {"x": data.type, "bid": act[1], "content": act[2]}
-        
-        response_actions, done_status, error_message = dramaworld.round(act)
+
+        response_actions, done_status, error_message = await dramaworld.round(act)
         if error_message:
             return {"error": error_message}
-        
+
         end_time = time.time()
         response_time = end_time - start_time
         print(f"Interaction took {response_time:.2f} seconds")

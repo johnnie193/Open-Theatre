@@ -685,7 +685,7 @@ class DramaLLM(World):
             
     def v1_react(self):
         all_records = sum(self.raw_records.values(), [])
-
+        # logger.info(f"storage {self.storage_mode}, records {len(all_records)}, {self.retrieve_threshold}")
         if not self.storage_mode or len(all_records) < self.retrieve_threshold:
             prompt = self.prompt_v1.format(
                 narrative = self.narrative,
@@ -708,6 +708,7 @@ class DramaLLM(World):
                 for last in last_list:
                     self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
                     records += f"\n{last['chunk'].to_text()}"
+            # logger.info(f"last retrieve {self.last_retrieved}")
             
             prompt = self.prompt_v1.format(
                 narrative = self.narrative,
@@ -741,24 +742,48 @@ class DramaLLM(World):
             action = response.get("决策")
         for char_id in self.characters:
             self.characters[char_id].to_do = True if char_id == action["aid"] else False
+        # logger.info(f"next action: {action["aid"]}")
         self.characters.get(action["aid"]).decision.append(action)
         if all([t == True for _, t in self.nc]):
             self.ready_for_next_scene = True
 
     def v2_react(self):
         all_records = sum(self.raw_records.values(), [])
-        
-        prompt = self.prompt_v2.format(
-            narrative = self.narrative,
-            npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
-            player_id=self.player.id,
-            player_profile = self.player.profile,
-            script = dump_script(self.script["scenes"], self.scene_cnt),
-            scene_id = "scene"+str(self.scene_cnt),
-            nc = self.nc,
-            records = "\n".join([line for line in all_records]),
-            recent = "\n".join([line for line in all_records[-2:]]),
-        )
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            prompt = self.prompt_v2.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = "\n".join([line for line in all_records]),
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            # logger.info(f"last retrieve {self.last_retrieved}")
+
+            prompt = self.prompt_v2.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = records,
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
         try:
             response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), 'v2')
@@ -784,17 +809,40 @@ class DramaLLM(World):
 
     def v2_plus_react(self):
         all_records = sum(self.raw_records.values(), [])
-        prompt = self.prompt_v2_plus.format(
-            narrative = self.narrative,
-            npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
-            player_id=self.player.id,
-            player_profile = self.player.profile,
-            script = dump_script(self.script["scenes"], self.scene_cnt),
-            scene_id = "scene"+str(self.scene_cnt),
-            plot_chain = self.nc,
-            records = "\n".join([line for line in all_records]),
-            recent = "\n".join([line for line in all_records[-2:]]),
-        )
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            prompt = self.prompt_v2_plus.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = "\n".join([line for line in all_records]),
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            
+            prompt = self.prompt_v2_plus.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = records,
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
         try:
             response = get_llm_service().query(prompt)
             self.log("\n".join([prompt, response]), 'v2_plus')
@@ -816,10 +864,6 @@ class DramaLLM(World):
         # Process multiple actors from the response with async parallel calls
         actor_list_key = "行动人列表" if not ENGLISH_MODE else "Actor List"
         if actor_list_key in response:
-            # Prepare tasks for parallel execution
-            tasks = []
-            active_characters = []
-
             for actor_info in response[actor_list_key]:
                 char_name_key = "角色" if not ENGLISH_MODE else "Character"
                 instruction_key = "指令" if not ENGLISH_MODE else "Instruction"
@@ -830,25 +874,11 @@ class DramaLLM(World):
                 if char_name in self.characters:
                     self.characters[char_name].to_do = True
                     self.characters[char_name].motivation = instruction
-                    active_characters.append(char_name)
-
-                    # Create async task for this character
-                    task = self.characters[char_name].av2(
+                    self.characters[char_name].v2(
                         self.narrative,
                         self.scenes["scene"+str(self.scene_cnt)].info,
                         scene_id="scene"+str(self.scene_cnt)
                     )
-                    tasks.append(task)
-
-            # Execute all character v2 calls in parallel
-            if tasks:
-                try:
-                    import asyncio
-                    loop = asyncio.get_event_loop()
-                    loop.run_until_complete(asyncio.gather(*tasks))
-                except RuntimeError:
-                    # If no event loop is running, create a new one
-                    asyncio.run(asyncio.gather(*tasks))
 
         if all([t == True for _, t in self.nc]):
             self.ready_for_next_scene = True
@@ -856,28 +886,51 @@ class DramaLLM(World):
     async def av2_plus_react(self):
         """异步版本的v2_plus_react，支持并行处理多个角色"""
         all_records = sum(self.raw_records.values(), [])
-        prompt = self.prompt_v2_plus.format(
-            narrative = self.narrative,
-            npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
-            player_id=self.player.id,
-            player_profile = self.player.profile,
-            script = dump_script(self.script["scenes"], self.scene_cnt),
-            scene_id = "scene"+str(self.scene_cnt),
-            plot_chain = self.nc,
-            records = "\n".join([line for line in all_records]),
-            recent = "\n".join([line for line in all_records[-2:]]),
-        )
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            prompt = self.prompt_v2_plus.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = "\n".join([line for line in all_records]),
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            
+            prompt = self.prompt_v2_plus.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = records,
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
         try:
             response = await get_llm_service().aquery(prompt)
             self.log("\n".join([prompt, response]), 'av2_plus')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
-            self.reacts = ["av2_plus", response]
+            self.reacts = ["v2_plus", response]
         except:
             print("av2_plus react error", response)
             response = await get_llm_service().aquery(prompt)
             self.log("\n".join([prompt, response]), 'av2_plus')
             response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
-            self.reacts = ["av2_plus", response]
+            self.reacts = ["v2_plus", response]
         self.reacts.append(prompt)
         self.nc = response["当前的情节链"] if not ENGLISH_MODE else response["Current Plot Chain"]
 
@@ -918,21 +971,53 @@ class DramaLLM(World):
             self.ready_for_next_scene = True
 
     def v2_prime_react(self):
-        all_records = sum(self.raw_records.values(), [])
-
         # First, get director instructions using v2_plus prompt
-        director_prompt = self.prompt_v2_plus.format(
-            narrative = self.narrative,
-            npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
-            player_id=self.player.id,
-            player_profile = self.player.profile,
-            script = dump_script(self.script["scenes"], self.scene_cnt),
-            scene_id = "scene"+str(self.scene_cnt),
-            plot_chain = self.nc,
-            records = "\n".join([line for line in all_records]),
-            recent = "\n".join([line for line in all_records[-2:]]),
-        )
-
+        # director_prompt = self.prompt_v2_plus.format(
+        #     narrative = self.narrative,
+        #     npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+        #     player_id=self.player.id,
+        #     player_profile = self.player.profile,
+        #     script = dump_script(self.script["scenes"], self.scene_cnt),
+        #     scene_id = "scene"+str(self.scene_cnt),
+        #     nc = self.nc,
+        #     records = "\n".join([line for line in all_records]),
+        #     recent = "\n".join([line for line in all_records[-2:]]),
+        # )
+        all_records = sum(self.raw_records.values(), [])
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            director_prompt = self.prompt_v2_plus.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = "\n".join([line for line in all_records]),
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            
+            director_prompt = self.prompt_v2_plus.format(
+                narrative = self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile = self.player.profile,
+                script = dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id = "scene"+str(self.scene_cnt),
+                nc = self.nc,
+                records = records,
+                recent = "\n".join([line for line in all_records[-2:]]),
+            )
         try:
             director_response = get_llm_service().query(director_prompt)
             self.log("\n".join([director_prompt, director_response]), 'v2_prime_director')
@@ -955,10 +1040,13 @@ class DramaLLM(World):
         all_memories_info = []
         director_instructions = []
 
-        for char_id, char in self.characters.items():
+        for char_id, char in self.scenes["scene"+str(self.scene_cnt)].characters.items():
             if char_id != self.player.id:
                 all_characters_info.append(f"**{char_id}**: {char.profile}")
-                all_memories_info.append(f"**{char_id}的记忆**: {char.get_memory(scene_id="scene"+str(self.scene_cnt))}")
+                scene_key = "scene" + str(self.scene_cnt)
+                memory_content = char.get_memory(scene_id=scene_key)
+                memory_info = f"**{char_id}的记忆**: {memory_content}" if not ENGLISH_MODE else f"**{char_id}'s memory**: {memory_content}"
+                all_memories_info.append(memory_info)
 
         for actor_info in director_response[actor_list_key]:
             char_name_key = "角色" if not ENGLISH_MODE else "Character"

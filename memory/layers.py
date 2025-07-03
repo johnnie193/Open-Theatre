@@ -62,7 +62,10 @@ class EventMemorySubStorage(BaseMemorySubStorage):
 
             # Apply inter-scene recency (if applicable for events)
             if current_scene_id is not None and chunk.scene_id is not None and chunk.scene_id != current_scene_id:
-                scene_diff = abs(current_scene_id - chunk.scene_id)
+                try:
+                    scene_diff = abs(current_scene_id - chunk.scene_id)
+                except:
+                    scene_diff = int(current_scene_id.split("scene")[1]) - int(chunk.scene_id.split("scene")[1])                
                 inter_scene_recency_weight = 1.0 / (1 + 0.25 * scene_diff)
                 final_score *= inter_scene_recency_weight
                 logger.info(f"  [EventMemorySubStorage] Inter-scene Recency (diff {scene_diff}): {inter_scene_recency_weight:.2f} -> Score: {final_score:.4f}")
@@ -103,7 +106,10 @@ class SummaryMemorySubStorage(BaseMemorySubStorage):
             final_score = item['score']
 
             if current_scene_id is not None and chunk.scene_id is not None and chunk.scene_id != current_scene_id:
-                scene_diff = abs(current_scene_id - chunk.scene_id)
+                try:
+                    scene_diff = abs(current_scene_id - chunk.scene_id)
+                except:
+                    scene_diff = int(current_scene_id.split("scene")[1]) - int(chunk.scene_id.split("scene")[1])                
                 inter_scene_recency_weight = 1.0 / (1 + 0.25 * scene_diff)
                 final_score *= inter_scene_recency_weight
                 logger.info(f"  [SummaryMemorySubStorage] Inter-scene Recency (diff {scene_diff}): {inter_scene_recency_weight:.2f} -> Score: {final_score:.4f}")

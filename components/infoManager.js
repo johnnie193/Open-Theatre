@@ -147,7 +147,7 @@ function updateOpenTheatre() {
                        .replace(/>/g, "&gt;")
                        .replace(/\\n/g, "<br>");
                 for(let i = 0; i < data.dramallm.length; i++){
-                    if(data.dramallm[i] == "v1" || data.dramallm[i] == "v2"){
+                    if(data.dramallm[i] == "v1" || data.dramallm[i] == "v2" || data.dramallm[i] == "v2_plus" || data.dramallm[i] == "v2_prime"){
                         dramallmBox.innerHTML += `
                         <b>${data.dramallm[i]}</b>
                         `;
