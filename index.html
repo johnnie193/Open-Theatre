@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create your drama</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="settings-btn" onclick="toggleCodeDisplay()">
+        <img src="static/settings.svg" alt="Settings">
+    </div>
+    <div id="main-container">
+        <div id="header">
+            <div id="world-name">Script Name</div>
+        </div>
+
+        <div id="scene">
+            <div id="scene-id">Scene Name</div>
+            <div id="scene-info">
+                Scene Information
+            </div>
+        </div>
+
+        <!-- 中间内容区域 -->
+        <div id="content">
+            <!-- 左侧聊天框 -->
+            <div id="chat-box">
+                <div id="chat-content">
+                </div>
+            </div>
+
+            <!-- 右侧信息区 -->
+            <div id="info-panel">
+                <div class="choose-panel">
+                    <div class="icon active" id="allscript" onclick="showInfoInterface('allscript')">Current Script</div>
+                    <div class="icon" id="characters-info" onclick="showInfoInterface('characters-info')">Characters</div>
+                    <div class="icon" id="dramallm" onclick="showInfoInterface('dramallm')">System Feedbacks</div>
+                    <div class="icon" id="allmemory" onclick="showInfoInterface('allmemory')">Records</div>
+                </div>
+                <div class="info-panel-content">
+                    <div id="allscript" class="info-interface active">
+                        <!-- <h3>当前剧本</h3> -->
+                        <div id="allscript-content">
+                            <div id="info-box">
+                                <h3>Script</h3>
+                                <p>Create your own script or load a default script to start the game!</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="characters-info" class="info-interface">
+                        <div id="characters">
+                            <!-- <h3>角色</h3> -->
+                            <div class="character-list">
+                                <div class="character" data-name="default">
+                                    <img src="assets/default_agent.jpg">
+                                    <p>Default Character</p>
+                                </div>
+                                <input type="file" id="file-input" accept="image/*" style="display: none;">
+                                <!-- 更多角色 -->
+                            </div>
+                            <div id="info-box" class="character-box">
+                                <h3>Characters Information</h3>
+                                <p>Select a character to see details.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="dramallm" class="info-interface">
+                        <!-- <h3>总导演</h3> -->
+                        <div id="dramallm-content">
+                            <div id="info-box">
+                                <h3>System Feedbacks</h3>
+                                <p>Start the game and check how the director operates.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="allmemory" class="info-interface">
+                        <!-- <h3>全部记录</h3> -->
+                        <div id="memory-content">
+                            <div id="info-box">
+                                <h3>Records</h3>
+                                <!-- <button id="save-record" class="export-button">Export Records</button> -->
+                                <p>Check the records.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部互动区域 -->
+        <div id="footer">
+            <div id="player">
+                <img src="assets/default_player.jpg">
+                <p>Player</p>
+            </div>
+            <div id="chat-input">
+                <select id="action-select">
+                    <option value="-stay">-stay</option>
+                    <option value="-speak">-speak</option>
+                </select>
+            
+                <div id="additional-input">
+                    <!-- 动态生成额外输入或选择项 -->
+                    <select>
+                        <option value="default characters">null</option>
+                    </select>
+                    <input type="text" id="additional-input-text" placeholder="Type your message and Press Enter or submit [IF YOU SELECT SPEAK]">
+                </div>
+                <!-- <input type="text" placeholder="Type your message (use @char1,char2 message for private chat) and Press Enter or submit "> -->
+                <button id="submit-btn">submit</button>                
+                <button id="withdraw-btn">withdraw</button>
+                <button id="next-scene-btn">next scene</button>
+                <button id="back-scene-btn">back scene</button>
+                <button id="save-record" class="export-button">export records</button>
+            </div>
+        <!-- 动作列表 -->
+            <!-- <div id="action-list">
+                <button class="action-btn">Action 1</button>
+                <button class="action-btn">Action 2</button>
+            </div> -->
+        </div>
+    </div>    
+    <div id="code-display" class="code-display">
+        <div class="panel-content">
+            <div class="main-content">
+                <!-- 当前剧本界面 默认激活 -->
+                <div id="current-script" class="task-interface active">
+                    <h2>Current script</h2>
+                    <div class="user-input-row">
+                        <label for="script-name">Script name:</label>
+                        <input type="text" id="script-name" placeholder="Please input the name of the script..." />
+                    </div>
+                    <div class="user-input-row">
+                        <label for="player-name">Player name:</label>
+                        <input type="text" id="player-name" placeholder="Please input the name of the player..." />
+                    </div>
+                    <div id="roles">
+                        <label>Characters:</label>
+                        <!-- 添加角色按钮 -->
+                        <button id="add-role" class="add-btn">+</button>
+                    </div>
+                    <div class="user-input">
+                        <label for="background">Background narrative:</label>
+                        <textarea id="background" placeholder="Please input the background narrative..."></textarea>
+                    </div>
+                    <div class="initial-memories">
+                        <label>Initial memories for characters:</label>
+                    </div>
+                    <div id="scenes-container">
+                        <h3>Scene list</h3>
+                        <button id="add-scene">Add scene</button>
+                    </div>
+                    <button id="save-config">Save configuration</button>
+                </div>
+                <!-- 模式界面 -->
+                <div id="mode" class="task-interface">
+                    <h2>Prompt</h2>
+                    <div class="user-input">
+                        <label>v1 - One-for-All </label>
+                         <!--<label>v1 圆桌模式-总导演决策</label> -->
+                        <textarea type="text" class="finished fixedsize" id="prompt_drama_v1"></textarea>
+                    </div>
+                    <div class="user-input">
+                        <label>v2 - Director-Actor</label>
+                        <textarea type="text" class="finished fixedsize" id="prompt_drama_v2"></textarea>
+                    </div>
+                    <div class="user-input">
+                        <label>v2_plus - Multi-Actor Director</label>
+                        <textarea type="text" class="finished fixedsize" id="prompt_drama_v2_plus"></textarea>
+                    </div>
+                    <div class="user-input">
+                        <label>Character - Raw</label>
+                        <!-- <label>v2 探索模式-角色决策</label> -->
+                        <textarea type="text" class="finished fixedsize" id="prompt_character"></textarea>
+                    </div>
+                    <div class="user-input">
+                        <label>Character - Motivated</label>
+                        <!-- <label>v2 探索模式-角色决策</label> -->
+                        <textarea type="text" class="finished fixedsize" id="prompt_character_v2"></textarea>
+                    </div>
+                    <div class="user-input">
+                        <label>Global Character - Prime</label>
+                        <!-- <label>v2 探索模式-角色决策</label> -->
+                        <textarea type="text" class="finished fixedsize" id="prompt_global_character"></textarea>
+                    </div>                                
+                    <button id="save-prompt">Save prompt</button>
+                    <p></p>
+                    <!-- <h2>模式</h2>
+                    <div class="agent-mode">
+                        <h3>选择agent模式</h3>
+                        <div class="radio-group">
+                            <label class="radio-option active">
+                                <input type="radio" name="agent" value="v1" checked/>
+                                <span class="custom-radio"></span>
+                                dramav1-圆桌模式
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="agent" value="v2" />
+                                <span class="custom-radio"></span>
+                                dramav2-multiagent多角色扮演
+                            </label>
+                        </div>                
+                    </div>
+                    <div class="player-mode">
+                        <h3>选择玩家模式</h3>
+                        <div class="radio-group">
+                            <label class="radio-option active">
+                                <input type="radio" name="player" value="option1" checked/>
+                                <span class="custom-radio"></span>
+                                玩家自行输入
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="player" value="option2" />
+                                <span class="custom-radio"></span>
+                                AI自动扮演
+
+                            </label>
+                        </div>                
+                    </div> -->
+                </div>
+                <div id="save-load-game" class="task-interface">
+                  <div id="save-game">
+                    <h2>Save Drama</h2>
+                    <button class="save-script">Click to save current drama script and history</button>
+                    <p></p>
+                  </div>
+                  <div id="load-game">
+                    <h2>Load Drama</h2>
+                    <button class="load-script" id="load-script-station">Seven people in the waiting room</button>
+                    <button class="load-script" id="load-script-hp">Harry Potter and the Philosopher's Stone</button>
+                    <button class="load-script" id="load-script-romeo">Romeo and Juliet</button>
+                  </div>
+                </div>
+                <!-- 存档界面 -->
+                <!-- <div id="save-game" class="task-interface">
+                    <h2>Save drama</h2>
+                    <button class="save-script">Click to save current drama script and history</button>
+                    <p></p>
+                </div> -->
+
+                <!-- 读档界面 -->
+                <!-- <div id="load-game" class="task-interface">
+                    <h2>Load drama</h2>
+                    <button class="load-script" id="load-script-station">Seven people in the waiting room</button>
+                    <button class="load-script" id="load-script-hp">Harry Potter and the Philosopher's Stone</button>
+                    <button class="load-script" id="load-script-romeo">Romeo and Juliet</button>
+                </div> -->
+            </div>
+
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <!-- <div class="icon active" id="userIcon" onclick="showInterface('current-script')">📕</div>
+                <div class="icon" id="modeIcon" onclick="showInterface('mode')">👤</div>
+                <div class="icon" id="saveIcon" onclick="showInterface('save-game')">💾</div>
+                <div class="icon" id="loadIcon" onclick="showInterface('load-game')">📂</div> -->
+                <div class="icon active" id="userIcon" onclick="showInterface('current-script')">
+                    <img src="static/script.svg" alt="Script">
+                    <span>Script</span>
+                </div>
+                <div class="icon" id="modeIcon" onclick="showInterface('mode')">
+                    <img src="static/prompt.svg" alt="Mode">
+                    <span>Prompt</span>
+                </div>
+                <div class="icon" id="saveLoadIcon" onclick="showInterface('save-load-game')">
+                    <img src="static/manage.svg" alt="Save/Load">
+                    <span>Save/Load</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src='components/scriptManager.js'></script>
+    <script>
+        function toggleCodeDisplay() {
+            const codeDisplay = document.querySelector("#code-display"); //匹配code-display的效果
+            codeDisplay.classList.toggle("open");
+            const settingsBtn = document.querySelector(".settings-btn");
+            settingsBtn.classList.toggle("move");            
+        }
+
+        function showInterface(interfaceId) {
+            const allInterfaces = document.querySelectorAll('.task-interface');
+            allInterfaces.forEach(interface => {
+                interface.classList.remove('active');
+            });
+            const selectedInterface = document.getElementById(interfaceId); // 根据传入的 ID 获取指定的主任务区元素
+            selectedInterface.classList.add('active'); 
+            const icons = document.querySelectorAll('.sidebar .icon');
+            icons.forEach((icon) => icon.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function showInfoInterface(interfaceId) {
+            console.log(`切换界面:` ,interfaceId);
+            const allInterfaces = document.querySelectorAll('.info-interface');
+            allInterfaces.forEach(interface => {
+                interface.classList.remove('active');
+            });
+            const selectedInterface = document.querySelector(`.info-panel-content #${interfaceId}`); // 根据传入的 ID 获取指定的主任务区元素
+            console.log(`切换界面select: `, selectedInterface);
+            selectedInterface.classList.add('active'); 
+            const icons = document.querySelectorAll('.choose-panel .icon');
+            icons.forEach((icon) => icon.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+    <script type="module" src='components/loadScript.js'></script>
+    <script type="module" src='components/saveScript.js'></script>
+    <script type="module" src='components/gameMain.js'></script>
+    <script type="module" src='components/promptManager.js'></script>
+</body>

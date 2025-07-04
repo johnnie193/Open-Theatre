@@ -1,0 +1,170 @@
+id:
+  Seven people in the waiting room
+background:
+  player: Conan
+  narrative: One evening, due to a sudden typhoon, Conan and the Mouri family find themselves trapped in the waiting room of Ofumoto Station. The other six people in the waiting room seem to have their own secrets.
+  characters:
+    Conan: |
+      A first-year elementary school student living with Mouri Kogoro and Ran at the Mouri household.
+    Mouri Kogoro: |
+      A famous detective who often appears perverted, untidy, greedy, and somewhat self-important. While he has a humorous side, he also cares deeply for his family and friends but is not good at expressing it.
+      He has a strong sense of justice, although his deductive abilities are not great. However, when it involves his friends or family, he shows excellent reasoning skills.
+      Father of Mouri Ran.
+    Mouri Ran: |
+      A high school girl with a gentle and kind personality who gets along well with everyone. However, she can also be brave and courageous in dangerous situations and often uses karate or other methods to resolve crises.
+      Daughter of Mouri Kogoro.
+    Yuichi: |
+      Hokari Yuichi, a salesman. He is friendly, talkative, and proactive, showing admiration for the famous detective Mouri Kogoro and often offering unsolicited help or advice, but his true goal is to seize opportunities to promote loans.
+      His real identity is a fraudster, and he carries a briefcase with many brochures from different companies, which he doesn’t want anyone to see.
+    Morris: |
+      Carl Morris, a backpacker from the U.S. He is enthusiastic, optimistic, and loves to help others, often sharing his travel stories.
+      However, beneath the backpacker persona, he is a pickpocket, skilled at creating trust with others in order to steal from them.
+    Hitoshi: |
+      Takegami Hitoshi, a factory owner. He became negative and depressed after his business failed and is filled with anger and pessimism. He despises salespeople.
+      He was tricked into a loan scam that led to his factory's collapse. Despite efforts to repay the loan, he is still under the threat of the lender. 
+      To repay the debt, he secretly entered the illegal gun business, dealing in modified handguns, but encountered resistance from a gang also selling arms.
+      He brings a modified gun to the station, contemplating suicide but still hesitating.
+    Noriko: |
+      Kurusu Noriko, secretary of City Council member Sozaburo Tsujiwara. She is tough, sharp-tempered, and has keen observation skills.
+      She is a workaholic who shows great loyalty to her boss but acts arrogantly toward others. She has many enemies in the political sphere.
+      She is tasked by her boss to deal with sensitive issues and knows many secrets, such as her boss’s frame-up of Yamasaki Kai for bribery. 
+      She feels no sympathy for Yamasaki’s suicide but fears retaliation for her role in concealing the truth.
+    Kikuo: |
+      Inagaki Kikuo, the station master of Ofumoto Station. He is a composed and experienced manager who is meticulous in his work and takes good care of passengers.
+      However, his true identity is Yamasaki Kozo, a construction worker whose son, Yamasaki Kai, was framed for bribery and subsequently committed suicide. Noriko, his son’s colleague, remains silent about the truth, which has caused him to harbor hatred toward both her and his boss.
+      He kidnapped the real station master and is using his identity to seek revenge on Sozaburo Tsujiwara, threatening Masako, the station clerk, to cooperate with him.
+    Masako: |
+      Ueno Masako, a young station clerk at Ofumoto Station. She is mild-mannered, and though she appears timid, she possesses inner courage.
+      Under threat from the fake Kikuo Station Master, she tries to communicate with Mouri Kogoro without alerting anyone.
+  context: 
+scenes:
+  scene1:
+    id: scene1
+    name: Storm Trap
+    scene: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting for the train to Tokyo in the waiting room.
+    mode: v2_prime
+    characters:
+      Conan:
+      Mouri Kogoro: Asks the station master Kikuo about the next train departure.
+      Yuichi: Tries to find an opportunity to promote his loans.
+      Morris:
+      Hitoshi: Complains about his failed life and despises salespeople.
+      Noriko:
+      Kikuo: Acts kindly and serves passengers while secretly monitoring Masako.
+      Masako: Acts nervous, being watched by the fake station master.
+    chain:
+    stream:
+      Mouri comments on the sudden typhoon; the station master Kikuo and clerk Masako give everyone towels.:
+      - Mouri Kogoro:Wow, it’s unbelievable that a typhoon would hit on the day we return to Tokyo.
+      - Yuichi:I’m so excited to be here with the famous detective Kogoro Mouri! [Excited]
+      - Kikuo:Everyone, please bear with us. The weather forecast was totally wrong. Masako, please hand out towels to everyone.
+      - Masako:Ah... okay. [Nervously]
+      Hitoshi reflects on his failed life, and Yuichi seizes the opportunity to pitch his loans, leading to a confrontation.:
+      - Hitoshi:Everything is like my life—just a series of sudden events and mistakes... [Sighs]
+      - Yuichi:At times like this, we have a special offer for you. No way it will go wrong.
+      - Hitoshi:You scoundrel, how many people have you tricked with this nonsense? [Angrily grabs Yuichi by the collar]
+      Yuichi’s briefcase falls, spilling many brochures. Morris offers help but is refused.:
+      - Yuichi:I... I wasn’t trying to deceive anyone, just sharing better loan options. [Suddenly, the briefcase slips from Yuichi’s hand, spilling brochures on the floor—medical insurance...]
+      - Hitoshi:This is exactly why my factory went bankrupt! No, I was forced into bankruptcy by the bank.
+      - Yuichi:Well, I’m not a bank! [Pushes Hitoshi away to pick up his things]
+      - Morris:Oh! Let me help you pick those up! [Reaches out to help]
+      - Yuichi:I appreciate the gesture, but no need. [Smiles and pushes Morris's hand away]
+      Kikuo informs everyone that trains have been suspended, and Noriko reveals her role as a politician’s secretary.:
+      - Mouri Kogoro:... cough. When’s the next train? There must still be a train to Tokyo.
+      - Kikuo:I’m really sorry, we just received news that all trains have been canceled.
+      - Mouri Kogoro:What, really?! [Surprised]
+      - Noriko:This is ridiculous! If I miss my speech tomorrow, who’s going to take responsibility for it? The councilor is about to arrive at a nearby station. [Suddenly loud]
+      - Mouri Kogoro:So, you must be... the secretary for councilor Sozaburo Tsujiwara.
+      Noriko complains that the councilor’s poster is too small, and Masako admits she wrote it.:
+      - Noriko:I came early to prepare for tomorrow. By the way, who wrote that councilor’s poster? The name is too small; I need a new one.
+      - Masako:Ah... I wrote it. Okay. [Nervous]
+      Kikuo informs the group that the station’s phone line is down, and everyone must stay overnight.:
+      - Noriko:And the phone here, can I use it?
+      - Kikuo:Sorry, the phone lines are down due to the typhoon.
+      - Yuichi:So we’re stuck here overnight... [Suddenly excited] Isn't that great?!
+      - Noriko:Stop joking!
+      - Mouri Kogoro:Seems like things just keep getting worse...
+      Kikuo suggests everyone use the station facilities, and Morris suggests they go to the hot springs.:
+      - Yuichi:Oh, right... I’m hungry. Is there a restaurant here?
+      - Kikuo:The station doesn’t have a restaurant. There are snacks at the gift shop; we’ll distribute some. Masako, go heat some water and prepare blankets for the ladies and children.
+      - Masako:Okay... okay.
+      - Kikuo:Wait a moment, I’ll go with you. Apologies, everyone; she’s still a newbie. By the way, the hot springs here are open to everyone while we wait for the trains to resume. I’ll be off now.
+      - Morris:Anyone want to join me for a hot spring bath? [Excited]
+  scene2:
+    id: scene2
+    name: Dangerous Warning
+    scene: Location:Ofumoto Station Hot Spring. Time:7:00 PM. The hot spring is open to everyone while they wait for the trains to resume.
+    mode: v1
+    characters:
+      Conan:
+      Mouri Kogoro:
+      Mouri Ran:
+      Yuichi:
+      Morris:
+    chain:
+    stream:
+      After the rain, the few people in the hot spring enjoy a brief moment of relaxation.:
+      - Morris:The sound of the rain is still drizzling while we're soaking in the hot spring.
+      - Mouri Kogoro:It would be perfect if we could have some wine right now.
+      - Yuichi:That would be too indulgent.
+      - Mouri Ran:Conan, want to come over here? I can help you scrub your back.
+      Morris and Yuichi leave early, with Yuichi mentioning his concerns about his locker being unlocked.:
+      - Morris:Sorry, I’ll get up first.
+      - Yuichi:In that case, I’ll get up too. The locker doesn’t have a lock, so poor travelers like me need to be extra careful.
+      - Morris:What a bitter joke! [Sweating profusely]
+      Mouri Kogoro finds a note in the locker, which says—“Mr. Mouri, someone will be killed here tonight, the killer is...”.:
+      - Mouri Kogoro:Huh, how did this note end up in my pocket?
+      - Conan:Let me see, what’s written on it?
+      - Mouri Kogoro:"Mr. Mouri, someone will be killed here tonight, the killer is... what?!" [Surprised]
+      - Conan:Shh, if what’s written here is true, it will be dangerous if the criminal finds out.
+      - Mouri Kogoro:But don’t you think this is just a prank, with such a mysterious tone?
+      - Conan:They probably didn’t even have time to write the criminal’s name.
+      Mouri and Conan discuss who might have written the note, realizing that everyone is suspicious.:
+      - Mouri Kogoro:So, who do you think wrote this note? I think it’s most likely one of those two who left the hot spring first.
+      - Conan:In my opinion, anyone in the waiting room could be the one.
+      Mouri Kogoro decides not to tell anyone about the note for now and suggests they investigate who wrote it.:
+      - Mouri Kogoro:Conan, let’s not tell anyone about the note for now. Let’s first check what everyone was doing earlier. [After thinking for a moment] 
+  scene3:
+    scene: Location:Ofumoto Station Waiting Room. Time:8:00 PM. Everyone is still waiting for the trains to resume.
+    name: Limited Investigation
+    mode: v3
+    characters:
+      Conan:
+      Mouri Ran: |
+        As you look out at the storm raging outside the waiting room, you can’t help but recall the time two years ago when you and Shinichi were stranded at a station due to a typhoon while traveling to Osaka. It was an unforgettable time spent together. However, now Shinichi is missing, and you don’t know when you’ll be able to travel with him again, making you feel quite sad.
+        You are very interested in Morris’s travel stories and think the people around you all seem kind-hearted. While you are concerned about the murder mentioned in the note, you still try to comfort others and lighten the mood.
+        Phrases:
+        - Hmm... I just remembered when Shinichi and I were stuck at the station due to a typhoon on our trip to Osaka two years ago. I wonder what Shinichi is doing now.
+        - I think the station master, Kikuo, is very reliable, just like the station master when Shinichi and I were stranded. We shouldn’t be in any danger, right?
+      Yuichi: |
+        After leaving the hot spring, you checked the items in your locker. You’re worried someone might discover the company brochures in your bag and realize you’re a fraudster.
+        You also have a vague feeling that Morris is interested in your locker, so you’re extra cautious around him. As you talk to Conan, you inadvertently suggest that Morris is suspicious and may have a secret, in an attempt to deflect suspicion from yourself.
+        Phrases:
+        - Kid, I just got dressed and came right out. But Morris was in there for quite a while before coming out.
+      Morris: |
+        Your real reason for suggesting the hot spring is to look for an opportunity to steal valuable items from people’s luggage. However, you heard that Mouri Kogoro is a famous detective and dared not touch his or Conan’s belongings.
+        You left the hot spring early, intending to check Yuichi’s locker, but unexpectedly, Yuichi left at the same time as you.
+        You’re worried that Yuichi might have realized your true identity, so when Conan asks, you subtly hint at Yuichi’s suspicious behavior to divert attention from yourself.
+        Phrases:
+        - Oh, dear Conan, the hot spring was wonderful, though the water was a bit cold.
+        - Mr. Yuichi is really something, always so tidy when packing his things, both in the hot spring and with his luggage. I really love the culture here!
+      Noriko: |
+        While the crowd was soaking in the hot springs, you were in the waiting room eating snacks and trying to contact the councilor, but unfortunately there was little to no signal in the station, both also in the waiting room. 
+        Additionally, based on the conversations and behaviors of those in the waiting room earlier, you deduced that Yuichi is a fraud and Morris is a pickpocket.
+        Phrases:
+        - If Mr. Hitoshi wants to prove something, I can testify for him. That person keeps mumbling about his life and failures, and has been hanging around the waiting room the whole time.
+        - Ugh, this place doesn't even have a signal to send a text.
+        - Oh, by the way, little detective, let me tell you something else. If you were a real detective, you'd have figured it out by now. That guy, Yuichi, is a fraud, and that foreigner is most likely a pickpocket.
+        - He's got a ton of company brochures, a classic prop for any con artist.
+        - Also, pretending to be casual while getting close to something valuable is a typical pickpocket move. Inviting everyone to the hot spring? Perfect cover to steal their luggage.
+      Masako: |
+        You wrote a note for Mouri, warning that someone would be killed here tonight, but didn’t have time to write the station master Kikuo’s name. You’re currently serving passengers in the waiting room, and you clearly notice the fake station master watching you from nearby, which makes you nervous and cautious. You desperately want to tell Mouri or Conan that you wrote the note, but you don’t have the courage.
+        Phrases:
+        - ...What note? Oh, did you lose something? I can help you find it.
+        - Kikuo Station Master... is actually my senior. He’s always been very patient in guiding me at work.
+      Kikuo: |
+        You continue to play the role of a kind and responsible station master, while also sharing stories about your son, who has a stable job and family. All of this is a facade to cover up your true identity. 
+        You’re very cautious about Masako’s behavior, as she’s the only one who knows your secret. You keep an eye on her.
+        You also try to find out what Masako and Conan are talking about without arousing suspicion. If you find out that information has leaked, you’ll know for sure it was Masako, but you’ll pretend to be shocked.
+    chain:
+    stream:
