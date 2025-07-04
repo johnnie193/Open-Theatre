@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 # 检查是否为英文模式
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
+STORAGE_MODE = bool(os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"])
 
 class PlayerAgent:
     """自动化玩家代理"""
@@ -260,7 +261,7 @@ class PlayerAgent:
         self.use_intelligent_interaction = True
 
     
-    def load_script(self, script_path: str, mode: str = "v2", storage_mode: bool = os.getenv("STORAGE_MODE")) -> bool:
+    def load_script(self, script_path: str, mode: str = "v2", storage_mode: bool = STORAGE_MODE) -> bool:
         """
         加载剧本
         

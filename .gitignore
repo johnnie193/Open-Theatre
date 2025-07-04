@@ -1,4 +1,4 @@
 records/*
-script/*
 cache/*
+tests/*
 .env

@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 # Optional: Set a handler if not configured elsewhere (e.g., for standalone testing)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
 # --- Global Weights and Definitions ---
 LAYER_WEIGHTS = {
     "global": 1.0,
@@ -39,6 +38,9 @@ TAG_WEIGHTS = {
 }
 TAG_EMBEDDING_WEIGHT = 0.0 # current not used
 TEXT_WEIGHT = 1.0
+IMPORTANCE_ADDITION_WEIGHT = 0.05
+IMPORTANCE_ADDITION_THRESHOLD = 10
+# --- Global Weights and Definitions ---
 
 class MemoryPiece:
     def __init__(self, piece_id, text="", layer="global", tag="conversation", metadata=None, layer_id=None, scene_id=None):

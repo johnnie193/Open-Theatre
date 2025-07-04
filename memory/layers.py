@@ -1,11 +1,10 @@
-from memory.base import BaseMemorySubStorage
+from memory.base import BaseMemorySubStorage, IMPORTANCE_ADDITION_WEIGHT, IMPORTANCE_ADDITION_THRESHOLD
 from collections import defaultdict
 import logging
 
 # --- Setup Logging ---
 logger = logging.getLogger(__name__)
-IMPORTANCE_ADDITION_WEIGHT = 0.05
-IMPORTANCE_ADDITION_THRESHOLD = 10
+
 # --- Specific Sub-Storage Implementations ---
 class GlobalMemorySubStorage(BaseMemorySubStorage):
     def __init__(self, parent_storage, embed_model, dimension, tag_embeddings, chunk_max_pieces, chunk_overlap_pieces):

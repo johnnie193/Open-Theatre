@@ -14,6 +14,7 @@ from models import get_llm_service
 
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
+STORAGE_MODE = bool(os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"])
 
 class Scene:
     def __init__(self, id = None, config={}):
@@ -116,7 +117,7 @@ class Scene:
 
 
 class World:
-    def __init__(self, config={}, storage_mode = True, storager = None):
+    def __init__(self, config={}, storage_mode = STORAGE_MODE, storager = None):
         self.storage_mode = storage_mode
         self.raw_records = {}
         self.record_storage = storager
@@ -427,7 +428,7 @@ class Character:
         self.recent_memory = []
 
 class CharacterLLM(Character):
-    def __init__(self, id=None, config={}, storage_mode=False, retrieve_threshold=1):
+    def __init__(self, id=None, config={}, storage_mode=STORAGE_MODE, retrieve_threshold=5):
         super().__init__(id, config)
         self.plan = []
         self.decision = []
@@ -647,7 +648,7 @@ class CharacterLLM(Character):
             self.to_do = False            
 
 class DramaLLM(World):
-    def __init__(self, script, storage_mode = True, storager = MemoryStorage(), retrieve_threshold=1):
+    def __init__(self, script, storage_mode = False, storager = MemoryStorage(), retrieve_threshold=5):
         super().__init__(script, storage_mode, storager)
         self.sum_records = []
         self.reacts = []

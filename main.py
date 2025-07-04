@@ -20,6 +20,7 @@ logging.basicConfig(level=logging.WARNING)  # 设置日志级别为WARNING
 logger = logging.getLogger(__name__)
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
+STORAGE_MODE = bool(os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"])
 
 # 初始化全局LLM服务
 llm_service = init_llm_service()
@@ -44,7 +45,7 @@ class ScriptData(BaseModel):
     background_narrative: Optional[str] = Field(None)
     characters: Optional[List[CharacterRequest]] = Field(None)
     scenes: Optional[Dict[str, SceneRequest]] = Field(None)
-    storageMode: Optional[bool] = Field(True)
+    storageMode: Optional[bool] = Field(False)
 
 class LoadRequest(BaseModel):
     script_name: Optional[str] = Field(None)
@@ -80,7 +81,7 @@ class DRAMA:
         self.dramallm: Optional[DramaLLM] = None # Initialize as None
         self.cache = 'cache/'
 
-    def init(self, script, storage_mode: bool = os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"]):
+    def init(self, script, storage_mode: bool = STORAGE_MODE):
         self.storage.reset() # Reset the storage for a clean start
         self.dramallm = DramaLLM(script=script, storage_mode=storage_mode, storager=self.storage)
         try:
