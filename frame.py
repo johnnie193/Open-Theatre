@@ -145,6 +145,7 @@ class World:
         self.scene_cnt = 0
         self.add_scene("scene1")
         self.cache = CACHE_DIR
+        os.makedirs(self.cache, exist_ok=True)
         ## self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
 
 

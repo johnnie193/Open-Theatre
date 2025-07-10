@@ -558,12 +558,7 @@ async def get_info(data: InfoRequest, dramaworld: DRAMA = Depends(get_dramaworld
         elif data.help == "export_records":
             logger.info("exporting records")
             save_id = dramaworld.dramallm.id + datetime.datetime.now().strftime("_%m%d_%H%M%S")
-            write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/record_{save_id}.yaml')
-            
-            # Assuming write_json handles the serialization
-            if not os.path.exists(dramaworld.dramallm.cache):
-                os.makedirs(dramaworld.dramallm.cache)
-            
+            write_json(dramaworld.dramallm.raw_records, f'{dramaworld.dramallm.cache}/record_{save_id}.yaml')            
             config = {
                 "allmemory": dramaworld.dramallm.raw_records,
                 "chunks": dramaworld.dramallm.record_storage.all_chunks_values() if dramaworld.dramallm.storage_mode else None
