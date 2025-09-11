@@ -122,6 +122,11 @@ class DRAMA:
             elif self.dramallm.mode == "v2_prime":
                 self.dramallm.v2_prime_react()
 
+            reflect_interval = int(os.getenv("REFLECT_INTERVAL", "5"))
+            reflect = False
+            if (self.dramallm.timestamp + 1) % reflect_interval == 0:
+                reflect = True
+
             # Iterate through characters in the current scene
             current_scene_key = "scene" + str(self.dramallm.scene_cnt)
             if current_scene_key not in self.dramallm.scenes:
@@ -151,6 +156,9 @@ class DRAMA:
                     pass
                 action.append(decision)
                 logger.info(f"successfully add action: {action}")
+
+            if reflect:
+                self.dramallm.reflect()
 
             if self.dramallm.ready_for_next_scene:
                 self.dramallm.next_scene()
@@ -612,7 +620,10 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
             return dramaworld.state
         elif data.interact == "withdraw":
             cnt = dramaworld.dramallm.withdraw()
-            return {"state": dramaworld.dramallm.state, "cnt": cnt} 
+            return {"state": dramaworld.dramallm.state, "cnt": cnt}
+        elif data.interact == "reflect":
+            dramaworld.dramallm.reflect()
+            return {"state": dramaworld.dramallm.state, "message": "reflect done"} 
     
     return {"error": "Invalid interaction request."} # Default error for unhandled cases
 

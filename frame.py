@@ -313,6 +313,9 @@ class World:
                 else:
                     bid = bid[0]
             self._calculate(aid, x, bid, cid, **kwargs)
+        
+        if aid != self.player.id:
+            self.timestamp += 1
 
     def update_dialogues_record(self, scene, a="", x="", b="", c="", y="", **kwargs):
         # m = {"a": a, "x": x, "b": b, "c": c, "y": y}
@@ -659,10 +662,14 @@ class DramaLLM(World):
         self.prompt_v2 = PROMPT_DRAMA_V2
         self.prompt_v2_plus = PROMPT_DRAMA_V2_PLUS
         self.prompt_global_character = PROMPT_GLOBAL_CHARACTER
+        # Reflect prompts
+        self.prompt_v1_reflect = PROMPT_DRAMA_V1_REFLECT
+        self.prompt_director_reflect = PROMPT_DIRECTOR_REFLECT
         self.mode = current_scene["mode"] if "mode" in current_scene else "v1"
         self.ready_for_next_scene = False
         self.last_retrieved = []
         self.retrieve_threshold = retrieve_threshold
+        self.timestamp = 0
 
     @property
     def state(self):
@@ -1181,4 +1188,112 @@ class DramaLLM(World):
             current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]
             self.nc = [[item, False] for item in current_scene["chain"]]
         self.mode = self.scenes["scene"+str(self.scene_cnt)].mode
+
+    def reflect_v1(self):
+        """v1 模式的反思功能"""
+        all_records = sum(self.raw_records.values(), [])
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            prompt = self.prompt_v1_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records="\n".join([line for line in all_records]),
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            
+            prompt = self.prompt_v1_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records=records,
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        
+        try:
+            response = get_llm_service().query(prompt)
+            self.log("\n".join([prompt, response]), 'reflect_v1')
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            
+            reflect_chain_key = "反思后的情节链" if not ENGLISH_MODE else "Reflected Plot Chain"
+            if response.get(reflect_chain_key):
+                self.nc = response[reflect_chain_key]
+            else:
+                print("reflect_v1 error: no reflected plot chain")
+        except Exception as e:
+            print(f"reflect_v1 error: {e}")
+
+    def reflect_director(self):
+        """导演反思功能"""
+        all_records = sum(self.raw_records.values(), [])
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            prompt = self.prompt_director_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records="\n".join([line for line in all_records]),
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            
+            prompt = self.prompt_director_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records=records,
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        
+        try:
+            response = get_llm_service().query(prompt)
+            self.log("\n".join([prompt, response]), 'reflect_director')
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            
+            reflect_chain_key = "反思后的情节链" if not ENGLISH_MODE else "Reflected Plot Chain"
+            if response.get(reflect_chain_key):
+                self.nc = response[reflect_chain_key]
+            else:
+                print("reflect_director error: no reflected plot chain")
+        except Exception as e:
+            print(f"reflect_director error: {e}")
+
+    def reflect(self):
+        if self.mode == "v1":
+            self.reflect_v1()
+        else:
+            self.reflect_director()
 
