@@ -15,7 +15,7 @@ scenes:
   scene1:
     name: Dawn in Verona Square
     mode: v1
-    scene: Location:Verona Square. Time:10 AM. Romeo is walking alone, trying to clear his mind, and spots his parents—the Montague couple. His cousin Benvolio waves at him from a distance. The atmosphere is light, but there is a subtle tension due to the family feud.
+    info: Location:Verona Square. Time:10 AM. Romeo is walking alone, trying to clear his mind, and spots his parents—the Montague couple. His cousin Benvolio waves at him from a distance. The atmosphere is light, but there is a subtle tension due to the family feud.
     characters:
       Romeo: 
       Montague: Aware of the ongoing conflict with the Capulet family’s servants, concerned about Romeo’s mood, asks Benvolio to talk to him.
@@ -43,7 +43,7 @@ scenes:
   scene2:
     name: Casual Conversation on the Street
     mode: v1
-    scene:
+    info:
       Location:City Street. Time:Evening. Romeo and Benvolio walk side by side down a busy street. The atmosphere is lively and bustling, but amidst the crowd, Romeo can’t help but feel troubled.
     characters:
       Romeo:
@@ -67,7 +67,7 @@ scenes:
         - Benvolio:(lightly) See, Romeo, as the old saying goes, “Take a step back, and the sea is wide and the sky is vast.”
   scene3:
     name: Gazing at the Dusk
-    scene: Location:Outside the Old Church in Verona. Time:Dusk. The last rays of the sun spill over the ancient stone steps, and the church’s spire stands tall against the deep blue sky, looking particularly solemn. Romeo and Benvolio stand in front of the church, the night fog rolling in behind them, the air filled with an eerie stillness, as if the world has momentarily paused. Their eyes gaze into the distance, filled with an unsettling sense of uncertainty.
+    info: Location:Outside the Old Church in Verona. Time:Dusk. The last rays of the sun spill over the ancient stone steps, and the church’s spire stands tall against the deep blue sky, looking particularly solemn. Romeo and Benvolio stand in front of the church, the night fog rolling in behind them, the air filled with an eerie stillness, as if the world has momentarily paused. Their eyes gaze into the distance, filled with an unsettling sense of uncertainty.
     characters:
       Romeo: |
         Words

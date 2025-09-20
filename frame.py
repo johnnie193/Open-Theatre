@@ -20,7 +20,7 @@ class Scene:
     def __init__(self, id = None, config={}):
         self.id = config.get("id", id)
         self.name = config.get("name","")
-        self.info = config.get("scene","")
+        self.info = config.get("info","")
         self.context = config.get("characters","")
         self.mode = config.get("mode","v1")
         assert self.id
@@ -146,6 +146,8 @@ class World:
         self.add_scene("scene1")
         self.cache = CACHE_DIR
         os.makedirs(self.cache, exist_ok=True)
+        self.save_dir = SAVE_DIR
+        os.makedirs(self.save_dir, exist_ok=True)
         ## self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
 
 
@@ -160,11 +162,11 @@ class World:
 
     def save(self):
         save_id = self.id+str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
-        write_json(self.state, f'{self.cache}/{save_id}.yml')
+        write_json(self.state, f'{self.save_dir}/{save_id}.yml')
         return save_id
 
     def load(self, save_id):
-        state = read_json(f'{self.cache}/{save_id}.yml')
+        state = read_json(f'{self.save_dir}/{save_id}.yml')
         if "characters" in state:
             for cid, char in state["characters"].items():
                 self.characters[cid].load(char)
@@ -467,7 +469,7 @@ class CharacterLLM(Character):
         self.plan = state["plan"]
         if self.storage_mode:
             self.storage.reset()
-            self.storage.load_dialogues_record(state["raw_records"], current_scene_id=self.loc)
+            self.storage.load_dialogues_record(state["memory"], current_scene_id=self.loc)
 
     @property
     def state(self):
@@ -1119,7 +1121,7 @@ class DramaLLM(World):
         ans = self.scenes["scene"+str(self.scene_cnt)].withdraw(self.player.id)
         if self.storage_mode:
             self.record_storage.reset()
-            self.record_storage.load_dialogues_record(self.raw_records, current_scene_id=self.loc)
+            self.record_storage.load_dialogues_record(self.raw_records, current_scene_id=self.player.loc)
         return ans
 
     def back_scene(self):
@@ -1160,11 +1162,11 @@ class DramaLLM(World):
 
     def save(self):
         save_id = self.id+str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
-        write_json(self.state, f'{self.cache}/{save_id}.yml')
+        write_json(self.state, f'{self.save_dir}/{save_id}.yml')
         return save_id
 
     def load(self, save_id):
-        state = read_json(f'{self.cache}/{save_id}.yml')
+        state = read_json(f'{self.save_dir}/{save_id}.yml')
         if "characters" in state:
             for cid, char in state["characters"].items():
                 self.characters[cid].load(char)

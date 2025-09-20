@@ -80,6 +80,7 @@ class DRAMA:
         self.storage = MemoryStorage()
         self.dramallm: Optional[DramaLLM] = None # Initialize as None
         self.cache = 'cache/'
+        self.script_dir = 'script/'
 
     def init(self, script, storage_mode: bool = STORAGE_MODE):
         self.storage.reset() # Reset the storage for a clean start
@@ -376,7 +377,7 @@ class DRAMA:
                 for sid, scenes_req in data.scenes.items():
                     config = {
                         "name": scenes_req.sceneName,
-                        "scene": scenes_req.sceneInfo,
+                        "info": scenes_req.sceneInfo,
                         "chain": scenes_req.chains,
                         "stream": scenes_req.streams if scenes_req.streams is not None else {},
                         "characters": scenes_req.characters,
@@ -476,36 +477,60 @@ async def load_script(data: LoadRequest, dramaworld: DRAMA = Depends(get_dramawo
     """加载剧本"""
     logger.info(f"Loading script: {data.script_name}, StorageMode: {data.storageMode}")
     postix = "_eng" if ENGLISH_MODE else ""    
+    print(f"Loading script: {data.script_name}, StorageMode: {data.storageMode}")
+    print(f"Script directory: {dramaworld.script_dir}")
     try:
         storageMode = data.storageMode if data.storageMode is not None else True
+        
+        # 处理预定义的脚本
         if data.script_name == 'load-script-hp':
-            with open(f"script/Harry Potter and the Philosopher's Stone{postix}.yaml", encoding = 'utf-8') as file:
+            with open(f"{dramaworld.script_dir}/Harry Potter and the Philosopher's Stone{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
             dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         elif data.script_name == 'load-script-station':
-            with open(f"script/Seven people in the waiting room{postix}.yaml", encoding = 'utf-8') as file:
+            with open(f"{dramaworld.script_dir}/Seven people in the waiting room{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
             dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         elif data.script_name == 'load-script-romeo':
-            with open(f"script/Romeo and Juliet{postix}.yaml", encoding = 'utf-8') as file:
+            with open(f"{dramaworld.script_dir}/Romeo and Juliet{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
             dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         else:
-            match = re.match(r"load-script-(.*)", data.script_name)
-            if match:
-                script_id = match.group(1)
-                with open(f'{dramaworld.cache}/{script_id}.yml', encoding='utf-8') as file:
-                    script = yaml.safe_load(file)
-                dramaworld.init(script["script"], storage_mode=storageMode)
+            # 处理保存的脚本文件（前端现在直接发送文件名）
+            script_filename = data.script_name
+            script_path = f'{dramaworld.script_dir}/{script_filename}'
+            
+            # 检查文件是否存在
+            if not os.path.exists(script_path):
+                raise HTTPException(status_code=404, detail=f"Script file not found: {script_filename}")
+            
+            with open(script_path, encoding='utf-8') as file:
+                script_data = yaml.safe_load(file)
+            
+            # 如果文件包含script字段，使用script字段；否则直接使用整个文件内容
+            if isinstance(script_data, dict) and 'script' in script_data:
+                script = script_data['script']
+            else:
+                script = script_data
+                
+            dramaworld.init(script, storage_mode=storageMode)
+            
+            # 如果是保存的脚本，尝试加载dramallm状态
+            if isinstance(script_data, dict) and 'script' in script_data:
+                # 从文件名提取脚本ID（去掉扩展名）
+                script_id = os.path.splitext(script_filename)[0]
                 dramaworld.dramallm.load(script_id)
-                return dramaworld.state
-        raise HTTPException(status_code=400, detail="Invalid script name")
+            
+            return dramaworld.state
+            
+    except HTTPException as e:
+        raise e
     except Exception as e:
         logger.error(f"Error loading script: {str(e)}")
-        logger.error(traceback.print_exc(e))
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/save")
@@ -513,13 +538,58 @@ async def save(dramaworld: DRAMA = Depends(get_dramaworld)):
     if hasattr(dramaworld, 'dramallm') and dramaworld.dramallm:
         try:
             save_id = dramaworld.dramallm.save()
-            return {"info": f"Saved in {dramaworld.cache} as {save_id} successfully!", "save_id": save_id}
+            return {"info": f"Saved in {dramaworld.script_dir} as {save_id} successfully!", "save_id": save_id}
         except Exception as e:
             logger.error(f"Error saving script: {e}")
             logger.error(traceback.format_exc())
             return {"error": f"Error message: {e}"}
     else:
         return {"error": "Save config first to create your world, then save the script file!"}
+
+@app.get("/api/saved-scripts")
+async def get_saved_scripts(dramaworld: DRAMA = Depends(get_dramaworld)):
+    """获取已保存的脚本列表"""
+    try:
+        import os
+        import glob
+        from datetime import datetime
+        
+        scripts = []
+        
+        # 检查script目录
+        script_dir = dramaworld.script_dir
+        if os.path.exists(script_dir):
+            yml_files = glob.glob(os.path.join(script_dir, "*.yml"))
+            yaml_files = glob.glob(os.path.join(script_dir, "*.yaml"))
+            all_files = yml_files + yaml_files
+            
+            for file_path in all_files:
+                filename = os.path.basename(file_path)
+                    
+                # 获取文件修改时间
+                mtime = os.path.getmtime(file_path)
+                timestamp = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                
+                # 从文件名提取脚本名称（去掉时间戳部分）
+                name = filename.replace('.yml', '').replace('.yaml', '')
+                # 去掉时间戳部分（格式：_MMDD_HHMMSS）
+                import re
+                name = re.sub(r'_\d{4}_\d{6}$', '', name)
+                
+                scripts.append({
+                    "id": filename,
+                    "name": name,
+                    "timestamp": timestamp,
+                    "filename": filename
+                })
+        
+
+        scripts.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        return {"scripts": scripts}
+    except Exception as e:
+        logger.error(f"Error getting saved scripts: {e}")
+        return {"error": f"Failed to get saved scripts: {str(e)}"}
 
 @app.post("/api/info")
 async def get_info(data: InfoRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
@@ -580,7 +650,7 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
     if not hasattr(dramaworld, 'dramallm') or dramaworld.dramallm is None:
         return {"error": "DramaLLM not initialized. Please load a script first."}
 
-    if data.type:
+    if data.type and data.type != "operation":
         input_action = {"x": data.type}
         act = []
         if data.type == "-stay":
@@ -710,6 +780,120 @@ async def get_prompt():
             prompts[key] = "" # Return empty string if file not found
             logger.warning(f"Prompt file not found: {filename}")
     return prompts
+
+@app.get("/api/model-config")
+async def get_model_config():
+    """获取模型配置"""
+    try:
+        config = {
+            "provider": os.getenv("LLM_PROVIDER", "azure_openai"),
+            "azure_openai": {
+                "api_key": os.getenv("AZURE_API_KEY", ""),
+                "api_version": os.getenv("AZURE_API_VERSION", "2024-02-15-preview"),
+                "endpoint": os.getenv("AZURE_ENDPOINT", ""),
+                "deployment": os.getenv("AZURE_DEPLOYMENT", "gpt-4o")
+            },
+            "openai": {
+                "api_key": os.getenv("OPENAI_API_KEY", ""),
+                "base_url": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+                "model": os.getenv("OPENAI_MODEL", "gpt-4o")
+            },
+            "deepseek": {
+                "api_key": os.getenv("DEEPSEEK_API_KEY", ""),
+                "api_url": os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com"),
+                "model": os.getenv("DEEPSEEK_MODEL", "DeepSeek-V3")
+            }
+        }
+        return config
+    except Exception as e:
+        logger.error(f"Error getting model config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/model-config")
+async def save_model_config(config: dict):
+    """保存模型配置"""
+    try:
+        import json
+        
+        # 验证配置
+        if "provider" not in config:
+            raise HTTPException(status_code=400, detail="Provider is required")
+        
+        provider = config["provider"]
+        if provider not in ["azure_openai", "openai", "deepseek"]:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        # 更新环境变量
+        env_updates = {}
+        
+        if provider == "azure_openai":
+            azure_config = config.get("azure_openai", {})
+            env_updates.update({
+                "AZURE_API_KEY": azure_config.get("api_key", ""),
+                "AZURE_API_VERSION": azure_config.get("api_version", "2024-02-15-preview"),
+                "AZURE_ENDPOINT": azure_config.get("endpoint", ""),
+                "AZURE_DEPLOYMENT": azure_config.get("deployment", "gpt-4o")
+            })
+        elif provider == "openai":
+            openai_config = config.get("openai", {})
+            env_updates.update({
+                "OPENAI_API_KEY": openai_config.get("api_key", ""),
+                "OPENAI_BASE_URL": openai_config.get("base_url", "https://api.openai.com/v1"),
+                "OPENAI_MODEL": openai_config.get("model", "gpt-4o")
+            })
+        elif provider == "deepseek":
+            deepseek_config = config.get("deepseek", {})
+            env_updates.update({
+                "DEEPSEEK_API_KEY": deepseek_config.get("api_key", ""),
+                "DEEPSEEK_API_URL": deepseek_config.get("api_url", "https://api.deepseek.com"),
+                "DEEPSEEK_MODEL": deepseek_config.get("model", "DeepSeek-V3")
+            })
+        
+        # 更新LLM_PROVIDER
+        env_updates["LLM_PROVIDER"] = provider
+        
+        # 保存到.env文件
+        env_file_path = ".env"
+        env_lines = []
+        
+        # 读取现有.env文件
+        if os.path.exists(env_file_path):
+            with open(env_file_path, 'r', encoding='utf-8') as f:
+                env_lines = f.readlines()
+        
+        # 更新或添加配置项
+        updated_keys = set()
+        for i, line in enumerate(env_lines):
+            if '=' in line:
+                key = line.split('=')[0].strip()
+                if key in env_updates:
+                    env_lines[i] = f"{key}={env_updates[key]}\n"
+                    updated_keys.add(key)
+        
+        # 添加新的配置项
+        for key, value in env_updates.items():
+            if key not in updated_keys:
+                env_lines.append(f"{key}={value}\n")
+        
+        # 写入.env文件
+        with open(env_file_path, 'w', encoding='utf-8') as f:
+            f.writelines(env_lines)
+        
+        # 重新加载环境变量
+        load_dotenv(override=True)
+        
+        # 重新初始化LLM服务
+        global _global_llm_service
+        _global_llm_service = None
+        init_llm_service(provider)
+        
+        return {"message": "Model configuration saved successfully"}
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error saving model config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 IMG_DIR = 'assets'
 os.makedirs(IMG_DIR, exist_ok=True)  # Ensure the directory exists

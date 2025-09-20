@@ -41,7 +41,7 @@ scenes:
   scene1:
     id: scene1
     name: Storm Trap
-    scene: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting for the train to Tokyo in the waiting room.
+    info: Location:Ofumoto Station Waiting Room. Time:6:00 PM. Everyone is waiting for the train to Tokyo in the waiting room.
     mode: v2_prime
     characters:
       Conan:
@@ -93,7 +93,7 @@ scenes:
   scene2:
     id: scene2
     name: Dangerous Warning
-    scene: Location:Ofumoto Station Hot Spring. Time:7:00 PM. The hot spring is open to everyone while they wait for the trains to resume.
+    info: Location:Ofumoto Station Hot Spring. Time:7:00 PM. The hot spring is open to everyone while they wait for the trains to resume.
     mode: v1
     characters:
       Conan:
@@ -125,7 +125,7 @@ scenes:
       Mouri Kogoro decides not to tell anyone about the note for now and suggests they investigate who wrote it.:
       - Mouri Kogoro:Conan, let’s not tell anyone about the note for now. Let’s first check what everyone was doing earlier. [After thinking for a moment] 
   scene3:
-    scene: Location:Ofumoto Station Waiting Room. Time:8:00 PM. Everyone is still waiting for the trains to resume.
+    info: Location:Ofumoto Station Waiting Room. Time:8:00 PM. Everyone is still waiting for the trains to resume.
     name: Limited Investigation
     mode: v3
     characters:

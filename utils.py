@@ -184,6 +184,7 @@ def sample_script(scene_script, x):
     return _samples.get(x, [])
 
 CACHE_DIR = "cache"
+SAVE_DIR = "script"
 postdix = "" if not ENGLISH_MODE else "_eng"
 PROMPT_DRAMA_V1 = read(f"prompt/prompt_drama_v1{postdix}.md")
 PROMPT_DRAMA_V2 = read(f"prompt/prompt_drama_v2{postdix}.md")

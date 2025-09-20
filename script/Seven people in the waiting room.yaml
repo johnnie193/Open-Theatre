@@ -38,7 +38,7 @@ scenes:
   scene1:
     id: scene1
     name: 暴风雪受困
-    scene: 地点：大麓站候车室
+    info: 地点：大麓站候车室
     mode: v2
     characters:
       柯南:
@@ -90,7 +90,7 @@ scenes:
   scene2:
     id: scene2
     name: 危险的预告
-    scene: 地点：大麓站温泉
+    info: 地点：大麓站温泉
     mode: v1
     characters:
       柯南:
@@ -122,7 +122,7 @@ scenes:
       毛利小五郎决定暂时暂时不把纸条告诉别人，先去找出写纸条的人。:
       - 毛利小五郎：[经过一番思索]柯南，我们暂时不要把纸条的事情告诉别人，先去调查一下其他人之前都在干什么吧。
   scene3:
-    scene: 地点：大麓站候车室
+    info: 地点：大麓站候车室
     name: 有限调查
     mode: v2
     characters:
