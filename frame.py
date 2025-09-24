@@ -664,7 +664,6 @@ class DramaLLM(World):
         self.prompt_v2 = PROMPT_DRAMA_V2
         self.prompt_v2_plus = PROMPT_DRAMA_V2_PLUS
         self.prompt_global_character = PROMPT_GLOBAL_CHARACTER
-        # Reflect prompts
         self.prompt_v1_reflect = PROMPT_DRAMA_V1_REFLECT
         self.prompt_director_reflect = PROMPT_DIRECTOR_REFLECT
         self.mode = current_scene["mode"] if "mode" in current_scene else "v1"

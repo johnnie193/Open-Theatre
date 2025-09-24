@@ -183,9 +183,9 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="v1">v1 - One-for-All</SelectItem>
-                    <SelectItem value="v2">v2 - Director-Actor</SelectItem>
-                    <SelectItem value="v2_plus">v2_plus - Director-multi-Actor</SelectItem>
-                    <SelectItem value="v2_prime">v2_prime - Director-multi-Actor</SelectItem>
+                    <SelectItem value="v2">v2 - Director-Actor(single action)</SelectItem>
+                    <SelectItem value="v2_plus">v2_plus - Director-Actor(multiple actions)</SelectItem>
+                    <SelectItem value="v2_prime">v2_prime - Director-Global-Actor</SelectItem>
                     <SelectItem value="v3">v3 - Hybrid Architecture</SelectItem>
                   </SelectContent>
                 </Select>
@@ -271,6 +271,9 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    小提示：请添加该场景所需的所有角色（包括玩家）。如有需要，请为他们填写对应的角色动机。
+                  </p>
                   <div className="space-y-2">
                     {Object.entries(scene.characters).map(([characterId, motivation]) => (
                       <div key={characterId} className="flex items-center gap-2">

@@ -1,5 +1,5 @@
 import traceback
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
@@ -64,12 +64,13 @@ class InteractRequest(BaseModel):
 
 class Prompt(BaseModel):
     prompt_drama_v1: str
+    prompt_drama_v1_reflect: Optional[str] = Field("")
     prompt_drama_v2: str
     prompt_drama_v2_plus: str
     prompt_character: str
     prompt_character_v2: str
     prompt_global_character: str
-    prompt_global_character: str
+    prompt_director_reflect: Optional[str] = Field("")
 
 class InfoRequest(BaseModel):
     role: Optional[str] = Field(None)
@@ -388,7 +389,7 @@ class DRAMA:
             # Reset current dramallm before initializing a new one
             self.reset() # This sets self.dramallm to None and resets storage
 
-            init_error = self.init(script, storage_mode=data.storageMode if data.storageMode is not None else True)
+            init_error = self.init(script, storage_mode=data.storageMode)
             if init_error:
                 raise Exception(init_error)
             
@@ -727,6 +728,8 @@ async def post_prompt(data: Prompt, dramaworld: DRAMA = Depends(get_dramaworld))
     postix = "_eng" if ENGLISH_MODE else ""
     if hasattr(dramaworld, 'dramallm') and dramaworld.dramallm:
         dramaworld.dramallm.prompt_v1 = data.prompt_drama_v1
+        dramaworld.dramallm.prompt_v1_reflect = data.prompt_drama_v1_reflect or ""
+        dramaworld.dramallm.prompt_director_reflect = data.prompt_director_reflect or ""
         dramaworld.dramallm.prompt_v2 = data.prompt_drama_v2
         dramaworld.dramallm.prompt_v2_plus = data.prompt_drama_v2_plus
         dramaworld.dramallm.prompt_global_character = data.prompt_global_character
@@ -738,11 +741,13 @@ async def post_prompt(data: Prompt, dramaworld: DRAMA = Depends(get_dramaworld))
     # Save prompts to files
     prompt_files = {
         "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
+        "prompt_drama_v1_reflect": f"prompt/prompt_drama_v1_reflect{postix}.md",
         "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
         "prompt_drama_v2_plus": f"prompt/prompt_drama_v2_plus{postix}.md",
         "prompt_character": f"prompt/prompt_character{postix}.md",
         "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md",        
-        "prompt_global_character": f"prompt/prompt_global_character{postix}.md"
+        "prompt_global_character": f"prompt/prompt_global_character{postix}.md",
+        "prompt_director_reflect": f"prompt/prompt_director_reflect{postix}.md"
     }
     
     for key, filename in prompt_files.items():
@@ -765,11 +770,13 @@ async def get_prompt():
     # Define prompt file paths
     prompt_files = {
         "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
+        "prompt_drama_v1_reflect": f"prompt/prompt_drama_v1_reflect{postix}.md",
         "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
         "prompt_drama_v2_plus": f"prompt/prompt_drama_v2_plus{postix}.md",
         "prompt_character": f"prompt/prompt_character{postix}.md",
         "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md",        
-        "prompt_global_character": f"prompt/prompt_global_character{postix}.md"
+        "prompt_global_character": f"prompt/prompt_global_character{postix}.md",
+        "prompt_director_reflect": f"prompt/prompt_director_reflect{postix}.md"
     }
 
     for key, filename in prompt_files.items():
@@ -898,15 +905,20 @@ async def save_model_config(config: dict):
 IMG_DIR = 'assets'
 os.makedirs(IMG_DIR, exist_ok=True)  # Ensure the directory exists
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...)):
-    name = file.filename
-    # No need to add '.jpg' if it's already part of the filename or not guaranteed to be jpg
-    # if you want to force .jpg, you might need to handle other extensions
-    # name += '.jpg' # Only add if you explicitly want to append .jpg
-    if not file or not name:
+async def upload(file: UploadFile = File(...), name: Optional[str] = Form(None)):
+    # 优先使用前端传入的角色名作为文件名，统一存为 .jpg 以便前端直接按 /assets/{name}.jpg 访问
+    if name:
+        save_name = f"{name}.jpg"
+    else:
+        save_name = file.filename or "uploaded.jpg"
+        # 规范化为 .jpg 结尾
+        if not save_name.lower().endswith(".jpg"):
+            save_name = os.path.splitext(save_name)[0] + ".jpg"
+
+    if not file or not save_name:
         raise HTTPException(status_code=400, detail='Invalid file or name')
     
-    filepath = os.path.join(IMG_DIR, name)
+    filepath = os.path.join(IMG_DIR, save_name)
     try:
         # FastAPI's UploadFile has an async write method
         with open(filepath, "wb") as buffer:

@@ -33,6 +33,9 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
   const [selectedCharacterName, setSelectedCharacterName] = useState<string>('');
   const [availableCharacters, setAvailableCharacters] = useState<string[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [avatarRefreshKey, setAvatarRefreshKey] = useState<number>(Date.now());
+  const [pendingUploadCharacter, setPendingUploadCharacter] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // 初始化
   useEffect(() => {
@@ -50,6 +53,24 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
       loadCharacterInfo(selectedCharacterName);
     }
   }, [selectedCharacterName]);
+
+  // 切换到“系统反馈”或“记录”标签时自动刷新
+  useEffect(() => {
+    if (activeTab === 'system') {
+      loadSystemFeedbacks();
+    } else if (activeTab === 'records') {
+      loadWorldRecords();
+    }
+  }, [activeTab]);
+
+  // 当 gameState 变化且当前在“系统反馈/记录”时自动刷新
+  useEffect(() => {
+    if (activeTab === 'system') {
+      loadSystemFeedbacks();
+    } else if (activeTab === 'records') {
+      loadWorldRecords();
+    }
+  }, [gameState]);
 
 
   // 加载世界记录
@@ -121,6 +142,38 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
     }
   };
 
+  // 处理头像双击：打开文件选择
+  const handleAvatarDoubleClick = (charName: string) => {
+    setPendingUploadCharacter(charName);
+    fileInputRef.current?.click();
+  };
+
+  // 处理文件选择并上传头像
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !pendingUploadCharacter) return;
+    try {
+      const resp = await apiService.uploadCharacterAvatar(file, pendingUploadCharacter);
+      if (resp.success) {
+        // 刷新右侧角色信息
+        if (selectedCharacterName === pendingUploadCharacter) {
+          await loadCharacterInfo(pendingUploadCharacter);
+        }
+        // 强制头像缓存刷新
+        setAvatarRefreshKey(Date.now());
+        setMessage({ type: 'success', text: '头像上传成功！' });
+      } else {
+        setMessage({ type: 'error', text: resp.error || '头像上传失败' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: '头像上传失败，请重试' });
+    } finally {
+      // 清空选择，避免同名文件无法再次触发change
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setPendingUploadCharacter(null);
+    }
+  };
+
   // 导出记录
   const handleExportRecords = async () => {
     try {
@@ -139,35 +192,35 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
     }
   };
 
-  // 格式化脚本内容
-  const formatScriptContent = (data: any) => {
-    if (!data) return '暂无脚本信息';
+  // 格式化脚本内容：根据 gameState.scene_cnt 与 gameState.nc 标注当前场景与完成的剧情链
+  const formatScriptContent = (scriptData: any, meta?: { scene_cnt?: number; nc?: Array<[string, boolean]> }) => {
+    if (!scriptData) return '暂无脚本信息';
     
     let content = `<div class="space-y-2">`;
-    content += `<div><strong>脚本名称：</strong> ${data.id || '未命名'}</div>`;
-    content += `<div><strong>玩家名称：</strong> ${data.background?.player || '未设置'}</div>`;
+    content += `<div><strong>脚本名称：</strong> ${scriptData.id || '未命名'}</div>`;
+    content += `<div><strong>玩家名称：</strong> ${scriptData.background?.player || '未设置'}</div>`;
     content += `<div><strong>角色及其档案：</strong></div>`;
     
-    if (data.background?.characters) {
-      Object.entries(data.background.characters).forEach(([name, profile]) => {
+    if (scriptData.background?.characters) {
+      Object.entries(scriptData.background.characters).forEach(([name, profile]) => {
         content += `<div class="ml-4">${name}: ${profile || '无档案'}</div>`;
       });
     }
     
-    content += `<div><strong>背景叙述：</strong> ${data.background?.narrative || '无背景叙述'}</div>`;
+    content += `<div><strong>背景叙述：</strong> ${scriptData.background?.narrative || '无背景叙述'}</div>`;
     content += `<div><strong>角色初始记忆：</strong></div>`;
     
-    if (data.background?.context) {
-      Object.entries(data.background.context).forEach(([name, memory]) => {
+    if (scriptData.background?.context) {
+      Object.entries(scriptData.background.context).forEach(([name, memory]) => {
         content += `<div class="ml-4">${name}: ${memory || '无记忆'}</div>`;
       });
     } else {
       content += `<div class="ml-4">无初始记忆</div>`;
     }
     
-    if (data.scenes) {
-      Object.entries(data.scenes).forEach(([sceneKey, scene]: [string, any]) => {
-        const isCurrentScene = sceneKey === `scene${data.scene_cnt}`;
+    if (scriptData.scenes) {
+      Object.entries(scriptData.scenes).forEach(([sceneKey, scene]: [string, any]) => {
+        const isCurrentScene = !!meta?.scene_cnt && sceneKey === `scene${meta.scene_cnt}`;
         const sceneClass = isCurrentScene ? 'bg-yellow-100 p-2 rounded font-bold' : '';
         
         content += `<div class="mt-4 ${sceneClass}">`;
@@ -186,7 +239,7 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
         content += `<div class="ml-4"><strong>剧情链：</strong></div>`;
         if (scene.chain && scene.chain.length > 0) {
           scene.chain.forEach((item: string) => {
-            const isCompleted = data.nc?.some(([entry, status]: [string, boolean]) => entry === item && status);
+            const isCompleted = meta?.nc?.some(([entry, status]: [string, boolean]) => entry === item && status);
             const itemClass = isCompleted ? 'text-green-600 font-bold italic' : 'text-gray-500 italic';
             content += `<div class="ml-8 ${itemClass}">${item}</div>`;
           });
@@ -260,7 +313,7 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
                   <div 
                     className="text-sm space-y-2"
                     dangerouslySetInnerHTML={{ 
-                      __html: formatScriptContent(scriptInfo || gameState.script) 
+                      __html: formatScriptContent(gameState.script, { scene_cnt: gameState.scene_cnt, nc: gameState.nc }) 
                     }}
                   />
                 )}
@@ -294,9 +347,13 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
                         onClick={() => setSelectedCharacterName(char)}
                       >
                         <img
-                          src={`/assets/${char}.jpg`}
+                          src={`/assets/${char}.jpg?${avatarRefreshKey}`}
                           alt={char}
                           className="w-8 h-8 rounded-full object-cover"
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            handleAvatarDoubleClick(char);
+                          }}
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = '/assets/default_agent.jpg';
                           }}
@@ -391,6 +448,14 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
                   </ScrollArea>
                 </div>
               </div>
+            {/* 隐藏文件输入用于上传头像 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarFileChange}
+            />
             </CardContent>
           </Card>
         </TabsContent>

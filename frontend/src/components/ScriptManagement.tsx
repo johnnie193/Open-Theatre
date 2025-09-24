@@ -137,14 +137,18 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
   // 添加场景角色动机
   const addSceneCharacter = (sceneIndex: number) => {
     const scene = scenes[sceneIndex];
-    const characterNames = characters.map(c => c.id).filter(name => name);
-    if (characterNames.length === 0) return;
+    const allCharacterNames = characters.map(c => c.id).filter(name => !!name);
+    if (allCharacterNames.length === 0) return;
 
-    const newCharacter = characterNames[0];
+    // 选择一个尚未加入该场景的角色，避免覆盖
+    const existingNames = new Set(Object.keys(scene.characters || {}));
+    const candidate = allCharacterNames.find(name => !existingNames.has(name));
+    if (!candidate) return; // 所有可选角色都已添加时不再新增
+
     const updated = [...scenes];
     updated[sceneIndex] = {
       ...scene,
-      characters: { ...scene.characters, [newCharacter]: '' }
+      characters: { ...(scene.characters || {}), [candidate]: '' }
     };
     setScenes(updated);
   };
@@ -378,6 +382,9 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
+              <p className="text-xs text-muted-foreground mb-3">
+                小提示：请在此处添加本剧本的所有角色，并确保包含玩家名称。
+              </p>
               <ScrollArea className="h-64">
                 <div className="space-y-4">
                   {characters.map((character, index) => (
@@ -484,9 +491,9 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="v1">v1 - One-for-All</SelectItem>
-                              <SelectItem value="v2">v2 - Director-Actor</SelectItem>
-                              <SelectItem value="v2_plus">v2_plus - Multi-Actor Director</SelectItem>
-                              <SelectItem value="v2_prime">v2_prime - Director-multi-Actor</SelectItem>
+                              <SelectItem value="v2">v2 - Director-Actor(single action)</SelectItem>
+                              <SelectItem value="v2_plus">v2_plus - Director-Actor(multiple actions)</SelectItem>
+                              <SelectItem value="v2_prime">v2_prime - Director-Global-Actor</SelectItem>
                               <SelectItem value="v3">v3 - Hybrid Architecture</SelectItem>
                             </SelectContent>
                           </Select>
@@ -516,6 +523,9 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                             添加角色
                           </Button>
                         </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          小提示：请为该场景补充所有需要的角色（含玩家），并在需要时为他们填写角色动机。
+                        </p>
                         <div className="space-y-2">
                           {Object.entries(scene.characters).map(([charName, motivation]) => (
                             <div key={charName} className="flex items-center gap-2">

@@ -64,11 +64,13 @@ export interface InteractionRequest {
 
 export interface PromptSettings {
   prompt_drama_v1: string;
+  prompt_drama_v1_reflect?: string;
   prompt_drama_v2: string;
   prompt_drama_v2_plus: string;
   prompt_character: string;
   prompt_character_v2: string;
   prompt_global_character: string;
+  prompt_director_reflect?: string;
 }
 
 class ApiService {
@@ -293,7 +295,7 @@ class ApiService {
     formData.append('name', characterName);
     
     try {
-      const response = await fetch(`${this.baseUrl}/upload`, {
+      const response = await fetch(`${this.baseUrl}/api/upload`, {
         method: 'POST',
         body: formData,
       });

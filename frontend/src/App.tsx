@@ -366,6 +366,14 @@ export default function App() {
       {/* 设置面板 */}
       {settingsOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          {/* 外侧右上角关闭按钮，便于点击 */}
+          <button
+            onClick={() => setSettingsOpen(false)}
+            aria-label="关闭设置"
+            className="absolute top-4 right-4 p-3 rounded-full bg-white/80 hover:bg-white shadow-lg border border-white/60 backdrop-blur-sm transition-colors dark:bg-gray-800/80 dark:hover:bg-gray-800"
+          >
+            <X className="w-5 h-5" />
+          </button>
           <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden">
             <CardContent className="p-0">
               <div className="flex h-[80vh]">

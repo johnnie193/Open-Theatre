@@ -20,11 +20,13 @@ import { apiService, PromptSettings } from '../services/api';
 export const PromptManagement: React.FC = () => {
   const [prompts, setPrompts] = useState<PromptSettings>({
     prompt_drama_v1: '',
+    prompt_drama_v1_reflect: '',
     prompt_drama_v2: '',
     prompt_drama_v2_plus: '',
     prompt_character: '',
     prompt_character_v2: '',
-    prompt_global_character: ''
+    prompt_global_character: '',
+    prompt_director_reflect: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -84,15 +86,22 @@ export const PromptManagement: React.FC = () => {
       color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
     },
     {
+      key: 'prompt_drama_v1_reflect' as keyof PromptSettings,
+      title: 'v1 - Reflect',
+      description: 'v1 反思提示词',
+      icon: <Brain className="w-5 h-5" />,
+      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+    },
+    {
       key: 'prompt_drama_v2' as keyof PromptSettings,
-      title: 'v2 - Director-Actor',
+      title: 'v2 - Director-Actor(single action)',
       description: '导演-演员模式',
       icon: <Users className="w-5 h-5" />,
       color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
     },
     {
       key: 'prompt_drama_v2_plus' as keyof PromptSettings,
-      title: 'v2_plus - Multi-Actor Director',
+      title: 'v2_plus - Director-Actor(multiple actions)',
       description: '多角色导演模式',
       icon: <Zap className="w-5 h-5" />,
       color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
@@ -113,8 +122,16 @@ export const PromptManagement: React.FC = () => {
     },
     {
       key: 'prompt_global_character' as keyof PromptSettings,
-      title: 'Global Character - Prime',
+      title: 'Global Character - v2 Prime',
       description: '全局角色主要模式',
+      icon: <Settings className="w-5 h-5" />,
+      color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
+    }
+    ,
+    {
+      key: 'prompt_director_reflect' as keyof PromptSettings,
+      title: 'Director Reflect',
+      description: '导演反思提示词',
       icon: <Settings className="w-5 h-5" />,
       color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
     }
