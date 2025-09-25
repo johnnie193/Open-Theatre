@@ -1,5 +1,5 @@
 import traceback
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
@@ -64,12 +64,13 @@ class InteractRequest(BaseModel):
 
 class Prompt(BaseModel):
     prompt_drama_v1: str
+    prompt_drama_v1_reflect: Optional[str] = Field("")
     prompt_drama_v2: str
     prompt_drama_v2_plus: str
     prompt_character: str
     prompt_character_v2: str
     prompt_global_character: str
-    prompt_global_character: str
+    prompt_director_reflect: Optional[str] = Field("")
 
 class InfoRequest(BaseModel):
     role: Optional[str] = Field(None)
@@ -77,12 +78,17 @@ class InfoRequest(BaseModel):
 
 class DRAMA:
     def __init__(self):
-        self.storage = MemoryStorage()
         self.dramallm: Optional[DramaLLM] = None # Initialize as None
         self.cache = 'cache/'
+        self.script_dir = 'script/'
+        if STORAGE_MODE:
+            self.storage = MemoryStorage()
+        else:
+            self.storage = None
 
     def init(self, script, storage_mode: bool = STORAGE_MODE):
-        self.storage.reset() # Reset the storage for a clean start
+        if storage_mode:
+            self.storage.reset() # Reset the storage for a clean start
         self.dramallm = DramaLLM(script=script, storage_mode=storage_mode, storager=self.storage)
         try:
             # Ensure player exists before updating view
@@ -122,6 +128,11 @@ class DRAMA:
             elif self.dramallm.mode == "v2_prime":
                 self.dramallm.v2_prime_react()
 
+            reflect_interval = int(os.getenv("REFLECT_INTERVAL", "5"))
+            reflect = False
+            if (self.dramallm.timestamp + 1) % reflect_interval == 0:
+                reflect = True
+
             # Iterate through characters in the current scene
             current_scene_key = "scene" + str(self.dramallm.scene_cnt)
             if current_scene_key not in self.dramallm.scenes:
@@ -151,6 +162,9 @@ class DRAMA:
                     pass
                 action.append(decision)
                 logger.info(f"successfully add action: {action}")
+
+            if reflect:
+                self.dramallm.reflect()
 
             if self.dramallm.ready_for_next_scene:
                 self.dramallm.next_scene()
@@ -368,7 +382,7 @@ class DRAMA:
                 for sid, scenes_req in data.scenes.items():
                     config = {
                         "name": scenes_req.sceneName,
-                        "scene": scenes_req.sceneInfo,
+                        "info": scenes_req.sceneInfo,
                         "chain": scenes_req.chains,
                         "stream": scenes_req.streams if scenes_req.streams is not None else {},
                         "characters": scenes_req.characters,
@@ -379,7 +393,7 @@ class DRAMA:
             # Reset current dramallm before initializing a new one
             self.reset() # This sets self.dramallm to None and resets storage
 
-            init_error = self.init(script, storage_mode=data.storageMode if data.storageMode is not None else True)
+            init_error = self.init(script, storage_mode=data.storageMode)
             if init_error:
                 raise Exception(init_error)
             
@@ -468,36 +482,61 @@ async def load_script(data: LoadRequest, dramaworld: DRAMA = Depends(get_dramawo
     """加载剧本"""
     logger.info(f"Loading script: {data.script_name}, StorageMode: {data.storageMode}")
     postix = "_eng" if ENGLISH_MODE else ""    
+    print(f"Loading script: {data.script_name}, StorageMode: {data.storageMode}")
+    print(f"Script directory: {dramaworld.script_dir}")
     try:
-        storageMode = data.storageMode if data.storageMode is not None else True
+        # storageMode = data.storageMode if data.storageMode is not None else True
+        storageMode = STORAGE_MODE
+        
+        # 处理预定义的脚本
         if data.script_name == 'load-script-hp':
-            with open(f"script/Harry Potter and the Philosopher's Stone{postix}.yaml", encoding = 'utf-8') as file:
+            with open(f"{dramaworld.script_dir}/Harry Potter and the Philosopher's Stone{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
             dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         elif data.script_name == 'load-script-station':
-            with open(f"script/Seven people in the waiting room{postix}.yaml", encoding = 'utf-8') as file:
+            with open(f"{dramaworld.script_dir}/Seven people in the waiting room{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
             dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         elif data.script_name == 'load-script-romeo':
-            with open(f"script/Romeo and Juliet{postix}.yaml", encoding = 'utf-8') as file:
+            with open(f"{dramaworld.script_dir}/Romeo and Juliet{postix}.yaml", encoding = 'utf-8') as file:
                 script = yaml.safe_load(file)
             dramaworld.init(script, storage_mode=storageMode)
             return dramaworld.state
         else:
-            match = re.match(r"load-script-(.*)", data.script_name)
-            if match:
-                script_id = match.group(1)
-                with open(f'{dramaworld.cache}/{script_id}.yml', encoding='utf-8') as file:
-                    script = yaml.safe_load(file)
-                dramaworld.init(script["script"], storage_mode=storageMode)
+            # 处理保存的脚本文件（前端现在直接发送文件名）
+            script_filename = data.script_name
+            script_path = f'{dramaworld.script_dir}/{script_filename}'
+            
+            # 检查文件是否存在
+            if not os.path.exists(script_path):
+                raise HTTPException(status_code=404, detail=f"Script file not found: {script_filename}")
+            
+            with open(script_path, encoding='utf-8') as file:
+                script_data = yaml.safe_load(file)
+            
+            # 如果文件包含script字段，使用script字段；否则直接使用整个文件内容
+            if isinstance(script_data, dict) and 'script' in script_data:
+                script = script_data['script']
+            else:
+                script = script_data
+                
+            dramaworld.init(script, storage_mode=storageMode)
+            
+            # 如果是保存的脚本，尝试加载dramallm状态
+            if isinstance(script_data, dict) and 'script' in script_data:
+                # 从文件名提取脚本ID（去掉扩展名）
+                script_id = os.path.splitext(script_filename)[0]
                 dramaworld.dramallm.load(script_id)
-                return dramaworld.state
-        raise HTTPException(status_code=400, detail="Invalid script name")
+            
+            return dramaworld.state
+            
+    except HTTPException as e:
+        raise e
     except Exception as e:
         logger.error(f"Error loading script: {str(e)}")
-        logger.error(traceback.print_exc(e))
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/save")
@@ -505,13 +544,58 @@ async def save(dramaworld: DRAMA = Depends(get_dramaworld)):
     if hasattr(dramaworld, 'dramallm') and dramaworld.dramallm:
         try:
             save_id = dramaworld.dramallm.save()
-            return {"info": f"Saved in {dramaworld.cache} as {save_id} successfully!", "save_id": save_id}
+            return {"info": f"Saved in {dramaworld.script_dir} as {save_id} successfully!", "save_id": save_id}
         except Exception as e:
             logger.error(f"Error saving script: {e}")
             logger.error(traceback.format_exc())
             return {"error": f"Error message: {e}"}
     else:
         return {"error": "Save config first to create your world, then save the script file!"}
+
+@app.get("/api/saved-scripts")
+async def get_saved_scripts(dramaworld: DRAMA = Depends(get_dramaworld)):
+    """获取已保存的脚本列表"""
+    try:
+        import os
+        import glob
+        from datetime import datetime
+        
+        scripts = []
+        
+        # 检查script目录
+        script_dir = dramaworld.script_dir
+        if os.path.exists(script_dir):
+            yml_files = glob.glob(os.path.join(script_dir, "*.yml"))
+            yaml_files = glob.glob(os.path.join(script_dir, "*.yaml"))
+            all_files = yml_files + yaml_files
+            
+            for file_path in all_files:
+                filename = os.path.basename(file_path)
+                    
+                # 获取文件修改时间
+                mtime = os.path.getmtime(file_path)
+                timestamp = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                
+                # 从文件名提取脚本名称（去掉时间戳部分）
+                name = filename.replace('.yml', '').replace('.yaml', '')
+                # 去掉时间戳部分（格式：_MMDD_HHMMSS）
+                import re
+                name = re.sub(r'_\d{4}_\d{6}$', '', name)
+                
+                scripts.append({
+                    "id": filename,
+                    "name": name,
+                    "timestamp": timestamp,
+                    "filename": filename
+                })
+        
+
+        scripts.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        return {"scripts": scripts}
+    except Exception as e:
+        logger.error(f"Error getting saved scripts: {e}")
+        return {"error": f"Failed to get saved scripts: {str(e)}"}
 
 @app.post("/api/info")
 async def get_info(data: InfoRequest, dramaworld: DRAMA = Depends(get_dramaworld)):
@@ -572,7 +656,7 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
     if not hasattr(dramaworld, 'dramallm') or dramaworld.dramallm is None:
         return {"error": "DramaLLM not initialized. Please load a script first."}
 
-    if data.type:
+    if data.type and data.type != "operation":
         input_action = {"x": data.type}
         act = []
         if data.type == "-stay":
@@ -612,7 +696,10 @@ async def interact(data: InteractRequest, dramaworld: DRAMA = Depends(get_dramaw
             return dramaworld.state
         elif data.interact == "withdraw":
             cnt = dramaworld.dramallm.withdraw()
-            return {"state": dramaworld.dramallm.state, "cnt": cnt} 
+            return {"state": dramaworld.dramallm.state, "cnt": cnt}
+        elif data.interact == "reflect":
+            dramaworld.dramallm.reflect()
+            return {"state": dramaworld.dramallm.state, "message": "reflect done"} 
     
     return {"error": "Invalid interaction request."} # Default error for unhandled cases
 
@@ -646,6 +733,8 @@ async def post_prompt(data: Prompt, dramaworld: DRAMA = Depends(get_dramaworld))
     postix = "_eng" if ENGLISH_MODE else ""
     if hasattr(dramaworld, 'dramallm') and dramaworld.dramallm:
         dramaworld.dramallm.prompt_v1 = data.prompt_drama_v1
+        dramaworld.dramallm.prompt_v1_reflect = data.prompt_drama_v1_reflect or ""
+        dramaworld.dramallm.prompt_director_reflect = data.prompt_director_reflect or ""
         dramaworld.dramallm.prompt_v2 = data.prompt_drama_v2
         dramaworld.dramallm.prompt_v2_plus = data.prompt_drama_v2_plus
         dramaworld.dramallm.prompt_global_character = data.prompt_global_character
@@ -657,11 +746,13 @@ async def post_prompt(data: Prompt, dramaworld: DRAMA = Depends(get_dramaworld))
     # Save prompts to files
     prompt_files = {
         "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
+        "prompt_drama_v1_reflect": f"prompt/prompt_drama_v1_reflect{postix}.md",
         "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
         "prompt_drama_v2_plus": f"prompt/prompt_drama_v2_plus{postix}.md",
         "prompt_character": f"prompt/prompt_character{postix}.md",
         "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md",        
-        "prompt_global_character": f"prompt/prompt_global_character{postix}.md"
+        "prompt_global_character": f"prompt/prompt_global_character{postix}.md",
+        "prompt_director_reflect": f"prompt/prompt_director_reflect{postix}.md"
     }
     
     for key, filename in prompt_files.items():
@@ -684,11 +775,13 @@ async def get_prompt():
     # Define prompt file paths
     prompt_files = {
         "prompt_drama_v1": f"prompt/prompt_drama_v1{postix}.md",
+        "prompt_drama_v1_reflect": f"prompt/prompt_drama_v1_reflect{postix}.md",
         "prompt_drama_v2": f"prompt/prompt_drama_v2{postix}.md",
         "prompt_drama_v2_plus": f"prompt/prompt_drama_v2_plus{postix}.md",
         "prompt_character": f"prompt/prompt_character{postix}.md",
         "prompt_character_v2": f"prompt/prompt_character_v2{postix}.md",        
-        "prompt_global_character": f"prompt/prompt_global_character{postix}.md"
+        "prompt_global_character": f"prompt/prompt_global_character{postix}.md",
+        "prompt_director_reflect": f"prompt/prompt_director_reflect{postix}.md"
     }
 
     for key, filename in prompt_files.items():
@@ -700,18 +793,137 @@ async def get_prompt():
             logger.warning(f"Prompt file not found: {filename}")
     return prompts
 
-IMG_DIR = 'assets'
+@app.get("/api/model-config")
+async def get_model_config():
+    """获取模型配置"""
+    try:
+        config = {
+            "provider": os.getenv("LLM_PROVIDER", "azure_openai"),
+            "azure_openai": {
+                "api_key": os.getenv("AZURE_API_KEY", ""),
+                "api_version": os.getenv("AZURE_API_VERSION", "2024-02-15-preview"),
+                "endpoint": os.getenv("AZURE_ENDPOINT", ""),
+                "deployment": os.getenv("AZURE_DEPLOYMENT", "gpt-4o")
+            },
+            "openai": {
+                "api_key": os.getenv("OPENAI_API_KEY", ""),
+                "base_url": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+                "model": os.getenv("OPENAI_MODEL", "gpt-4o")
+            },
+            "deepseek": {
+                "api_key": os.getenv("DEEPSEEK_API_KEY", ""),
+                "api_url": os.getenv("DEEPSEEK_API_URL", "https://api.deepseek.com"),
+                "model": os.getenv("DEEPSEEK_MODEL", "DeepSeek-V3")
+            }
+        }
+        return config
+    except Exception as e:
+        logger.error(f"Error getting model config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/model-config")
+async def save_model_config(config: dict):
+    """保存模型配置"""
+    try:
+        import json
+        
+        # 验证配置
+        if "provider" not in config:
+            raise HTTPException(status_code=400, detail="Provider is required")
+        
+        provider = config["provider"]
+        if provider not in ["azure_openai", "openai", "deepseek"]:
+            raise HTTPException(status_code=400, detail="Invalid provider")
+        
+        # 更新环境变量
+        env_updates = {}
+        
+        if provider == "azure_openai":
+            azure_config = config.get("azure_openai", {})
+            env_updates.update({
+                "AZURE_API_KEY": azure_config.get("api_key", ""),
+                "AZURE_API_VERSION": azure_config.get("api_version", "2024-02-15-preview"),
+                "AZURE_ENDPOINT": azure_config.get("endpoint", ""),
+                "AZURE_DEPLOYMENT": azure_config.get("deployment", "gpt-4o")
+            })
+        elif provider == "openai":
+            openai_config = config.get("openai", {})
+            env_updates.update({
+                "OPENAI_API_KEY": openai_config.get("api_key", ""),
+                "OPENAI_BASE_URL": openai_config.get("base_url", "https://api.openai.com/v1"),
+                "OPENAI_MODEL": openai_config.get("model", "gpt-4o")
+            })
+        elif provider == "deepseek":
+            deepseek_config = config.get("deepseek", {})
+            env_updates.update({
+                "DEEPSEEK_API_KEY": deepseek_config.get("api_key", ""),
+                "DEEPSEEK_API_URL": deepseek_config.get("api_url", "https://api.deepseek.com"),
+                "DEEPSEEK_MODEL": deepseek_config.get("model", "DeepSeek-V3")
+            })
+        
+        # 更新LLM_PROVIDER
+        env_updates["LLM_PROVIDER"] = provider
+        
+        # 保存到.env文件
+        env_file_path = ".env"
+        env_lines = []
+        
+        # 读取现有.env文件
+        if os.path.exists(env_file_path):
+            with open(env_file_path, 'r', encoding='utf-8') as f:
+                env_lines = f.readlines()
+        
+        # 更新或添加配置项
+        updated_keys = set()
+        for i, line in enumerate(env_lines):
+            if '=' in line:
+                key = line.split('=')[0].strip()
+                if key in env_updates:
+                    env_lines[i] = f"{key}={env_updates[key]}\n"
+                    updated_keys.add(key)
+        
+        # 添加新的配置项
+        for key, value in env_updates.items():
+            if key not in updated_keys:
+                env_lines.append(f"{key}={value}\n")
+        
+        # 写入.env文件
+        with open(env_file_path, 'w', encoding='utf-8') as f:
+            f.writelines(env_lines)
+        
+        # 重新加载环境变量
+        load_dotenv(override=True)
+        
+        # 重新初始化LLM服务
+        global _global_llm_service
+        _global_llm_service = None
+        init_llm_service(provider)
+        
+        return {"message": "Model configuration saved successfully"}
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error saving model config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+IMG_DIR = 'frontend/public/assets'
 os.makedirs(IMG_DIR, exist_ok=True)  # Ensure the directory exists
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...)):
-    name = file.filename
-    # No need to add '.jpg' if it's already part of the filename or not guaranteed to be jpg
-    # if you want to force .jpg, you might need to handle other extensions
-    # name += '.jpg' # Only add if you explicitly want to append .jpg
-    if not file or not name:
+async def upload(file: UploadFile = File(...), name: Optional[str] = Form(None)):
+    # 优先使用前端传入的角色名作为文件名，统一存为 .jpg 以便前端直接按 /assets/{name}.jpg 访问
+    if name:
+        save_name = f"{name}.jpg"
+    else:
+        save_name = file.filename or "uploaded.jpg"
+        # 规范化为 .jpg 结尾
+        if not save_name.lower().endswith(".jpg"):
+            save_name = os.path.splitext(save_name)[0] + ".jpg"
+
+    if not file or not save_name:
         raise HTTPException(status_code=400, detail='Invalid file or name')
     
-    filepath = os.path.join(IMG_DIR, name)
+    filepath = os.path.join(IMG_DIR, save_name)
     try:
         # FastAPI's UploadFile has an async write method
         with open(filepath, "wb") as buffer:

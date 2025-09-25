@@ -4,6 +4,8 @@ import logging
 
 # --- Setup Logging ---
 logger = logging.getLogger(__name__)
+SCENE_TURN_ALPHA = 0.25
+DIALOGUE_TRUN_BETA = 0.005 
 
 # --- Specific Sub-Storage Implementations ---
 class GlobalMemorySubStorage(BaseMemorySubStorage):
@@ -65,7 +67,7 @@ class EventMemorySubStorage(BaseMemorySubStorage):
                     scene_diff = abs(current_scene_id - chunk.scene_id)
                 except:
                     scene_diff = int(current_scene_id.split("scene")[1]) - int(chunk.scene_id.split("scene")[1])                
-                inter_scene_recency_weight = 1.0 / (1 + 0.25 * scene_diff)
+                inter_scene_recency_weight = 1.0 / (1 + SCENE_TURN_ALPHA * scene_diff)
                 final_score *= inter_scene_recency_weight
                 logger.info(f"  [EventMemorySubStorage] Inter-scene Recency (diff {scene_diff}): {inter_scene_recency_weight:.2f} -> Score: {final_score:.4f}")
             
@@ -74,8 +76,7 @@ class EventMemorySubStorage(BaseMemorySubStorage):
                (chunk.layer == "conversation" or chunk.layer.startswith("summary_conversation")): # Also consider summary conversation as related to recency
                 dialogue_turns_ago = self.get_dialogue_turns_ago(current_scene_id, chunk.id)
                 if dialogue_turns_ago > 0: 
-                    K_dialogue_turn_recency = 0.005 
-                    intra_scene_dialogue_weight = 1.0 / (1 + K_dialogue_turn_recency * dialogue_turns_ago)
+                    intra_scene_dialogue_weight = 1.0 / (1 + DIALOGUE_TRUN_BETA * dialogue_turns_ago)
                     final_score *= max(0.2, intra_scene_dialogue_weight) 
                     logger.info(f"  [EventMemorySubStorage] Intra-Scene Recency (Turns ago: {dialogue_turns_ago}): {intra_scene_dialogue_weight:.4f} -> Score: {final_score:.4f}")
             
@@ -109,7 +110,7 @@ class SummaryMemorySubStorage(BaseMemorySubStorage):
                     scene_diff = abs(current_scene_id - chunk.scene_id)
                 except:
                     scene_diff = int(current_scene_id.split("scene")[1]) - int(chunk.scene_id.split("scene")[1])                
-                inter_scene_recency_weight = 1.0 / (1 + 0.25 * scene_diff)
+                inter_scene_recency_weight = 1.0 / (1 + SCENE_TURN_ALPHA * scene_diff)
                 final_score *= inter_scene_recency_weight
                 logger.info(f"  [SummaryMemorySubStorage] Inter-scene Recency (diff {scene_diff}): {inter_scene_recency_weight:.2f} -> Score: {final_score:.4f}")
             

@@ -12,7 +12,7 @@ background:
 scenes:
   scene1:
     name: Midnight Scheme
-    scene: Location:Gryffindor Common Room. Time:10:00 PM. The common room is pitch dark. Perhaps everyone has gone to bed, or maybe some are still awake. The atmosphere is tense.
+    info: Location:Gryffindor Common Room. Time:10:00 PM. The common room is pitch dark. Perhaps everyone has gone to bed, or maybe some are still awake. The atmosphere is tense.
     mode: v1
     characters:
       Harry: Planning an urgent mission with Hermione and Ron, Harry doesn't hesitate to join despite the high risks.
@@ -46,7 +46,7 @@ scenes:
       - Ron:(nervously) Is Neville okay? We really can’t waste any more time.
   scene2:
     name: Exploring the Chamber
-    scene: Location:The Chamber in the Castle. Time:10:30 PM. The three-headed dog is lying in the center of the chamber, snoring deeply. Its beautiful and melodic snores echo through the room. Items in the scene include a harp, the three-headed dog, premium dog food, and a broken scarf. The atmosphere is mysterious and tense.
+    info: Location:The Chamber in the Castle. Time:10:30 PM. The three-headed dog is lying in the center of the chamber, snoring deeply. Its beautiful and melodic snores echo through the room. Items in the scene include a harp, the three-headed dog, premium dog food, and a broken scarf. The atmosphere is mysterious and tense.
     mode: v1
     characters:
       Harry: Determined and calm, Harry is ready to make key decisions to ensure the success of their mission.
@@ -83,7 +83,7 @@ scenes:
       - Ron:Be careful not to make any noise!
   scene3:
     name: Entering the Abyss
-    scene: Location:The dark hole beneath the castle's chamber. Time:10:40 PM. As you jump through the trapdoor, you are faced with a deep, bottomless abyss. The air is cold and damp, with almost no light. You can hear the sound of water dripping echoing through the empty space. Everything is eerily quiet, except for the sound of your breathing and hurried footsteps. The atmosphere is tense and oppressive, as though an unknown danger is lurking.
+    info: Location:The dark hole beneath the castle's chamber. Time:10:40 PM. As you jump through the trapdoor, you are faced with a deep, bottomless abyss. The air is cold and damp, with almost no light. You can hear the sound of water dripping echoing through the empty space. Everything is eerily quiet, except for the sound of your breathing and hurried footsteps. The atmosphere is tense and oppressive, as though an unknown danger is lurking.
     characters:
       Harry: As a brave Gryffindor student, Harry’s emotions are mixed, but he knows that moving forward is the only way to uncover the truth. He remains calm, ready to face the challenges ahead.
       Hermione: Hermione’s logic and intelligence are vital now. Despite the dark hole, she analyzes the surroundings, searching for any possible clues.

@@ -10,6 +10,7 @@
 
 *Code repository for the paper "OPEN-THEATRE: An Open-Source Toolkit for LLM-based Interactive Drama"*
 
+[📄 Paper (arXiv)](https://arxiv.org/abs/2509.16713)
 [🎬 Demo Video](https://www.youtube.com/watch?v=iN1Q3z24-LY) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture)
 
 </div>
@@ -42,8 +43,9 @@ Our toolkit supports four distinct AI architectures, each optimized for differen
 | Architecture | Mode | Description | Best For |
 |-------------|------|-------------|----------|
 | 🎯 **One-for-All** | `v1` | Single LLM manages all characters | Simple scenarios, consistent tone |
-| 🎬 **Director-Actor** | `v2_plus` | Separate director and character LLMs | Complex multi-character scenes |
-| 🌐 **Director-Global-Actor** | `v2_prime` | Global director with specialized actors | Large-scale narratives |
+| 🎬 **Director-Actor（one action per round）** | `v2` | Separate director and character LLMs | Complex multi-character scenes |
+| 🎬 **Director-Actor (allow multiple actions per round)** | `v2_plus` | Separate director and character LLMs | Complex multi-character scenes |
+| 🌐 **Director-Global-Actor** | `v2_prime` | Director with one global actor LLM | Large-scale narratives |
 
 ### 🧠 Memory System Architecture
 
@@ -139,7 +141,7 @@ DEEPSEEK_API_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=DeepSeek-V3
 
 # System Configuration
-ENGLISH_MODE=true #Chinese mode if false
+ENGLISH_MODE=true #Chinese mode if false (only for prompt, ui is all in Chinese now)
 STORAGE_MODE=true #whether to start with memory system
 ```
 

@@ -15,12 +15,16 @@ from models import get_llm_service
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
 STORAGE_MODE = bool(os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"])
+RECENT_MEMORY_LEN = int(os.getenv("RECENT_MEMORY_LEN") or 6)
+GLOBAL_RECENT_MEMORY_LEN = int(os.getenv("GLOBAL_RECENT_MEMORY_LEN") or 10)
+RETRIEVE_THRESHOLD = int(os.getenv("RETRIEVE_THRESHOLD") or 6)
+DIRECTOR_RETRIEVE_THRESHOLD = int(os.getenv("DIRECTOR_RETRIEVE_THRESHOLD") or 10)
 
 class Scene:
     def __init__(self, id = None, config={}):
         self.id = config.get("id", id)
         self.name = config.get("name","")
-        self.info = config.get("scene","")
+        self.info = config.get("info","")
         self.context = config.get("characters","")
         self.mode = config.get("mode","v1")
         assert self.id
@@ -73,7 +77,7 @@ class Scene:
                 for _, c in self.characters.items():
                     for _ in range(cnt):
                         c.delete_memory()
-                    c.recent_memory = c.get_memory_list_from_dict()[-2:]
+                    c.recent_memory = c.get_memory_list_from_dict()[-RECENT_MEMORY_LEN:]
                 for _ in range(cnt):
                     self.record.pop()                
                 return cnt
@@ -146,6 +150,8 @@ class World:
         self.add_scene("scene1")
         self.cache = CACHE_DIR
         os.makedirs(self.cache, exist_ok=True)
+        self.save_dir = SAVE_DIR
+        os.makedirs(self.save_dir, exist_ok=True)
         ## self.mode = self.script["scenes"]["scene"+str(self.scene_cnt)]["mode"] if "mode" in self.script["scenes"]["scene"+str(self.scene_cnt)] else "v1"
 
 
@@ -160,11 +166,11 @@ class World:
 
     def save(self):
         save_id = self.id+str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
-        write_json(self.state, f'{self.cache}/{save_id}.yml')
+        write_json(self.state, f'{self.save_dir}/{save_id}.yml')
         return save_id
 
     def load(self, save_id):
-        state = read_json(f'{self.cache}/{save_id}.yml')
+        state = read_json(f'{self.save_dir}/{save_id}.yml')
         if "characters" in state:
             for cid, char in state["characters"].items():
                 self.characters[cid].load(char)
@@ -313,6 +319,9 @@ class World:
                 else:
                     bid = bid[0]
             self._calculate(aid, x, bid, cid, **kwargs)
+        
+        if aid != self.player.id:
+            self.timestamp += 1
 
     def update_dialogues_record(self, scene, a="", x="", b="", c="", y="", **kwargs):
         # m = {"a": a, "x": x, "b": b, "c": c, "y": y}
@@ -400,8 +409,8 @@ class Character:
         else:
             self.memory[self.loc].append(action_to_text(m))
         self.recent_memory.append(action_to_text(m))
-        if len(self.recent_memory) > 3:
-            self.recent_memory = self.recent_memory[-2:]
+        if len(self.recent_memory) >  RECENT_MEMORY_LEN:
+            self.recent_memory = self.recent_memory[-RECENT_MEMORY_LEN:]
 
     def delete_memory(self, text=None):
         if text is None:
@@ -429,7 +438,7 @@ class Character:
         self.recent_memory = []
 
 class CharacterLLM(Character):
-    def __init__(self, id=None, config={}, storage_mode=STORAGE_MODE, retrieve_threshold=5):
+    def __init__(self, id=None, config={}, storage_mode=STORAGE_MODE, retrieve_threshold=RETRIEVE_THRESHOLD):
         super().__init__(id, config)
         self.plan = []
         self.decision = []
@@ -443,7 +452,10 @@ class CharacterLLM(Character):
         self.memory = {}
         
         self.storage_mode = storage_mode
-        self.storage = MemoryStorage()
+        if self.storage_mode:
+            self.storage = MemoryStorage()
+        else:
+            self.storage = None
         self.retrieve_threshold = retrieve_threshold
         self.last_retrieved = []
 
@@ -464,7 +476,7 @@ class CharacterLLM(Character):
         self.plan = state["plan"]
         if self.storage_mode:
             self.storage.reset()
-            self.storage.load_dialogues_record(state["raw_records"], current_scene_id=self.loc)
+            self.storage.load_dialogues_record(state["memory"], current_scene_id=self.loc)
 
     @property
     def state(self):
@@ -479,7 +491,7 @@ class CharacterLLM(Character):
             "plan": self.plan,
             "profile": self.profile,
             "motivation": self.motivation,
-            "chunks": self.storage.all_chunks_values(),
+            "chunks": self.storage.all_chunks_values() if self.storage_mode else [],
             "last_retrieved": self.last_retrieved
         }
         return state
@@ -553,8 +565,8 @@ class CharacterLLM(Character):
         m.update(kwargs)
         self.into_memory(action_to_text(m))
         self.recent_memory.append(action_to_text(m))
-        if len(self.recent_memory) > 3:
-            self.recent_memory = self.recent_memory[-2:]
+        if len(self.recent_memory) > RECENT_MEMORY_LEN:
+            self.recent_memory = self.recent_memory[-RECENT_MEMORY_LEN:]
 
     def make_plan(self, narrative, info, scene_id=None, plot = None):
         prompt = self.prompt.format(
@@ -649,7 +661,7 @@ class CharacterLLM(Character):
             self.to_do = False            
 
 class DramaLLM(World):
-    def __init__(self, script, storage_mode = False, storager = MemoryStorage(), retrieve_threshold=5):
+    def __init__(self, script, storage_mode = False, storager = None, retrieve_threshold=DIRECTOR_RETRIEVE_THRESHOLD):
         super().__init__(script, storage_mode, storager)
         self.sum_records = []
         self.reacts = []
@@ -659,10 +671,13 @@ class DramaLLM(World):
         self.prompt_v2 = PROMPT_DRAMA_V2
         self.prompt_v2_plus = PROMPT_DRAMA_V2_PLUS
         self.prompt_global_character = PROMPT_GLOBAL_CHARACTER
+        self.prompt_v1_reflect = PROMPT_DRAMA_V1_REFLECT
+        self.prompt_director_reflect = PROMPT_DIRECTOR_REFLECT
         self.mode = current_scene["mode"] if "mode" in current_scene else "v1"
         self.ready_for_next_scene = False
         self.last_retrieved = []
         self.retrieve_threshold = retrieve_threshold
+        self.timestamp = 0
 
     @property
     def state(self):
@@ -676,7 +691,7 @@ class DramaLLM(World):
             "scene_cnt": self.scene_cnt,
             "script": self.script,
             "nc": self.nc,
-            "chunks": self.record_storage.all_chunks_values(),
+            "chunks": self.record_storage.all_chunks_values() if self.storage_mode else [],
             "last_retrieved": self.last_retrieved,
         }
         return state
@@ -1062,7 +1077,7 @@ class DramaLLM(World):
             scene_info = self.scenes["scene"+str(self.scene_cnt)].info,
             all_characters = "\n".join(all_characters_info),
             all_memories = "\n".join(all_memories_info),
-            recent_memory = "\n".join([line for line in all_records[-5:]]),
+            recent_memory = "\n".join([line for line in all_records[-GLOBAL_RECENT_MEMORY_LEN:]]),
             director_instructions = "\n".join(director_instructions)
         )
 
@@ -1112,7 +1127,7 @@ class DramaLLM(World):
         ans = self.scenes["scene"+str(self.scene_cnt)].withdraw(self.player.id)
         if self.storage_mode:
             self.record_storage.reset()
-            self.record_storage.load_dialogues_record(self.raw_records, current_scene_id=self.loc)
+            self.record_storage.load_dialogues_record(self.raw_records, current_scene_id=self.player.loc)
         return ans
 
     def back_scene(self):
@@ -1153,11 +1168,11 @@ class DramaLLM(World):
 
     def save(self):
         save_id = self.id+str(datetime.datetime.now().strftime("_%m%d_%H%M%S"))
-        write_json(self.state, f'{self.cache}/{save_id}.yml')
+        write_json(self.state, f'{self.save_dir}/{save_id}.yml')
         return save_id
 
     def load(self, save_id):
-        state = read_json(f'{self.cache}/{save_id}.yml')
+        state = read_json(f'{self.save_dir}/{save_id}.yml')
         if "characters" in state:
             for cid, char in state["characters"].items():
                 self.characters[cid].load(char)
@@ -1181,4 +1196,112 @@ class DramaLLM(World):
             current_scene = self.script["scenes"]["scene"+str(self.scene_cnt)]
             self.nc = [[item, False] for item in current_scene["chain"]]
         self.mode = self.scenes["scene"+str(self.scene_cnt)].mode
+
+    def reflect_v1(self):
+        """v1 模式的反思功能"""
+        all_records = sum(self.raw_records.values(), [])
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            prompt = self.prompt_v1_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records="\n".join([line for line in all_records]),
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            
+            prompt = self.prompt_v1_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records=records,
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        
+        try:
+            response = get_llm_service().query(prompt)
+            self.log("\n".join([prompt, response]), 'reflect_v1')
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            
+            reflect_chain_key = "反思后的情节链" if not ENGLISH_MODE else "Reflected Plot Chain"
+            if response.get(reflect_chain_key):
+                self.nc = response[reflect_chain_key]
+            else:
+                print("reflect_v1 error: no reflected plot chain")
+        except Exception as e:
+            print(f"reflect_v1 error: {e}")
+
+    def reflect_director(self):
+        """导演反思功能"""
+        all_records = sum(self.raw_records.values(), [])
+        if not self.storage_mode or len(all_records) < self.retrieve_threshold:
+            prompt = self.prompt_director_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records="\n".join([line for line in all_records]),
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        else:
+            # do rag to get the relevant records
+            retrieved = self.record_storage.retrieve(all_records[-1], ["event"], "scene"+str(self.scene_cnt))
+            self.last_retrieved = []
+            records = "The script records are too long, so we get some chunks which may be relevant to the current dialogues from the record storage.\n"
+            for _, last_list in retrieved.items():
+                records += "\n\nChunk:"
+                for last in last_list:
+                    self.last_retrieved.append({"Score": last['score'], "Info": last["chunk"].text})
+                    records += f"\n{last['chunk'].to_text()}"
+            
+            prompt = self.prompt_director_reflect.format(
+                background=self.narrative,
+                npcs="\n\n".join(["\n".join([char_id, char.profile, char.motivation]) for char_id, char in self.characters.items() if char_id != self.player.id]),
+                player_id=self.player.id,
+                player_profile=self.player.profile,
+                script=dump_script(self.script["scenes"], self.scene_cnt),
+                scene_id="scene"+str(self.scene_cnt),
+                plot_chain=self.nc,
+                records=records,
+                recent="\n".join([line for line in all_records[-2:]])
+            )
+        
+        try:
+            response = get_llm_service().query(prompt)
+            self.log("\n".join([prompt, response]), 'reflect_director')
+            response = json.loads(response.split("```json\n")[-1].split("\n```")[0])
+            
+            reflect_chain_key = "反思后的情节链" if not ENGLISH_MODE else "Reflected Plot Chain"
+            if response.get(reflect_chain_key):
+                self.nc = response[reflect_chain_key]
+            else:
+                print("reflect_director error: no reflected plot chain")
+        except Exception as e:
+            print(f"reflect_director error: {e}")
+
+    def reflect(self):
+        if self.mode == "v1":
+            self.reflect_v1()
+        else:
+            self.reflect_director()
 

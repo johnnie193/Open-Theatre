@@ -184,10 +184,13 @@ def sample_script(scene_script, x):
     return _samples.get(x, [])
 
 CACHE_DIR = "cache"
+SAVE_DIR = "script"
 postdix = "" if not ENGLISH_MODE else "_eng"
 PROMPT_DRAMA_V1 = read(f"prompt/prompt_drama_v1{postdix}.md")
 PROMPT_DRAMA_V2 = read(f"prompt/prompt_drama_v2{postdix}.md")
 PROMPT_DRAMA_V2_PLUS = read(f"prompt/prompt_drama_v2_plus{postdix}.md") 
+PROMPT_DRAMA_V1_REFLECT = read(f"prompt/prompt_drama_v1_reflect{postdix}.md")
+PROMPT_DIRECTOR_REFLECT = read(f"prompt/prompt_director_reflect{postdix}.md")
 PROMPT_CHARACTER = read(f"prompt/prompt_character{postdix}.md")
 PROMPT_CHARACTER_V2 = read(f"prompt/prompt_character_v2{postdix}.md")
 PROMPT_GLOBAL_CHARACTER = read(f"prompt/prompt_global_character{postdix}.md")
