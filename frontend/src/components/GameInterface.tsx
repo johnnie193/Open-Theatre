@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { apiService, GameState, Message, InteractionRequest } from '../services/api';
 import { AnimatedMessage } from './ui/animated-message';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { MagicEffects } from './ui/magic-effects';
 
 interface GameInterfaceProps {
@@ -61,6 +62,13 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
       loadAvailableCharacters();
     }
   }, [gameState]);
+
+  // 当剧本ID变化时清空对话历史
+  useEffect(() => {
+    if (gameState?.script?.id) {
+      setMessages([]);
+    }
+  }, [gameState?.script?.id]);
 
   // 滚动到底部
   useEffect(() => {
@@ -288,6 +296,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
   // 确保scene_cnt至少为1，因为场景从scene1开始
   const effectiveSceneCnt = Math.max(gameState?.scene_cnt || 0, 1);
   const currentScene = gameState?.scenes?.[`scene${effectiveSceneCnt}`];
+  const playerName = gameState?.script?.background?.player || '玩家';
   
   // 根据原始代码逻辑构建场景标题
   const sceneTitle = currentScene?.name 
@@ -401,6 +410,11 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
 
           {/* 消息输入 */}
           <div className="flex items-center gap-3">
+            {/* 玩家头像 */}
+            <Avatar>
+              <AvatarImage src={`/assets/${playerName}.jpg`} alt={playerName} />
+              <AvatarFallback>{playerName?.slice(0, 1) || '你'}</AvatarFallback>
+            </Avatar>
             <Input
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}

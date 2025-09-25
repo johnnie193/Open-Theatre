@@ -141,7 +141,7 @@ DEEPSEEK_API_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=DeepSeek-V3
 
 # System Configuration
-ENGLISH_MODE=true #Chinese mode if false
+ENGLISH_MODE=true #Chinese mode if false (only for prompt, ui is all in Chinese now)
 STORAGE_MODE=true #whether to start with memory system
 ```
 

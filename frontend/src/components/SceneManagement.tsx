@@ -14,12 +14,6 @@ interface SceneManagementProps {
   scenes: Record<string, Scene>;
   characters: Character[];
   onScenesChange: (scenes: Record<string, Scene>) => void;
-  onCharactersChange: (characters: Character[]) => void;
-}
-
-interface SceneMemory {
-  characterId: string;
-  motivation: string;
 }
 
 interface PlotChain {
@@ -32,7 +26,6 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
   scenes,
   characters,
   onScenesChange,
-  onCharactersChange
 }) => {
   const [isAddingScene, setIsAddingScene] = useState(false);
   const [newScene, setNewScene] = useState({

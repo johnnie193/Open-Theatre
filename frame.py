@@ -15,6 +15,10 @@ from models import get_llm_service
 load_dotenv()
 ENGLISH_MODE = bool(os.getenv("ENGLISH_MODE") and os.getenv("ENGLISH_MODE").lower() in ["true", "1", "t", "y", "yes"])
 STORAGE_MODE = bool(os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"])
+RECENT_MEMORY_LEN = int(os.getenv("RECENT_MEMORY_LEN") or 6)
+GLOBAL_RECENT_MEMORY_LEN = int(os.getenv("GLOBAL_RECENT_MEMORY_LEN") or 10)
+RETRIEVE_THRESHOLD = int(os.getenv("RETRIEVE_THRESHOLD") or 6)
+DIRECTOR_RETRIEVE_THRESHOLD = int(os.getenv("DIRECTOR_RETRIEVE_THRESHOLD") or 10)
 
 class Scene:
     def __init__(self, id = None, config={}):
@@ -73,7 +77,7 @@ class Scene:
                 for _, c in self.characters.items():
                     for _ in range(cnt):
                         c.delete_memory()
-                    c.recent_memory = c.get_memory_list_from_dict()[-2:]
+                    c.recent_memory = c.get_memory_list_from_dict()[-RECENT_MEMORY_LEN:]
                 for _ in range(cnt):
                     self.record.pop()                
                 return cnt
@@ -405,8 +409,8 @@ class Character:
         else:
             self.memory[self.loc].append(action_to_text(m))
         self.recent_memory.append(action_to_text(m))
-        if len(self.recent_memory) > 3:
-            self.recent_memory = self.recent_memory[-2:]
+        if len(self.recent_memory) >  RECENT_MEMORY_LEN:
+            self.recent_memory = self.recent_memory[-RECENT_MEMORY_LEN:]
 
     def delete_memory(self, text=None):
         if text is None:
@@ -434,7 +438,7 @@ class Character:
         self.recent_memory = []
 
 class CharacterLLM(Character):
-    def __init__(self, id=None, config={}, storage_mode=STORAGE_MODE, retrieve_threshold=5):
+    def __init__(self, id=None, config={}, storage_mode=STORAGE_MODE, retrieve_threshold=RETRIEVE_THRESHOLD):
         super().__init__(id, config)
         self.plan = []
         self.decision = []
@@ -448,7 +452,10 @@ class CharacterLLM(Character):
         self.memory = {}
         
         self.storage_mode = storage_mode
-        self.storage = MemoryStorage()
+        if self.storage_mode:
+            self.storage = MemoryStorage()
+        else:
+            self.storage = None
         self.retrieve_threshold = retrieve_threshold
         self.last_retrieved = []
 
@@ -484,7 +491,7 @@ class CharacterLLM(Character):
             "plan": self.plan,
             "profile": self.profile,
             "motivation": self.motivation,
-            "chunks": self.storage.all_chunks_values(),
+            "chunks": self.storage.all_chunks_values() if self.storage_mode else [],
             "last_retrieved": self.last_retrieved
         }
         return state
@@ -558,8 +565,8 @@ class CharacterLLM(Character):
         m.update(kwargs)
         self.into_memory(action_to_text(m))
         self.recent_memory.append(action_to_text(m))
-        if len(self.recent_memory) > 3:
-            self.recent_memory = self.recent_memory[-2:]
+        if len(self.recent_memory) > RECENT_MEMORY_LEN:
+            self.recent_memory = self.recent_memory[-RECENT_MEMORY_LEN:]
 
     def make_plan(self, narrative, info, scene_id=None, plot = None):
         prompt = self.prompt.format(
@@ -654,7 +661,7 @@ class CharacterLLM(Character):
             self.to_do = False            
 
 class DramaLLM(World):
-    def __init__(self, script, storage_mode = False, storager = MemoryStorage(), retrieve_threshold=5):
+    def __init__(self, script, storage_mode = False, storager = None, retrieve_threshold=DIRECTOR_RETRIEVE_THRESHOLD):
         super().__init__(script, storage_mode, storager)
         self.sum_records = []
         self.reacts = []
@@ -684,7 +691,7 @@ class DramaLLM(World):
             "scene_cnt": self.scene_cnt,
             "script": self.script,
             "nc": self.nc,
-            "chunks": self.record_storage.all_chunks_values(),
+            "chunks": self.record_storage.all_chunks_values() if self.storage_mode else [],
             "last_retrieved": self.last_retrieved,
         }
         return state
@@ -1070,7 +1077,7 @@ class DramaLLM(World):
             scene_info = self.scenes["scene"+str(self.scene_cnt)].info,
             all_characters = "\n".join(all_characters_info),
             all_memories = "\n".join(all_memories_info),
-            recent_memory = "\n".join([line for line in all_records[-5:]]),
+            recent_memory = "\n".join([line for line in all_records[-GLOBAL_RECENT_MEMORY_LEN:]]),
             director_instructions = "\n".join(director_instructions)
         )
 

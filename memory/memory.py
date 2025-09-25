@@ -7,7 +7,10 @@ from sentence_transformers import SentenceTransformer
 from utils import get_keys
 from memory.base import TAG_WEIGHTS, LAYER_WEIGHTS
 from memory.summarizer import Summarizer
-
+from dotenv import load_dotenv, find_dotenv
+import os   
+load_dotenv(find_dotenv())
+STORAGE_MODE = bool(os.getenv("STORAGE_MODE") and os.getenv("STORAGE_MODE").lower() in ["true", "1", "t", "y", "yes"])
 # --- Setup Logging ---
 logger = logging.getLogger(__name__)
 
@@ -16,7 +19,7 @@ class ModelSingleton:
 
     @staticmethod
     def get_instance(embed_model_name="all-MiniLM-L6-v2"):
-        if ModelSingleton._instance is None:
+        if ModelSingleton._instance is None and STORAGE_MODE:
             ModelSingleton._instance = SentenceTransformer(embed_model_name)
         return ModelSingleton._instance
 

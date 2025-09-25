@@ -78,13 +78,17 @@ class InfoRequest(BaseModel):
 
 class DRAMA:
     def __init__(self):
-        self.storage = MemoryStorage()
         self.dramallm: Optional[DramaLLM] = None # Initialize as None
         self.cache = 'cache/'
         self.script_dir = 'script/'
+        if STORAGE_MODE:
+            self.storage = MemoryStorage()
+        else:
+            self.storage = None
 
     def init(self, script, storage_mode: bool = STORAGE_MODE):
-        self.storage.reset() # Reset the storage for a clean start
+        if storage_mode:
+            self.storage.reset() # Reset the storage for a clean start
         self.dramallm = DramaLLM(script=script, storage_mode=storage_mode, storager=self.storage)
         try:
             # Ensure player exists before updating view
@@ -481,7 +485,8 @@ async def load_script(data: LoadRequest, dramaworld: DRAMA = Depends(get_dramawo
     print(f"Loading script: {data.script_name}, StorageMode: {data.storageMode}")
     print(f"Script directory: {dramaworld.script_dir}")
     try:
-        storageMode = data.storageMode if data.storageMode is not None else True
+        # storageMode = data.storageMode if data.storageMode is not None else True
+        storageMode = STORAGE_MODE
         
         # 处理预定义的脚本
         if data.script_name == 'load-script-hp':
@@ -902,7 +907,7 @@ async def save_model_config(config: dict):
         logger.error(f"Error saving model config: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-IMG_DIR = 'assets'
+IMG_DIR = 'frontend/public/assets'
 os.makedirs(IMG_DIR, exist_ok=True)  # Ensure the directory exists
 @app.post("/api/upload")
 async def upload(file: UploadFile = File(...), name: Optional[str] = Form(None)):

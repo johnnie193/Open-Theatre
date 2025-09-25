@@ -204,14 +204,14 @@ export const PromptManagement: React.FC = () => {
             </CardHeader>
             <CardContent>
               <Textarea
-                value={prompts[config.key]}
+                value={prompts[config.key] ?? ''}
                 onChange={(e) => handlePromptChange(config.key, e.target.value)}
                 placeholder={`请输入 ${config.title} 的提示词...`}
                 rows={8}
                 className="font-mono text-sm"
               />
               <div className="mt-2 text-xs text-muted-foreground">
-                字符数: {prompts[config.key].length}
+                字符数: {(prompts[config.key] ?? '').length}
               </div>
             </CardContent>
           </Card>

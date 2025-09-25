@@ -26,7 +26,6 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('script');
   const [isLoading, setIsLoading] = useState(false);
-  const [scriptInfo] = useState<any>(null);
   const [worldRecords, setWorldRecords] = useState<any>(null);
   const [systemFeedbacks, setSystemFeedbacks] = useState<any>(null);
   const [characterInfo, setCharacterInfo] = useState<any>(null);
