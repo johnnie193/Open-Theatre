@@ -39,55 +39,55 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // 如果gameState为null，显示加载状态
+  // If gameState is null, show loading state
   if (!gameState) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">正在加载游戏状态...</p>
+          <p className="text-muted-foreground">Loading game state...</p>
         </div>
       </div>
     );
   }
 
-  // 加载可用角色列表
+  // Load available character list
   useEffect(() => {
     loadAvailableCharacters();
   }, []);
 
-  // 当gameState变化时重新加载角色列表
+  // Reload character list when gameState changes
   useEffect(() => {
     if (gameState) {
       loadAvailableCharacters();
     }
   }, [gameState]);
 
-  // 当剧本ID变化时清空对话历史
+  // Clear conversation history when script ID changes
   useEffect(() => {
     if (gameState?.script?.id) {
       setMessages([]);
     }
   }, [gameState?.script?.id]);
 
-  // 滚动到底部
+  // Scroll to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const loadAvailableCharacters = async () => {
     try {
-      console.log('加载可用角色列表...');
+      console.log('Loading available characters...');
       const response = await apiService.getCharacters();
-      console.log('角色列表API响应:', response);
+      console.log('Characters API response:', response);
       if (response.success && response.data) {
-        // 过滤掉null、undefined和空字符串
+        // Filter out null, undefined and empty strings
         const validCharacters = (response.data.characters || [])
           .filter(char => char && char !== 'null' && char.trim() !== '');
-        console.log('过滤后的角色列表:', validCharacters);
+        console.log('Filtered character list:', validCharacters);
         setAvailableCharacters(validCharacters);
       } else {
-        console.log('角色列表API调用失败:', response.error);
+        console.log('Characters API call failed:', response.error);
         setAvailableCharacters([]);
       }
     } catch (error) {
@@ -96,7 +96,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
     }
   };
 
-  // 发送消息
+  // Send message
   const handleSendMessage = async () => {
     if (!messageInput.trim() && actionType === '-speak') return;
 
@@ -114,13 +114,13 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
       const response = await apiService.calculateInteraction(request);
       
       if (response.success && response.data) {
-        // 处理错误情况
+        // Handle error cases
         if (response.data.error) {
           setMessage({ type: 'error', text: response.data.error });
           return;
         }
 
-        // 添加玩家消息（根据原始代码逻辑）
+        // Add player message (based on original code logic)
         if (response.data.input && (response.data.input as any).x === '-speak') {
           let playerContent = '';
           if (Array.isArray((response.data.input as any).bid) && (response.data.input as any).bid.length > 0) {
@@ -130,7 +130,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
 
           const playerMessage: Message = {
             id: Date.now().toString(),
-            character: gameState?.script?.background?.player || '玩家',
+            character: gameState?.script?.background?.player || 'Player',
             content: playerContent,
             timestamp: new Date(),
             type: 'speak',
@@ -139,7 +139,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
           setMessages(prev => [...prev, playerMessage]);
         }
 
-        // 添加角色回复（根据原始代码逻辑）
+        // Add character reply (based on original code logic)
         if (response.data.action && Array.isArray(response.data.action)) {
           const characterMessages: Message[] = response.data.action
             .filter((action: any) => action.x === '-speak')
@@ -167,54 +167,54 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
         // 更新游戏状态
         if (response.data.done && response.data.state) {
           onGameStateChange(response.data.state);
-          // 重新加载角色列表
+          // Reload character list
           loadAvailableCharacters();
         }
 
         setMessageInput('');
         setTargetCharacter('');
-        setMessage({ type: 'success', text: '消息发送成功' });
+        setMessage({ type: 'success', text: 'Message sent successfully' });
       } else {
-        setMessage({ type: 'error', text: response.error || '发送失败' });
+        setMessage({ type: 'error', text: response.error || 'Send failed' });
       }
     } catch (error) {
-      console.error('发送消息失败:', error);
-      setMessage({ type: 'error', text: '发送消息失败' });
+      console.error('Failed to send message:', error);
+      setMessage({ type: 'error', text: 'Failed to send message' });
     } finally {
       setIsLoading(false);
       setTimeout(() => setShowMagicEffects(false), 2000);
     }
   };
 
-  // 下一场景
+  // Next scene
   const handleNextScene = async () => {
     setIsLoading(true);
     setMessage(null);
 
     try {
-      console.log('切换到下一场景，当前scene_cnt:', gameState?.scene_cnt);
+      console.log('Switching to next scene, current scene_cnt:', gameState?.scene_cnt);
       const response = await apiService.calculateInteraction({ interact: 'next' });
-      console.log('下一场景API响应:', response);
+      console.log('Next scene API response:', response);
       if (response.success && response.data) {
-        // 检查API响应结构，可能直接返回gameState而不是包装在state中
+        // Check API response structure, may return gameState directly instead of wrapped in state
         const gameStateData = response.data.state || response.data;
-        console.log('更新gameState，新scene_cnt:', (gameStateData as any).scene_cnt);
+        console.log('Updated gameState, new scene_cnt:', (gameStateData as any).scene_cnt);
         onGameStateChange(gameStateData as GameState);
-        // 重新加载可用角色列表
+        // Reload available character list
         loadAvailableCharacters();
-        setMessage({ type: 'success', text: '已切换到下一场景' });
+        setMessage({ type: 'success', text: 'Switched to next scene' });
       } else {
-        setMessage({ type: 'error', text: response.error || '切换场景失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to switch scene' });
       }
     } catch (error) {
-      console.error('切换场景失败:', error);
-      setMessage({ type: 'error', text: '切换场景失败' });
+      console.error('Failed to switch scene:', error);
+      setMessage({ type: 'error', text: 'Failed to switch scene' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 上一场景
+  // Previous scene
   const handleBackScene = async () => {
     setIsLoading(true);
     setMessage(null);
@@ -222,25 +222,25 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
     try {
       const response = await apiService.calculateInteraction({ interact: 'back' });
       if (response.success && response.data) {
-        // 检查API响应结构，可能直接返回gameState而不是包装在state中
+        // Check API response structure, may return gameState directly instead of wrapped in state
         const gameStateData = response.data.state || response.data;
-        console.log('更新gameState，新scene_cnt:', (gameStateData as any).scene_cnt);
+        console.log('Updated gameState, new scene_cnt:', (gameStateData as any).scene_cnt);
         onGameStateChange(gameStateData as GameState);
-        // 重新加载可用角色列表
+        // Reload available character list
         loadAvailableCharacters();
-        setMessage({ type: 'success', text: '已切换到上一场景' });
+        setMessage({ type: 'success', text: 'Switched to previous scene' });
       } else {
-        setMessage({ type: 'error', text: response.error || '切换场景失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to switch scene' });
       }
     } catch (error) {
-      console.error('切换场景失败:', error);
-      setMessage({ type: 'error', text: '切换场景失败' });
+      console.error('Failed to switch scene:', error);
+      setMessage({ type: 'error', text: 'Failed to switch scene' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 撤回消息
+  // Withdraw message
   const handleWithdraw = async () => {
     setIsLoading(true);
     setMessage(null);
@@ -248,25 +248,25 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
     try {
       const response = await apiService.calculateInteraction({ interact: 'withdraw' });
       if (response.success && response.data) {
-        // 删除最后几条消息
+        // Delete last few messages
         if (response.data && response.data.cnt) {
           setMessages(prev => prev.slice(0, -response.data!.cnt!));
         }
-        // 重新加载可用角色列表（相当于原始代码的updateInfoPanelBySubmit）
+        // Reload available character list (equivalent to original code's updateInfoPanelBySubmit)
         loadAvailableCharacters();
-        setMessage({ type: 'success', text: '消息已撤回' });
+        setMessage({ type: 'success', text: 'Message withdrawn' });
       } else {
-        setMessage({ type: 'error', text: response.error || '撤回失败' });
+        setMessage({ type: 'error', text: response.error || 'Withdraw failed' });
       }
     } catch (error) {
-      console.error('撤回消息失败:', error);
-      setMessage({ type: 'error', text: '撤回消息失败' });
+      console.error('Failed to withdraw message:', error);
+      setMessage({ type: 'error', text: 'Failed to withdraw message' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 导出记录
+  // Export records
   const handleExportRecords = async () => {
     try {
       const blob = await apiService.exportRecords();
@@ -278,14 +278,14 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      setMessage({ type: 'success', text: '记录导出成功' });
+      setMessage({ type: 'success', text: 'Records exported successfully' });
     } catch (error) {
-      console.error('导出记录失败:', error);
-      setMessage({ type: 'error', text: '导出记录失败' });
+      console.error('Failed to export records:', error);
+      setMessage({ type: 'error', text: 'Failed to export records' });
     }
   };
 
-  // 处理键盘事件
+  // Handle keyboard events
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -293,17 +293,17 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
     }
   };
 
-  // 确保scene_cnt至少为1，因为场景从scene1开始
+  // Ensure scene_cnt is at least 1, as scenes start from scene1
   const effectiveSceneCnt = Math.max(gameState?.scene_cnt || 0, 1);
   const currentScene = gameState?.scenes?.[`scene${effectiveSceneCnt}`];
-  const playerName = gameState?.script?.background?.player || '玩家';
+  const playerName = gameState?.script?.background?.player || 'Player';
   
-  // 根据原始代码逻辑构建场景标题
+  // Build scene title based on original code logic
   const sceneTitle = currentScene?.name 
-    ? `场景 ${effectiveSceneCnt}  ${currentScene.name}`
-    : `场景 ${effectiveSceneCnt}`;
+    ? `Scene ${effectiveSceneCnt}  ${currentScene.name}`
+    : `Scene ${effectiveSceneCnt}`;
   
-  // 调试信息
+  // Debug info
   console.log('GameInterface Debug:', {
     gameState,
     scene_cnt: gameState?.scene_cnt,
@@ -317,7 +317,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
 
   return (
     <div className="h-[calc(100vh-200px)] flex flex-col space-y-4">
-      {/* 场景信息 */}
+      {/* Scene info */}
       <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -325,7 +325,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
               {sceneTitle}
             </h2>
             <p className="text-slate-600 dark:text-slate-300 mt-1 text-sm">
-              {currentScene?.info ? currentScene.info.replace(/\\n/g, '<br>') : '暂无场景信息'}
+              {currentScene?.info ? currentScene.info.replace(/\\n/g, '<br>') : 'No scene information'}
             </p>
           </div>
           <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 px-3 py-1">
@@ -334,12 +334,12 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
         </div>
       </div>
 
-      {/* 聊天区域 - 固定高度 */}
+      {/* Chat area - fixed height */}
       <div className="flex-1 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden min-h-0">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800 dark:text-slate-200">
             <MessageSquare className="w-4 h-4" />
-            对话记录
+            Conversation History
           </h3>
         </div>
         <div className="h-[calc(100%-60px)] p-4">
@@ -360,7 +360,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
                 <div className="flex items-center justify-center py-6">
                   <div className="flex items-center gap-3">
                     <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                    <span className="text-slate-600 dark:text-slate-300">AI正在思考...</span>
+                    <span className="text-slate-600 dark:text-slate-300">AI is thinking...</span>
                   </div>
                 </div>
               )}
@@ -370,10 +370,10 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
         </div>
       </div>
 
-      {/* 输入区域 - 固定在底部 */}
+      {/* Input area - fixed at bottom */}
       <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-4">
         <div className="space-y-4">
-          {/* 操作类型和目标选择 */}
+          {/* Action type and target selection */}
           <div className="flex items-center gap-3">
             <Select value={actionType} onValueChange={setActionType}>
               <SelectTrigger className="w-28 border-2 border-blue-200 hover:border-blue-400">
@@ -388,10 +388,10 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
             {actionType === '-speak' && (
               <Select value={targetCharacter || 'none'} onValueChange={(value) => setTargetCharacter(value === 'none' ? '' : value)}>
                 <SelectTrigger className="w-40 border-2 border-cyan-200 hover:border-cyan-400">
-                  <SelectValue placeholder="选择目标角色" />
+                  <SelectValue placeholder="Select target character" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">无目标</SelectItem>
+                  <SelectItem value="none">No target</SelectItem>
                   {availableCharacters?.map((char) => (
                     <SelectItem key={char} value={char}>
                       {char}
@@ -400,26 +400,26 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
                 </SelectContent>
               </Select>
             )}
-            {/* 调试信息 */}
+            {/* Debug info */}
             {actionType === '-speak' && (
               <div className="text-xs text-gray-500">
-                角色数: {availableCharacters?.length || 0}
+                Characters: {availableCharacters?.length || 0}
               </div>
             )}
           </div>
 
-          {/* 消息输入 */}
+          {/* Message input */}
           <div className="flex items-center gap-3">
-            {/* 玩家头像 */}
+            {/* Player avatar */}
             <Avatar>
               <AvatarImage src={`/assets/${playerName}.jpg`} alt={playerName} />
-              <AvatarFallback>{playerName?.slice(0, 1) || '你'}</AvatarFallback>
+              <AvatarFallback>{playerName?.slice(0, 1) || 'P'}</AvatarFallback>
             </Avatar>
             <Input
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="输入你的消息..."
+              placeholder="Enter your message..."
               className="flex-1 h-10 text-sm border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 transition-colors"
               disabled={isLoading}
             />
@@ -433,7 +433,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
             </Button>
           </div>
 
-          {/* 状态消息 */}
+          {/* Status message */}
           {message && (
             <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
               message.type === 'success' 
@@ -449,7 +449,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
             </div>
           )}
 
-          {/* 控制按钮 */}
+          {/* Control buttons */}
           <div className="flex items-center gap-2 flex-wrap">
             <Button 
               variant="outline" 
@@ -459,7 +459,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
               className="h-8 px-3 text-xs border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
             >
               <SkipForward className="w-3 h-3 mr-1" />
-              下一场景
+              Next Scene
             </Button>
             <Button 
               variant="outline" 
@@ -469,7 +469,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
               className="h-8 px-3 text-xs border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
             >
               <SkipBack className="w-3 h-3 mr-1" />
-              上一场景
+              Previous Scene
             </Button>
             <Button 
               variant="outline" 
@@ -479,7 +479,7 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
               className="h-8 px-3 text-xs border-2 border-orange-200 hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
             >
               <RotateCcw className="w-3 h-3 mr-1" />
-              撤回
+              Withdraw
             </Button>
             <Button 
               variant="outline" 
@@ -488,13 +488,13 @@ export const GameInterface: React.FC<GameInterfaceProps> = ({
               className="h-8 px-3 text-xs border-2 border-green-200 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
             >
               <Download className="w-3 h-3 mr-1" />
-              导出
+              Export
             </Button>
           </div>
         </div>
       </div>
 
-      {/* 魔法效果 */}
+      {/* Magic effects */}
       {showMagicEffects && <MagicEffects isActive={true} />}
     </div>
   );

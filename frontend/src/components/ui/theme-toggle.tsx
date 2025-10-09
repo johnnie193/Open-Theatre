@@ -81,7 +81,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
         "hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200",
         className
       )}
-      title={`当前主题: ${theme === 'system' ? '跟随系统' : theme === 'light' ? '浅色' : '深色'}`}
+      title={`Current theme: ${theme === 'system' ? 'Follow system' : theme === 'light' ? 'Light' : 'Dark'}`}
     >
       <motion.div
         key={theme}

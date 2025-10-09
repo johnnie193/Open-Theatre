@@ -130,7 +130,7 @@ export const VoiceInput: React.FC<VoiceInputProps> = ({
             <div className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
             <div className="w-1 h-4 bg-red-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
           </div>
-          <span>正在听取...</span>
+          <span>Listening...</span>
         </motion.div>
       )}
     </div>

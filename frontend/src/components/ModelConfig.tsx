@@ -45,7 +45,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [config, setConfig] = useState<ModelConfigData | null>(null);
 
-  // 加载模型配置
+  // Load model configuration
   useEffect(() => {
     loadModelConfig();
   }, []);
@@ -57,16 +57,16 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
       if (response.success && response.data) {
         setConfig(response.data);
       } else {
-        setMessage({ type: 'error', text: response.error || '加载模型配置失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to load model configuration' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '加载模型配置失败，请重试' });
+      setMessage({ type: 'error', text: 'Failed to load model configuration, please try again' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 保存模型配置
+  // Save model configuration
   const handleSaveConfig = async () => {
     if (!config) return;
 
@@ -76,21 +76,21 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
     try {
       const response = await apiService.saveModelConfig(config);
       if (response.success) {
-        setMessage({ type: 'success', text: '模型配置保存成功！' });
+        setMessage({ type: 'success', text: 'Model configuration saved successfully!' });
         if (onConfigChange) {
           onConfigChange();
         }
       } else {
-        setMessage({ type: 'error', text: response.error || '保存失败' });
+        setMessage({ type: 'error', text: response.error || 'Save failed' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '保存失败，请重试' });
+      setMessage({ type: 'error', text: 'Save failed, please try again' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 更新配置
+  // Update configuration
   const updateConfig = (provider: string, field: string, value: string) => {
     if (!config) return;
     
@@ -120,7 +120,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
 
   return (
     <div className="space-y-6">
-      {/* 消息提示 */}
+      {/* Message notifications */}
       {message && (
         <Card className={`${message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <CardContent className="p-4">
@@ -138,24 +138,24 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
         </Card>
       )}
 
-      {/* 模型提供商选择 */}
+      {/* Model provider selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="w-5 h-5" />
-            模型提供商
+            Model Provider
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="provider">选择提供商</Label>
+              <Label htmlFor="provider">Select Provider</Label>
               <Select 
                 value={config.provider} 
                 onValueChange={(value) => updateConfig('main', 'provider', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="选择模型提供商" />
+                  <SelectValue placeholder="Select model provider" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="azure_openai">Azure OpenAI</SelectItem>
@@ -168,7 +168,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
         </CardContent>
       </Card>
 
-      {/* 配置详情 */}
+      {/* Configuration details */}
       <Tabs value={config.provider} onValueChange={(value) => updateConfig('main', 'provider', value)}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="azure_openai">Azure OpenAI</TabsTrigger>
@@ -176,13 +176,13 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
           <TabsTrigger value="deepseek">DeepSeek</TabsTrigger>
         </TabsList>
 
-        {/* Azure OpenAI 配置 */}
+        {/* Azure OpenAI configuration */}
         <TabsContent value="azure_openai">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Server className="w-5 h-5" />
-                Azure OpenAI 配置
+                Azure OpenAI Configuration
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -195,7 +195,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
                     type="password"
                     value={config.azure_openai.api_key}
                     onChange={(e) => updateConfig('azure_openai', 'api_key', e.target.value)}
-                    placeholder="输入 Azure OpenAI API Key"
+                    placeholder="Enter Azure OpenAI API Key"
                     className="pl-10"
                   />
                 </div>
@@ -233,13 +233,13 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
           </Card>
         </TabsContent>
 
-        {/* OpenAI 配置 */}
+        {/* OpenAI configuration */}
         <TabsContent value="openai">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Server className="w-5 h-5" />
-                OpenAI 配置
+                OpenAI Configuration
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -252,7 +252,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
                     type="password"
                     value={config.openai.api_key}
                     onChange={(e) => updateConfig('openai', 'api_key', e.target.value)}
-                    placeholder="输入 OpenAI API Key"
+                    placeholder="Enter OpenAI API Key"
                     className="pl-10"
                   />
                 </div>
@@ -279,13 +279,13 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
           </Card>
         </TabsContent>
 
-        {/* DeepSeek 配置 */}
+        {/* DeepSeek configuration */}
         <TabsContent value="deepseek">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Server className="w-5 h-5" />
-                DeepSeek 配置
+                DeepSeek Configuration
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -298,7 +298,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
                     type="password"
                     value={config.deepseek.api_key}
                     onChange={(e) => updateConfig('deepseek', 'api_key', e.target.value)}
-                    placeholder="输入 DeepSeek API Key"
+                    placeholder="Enter DeepSeek API Key"
                     className="pl-10"
                   />
                 </div>
@@ -326,7 +326,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
         </TabsContent>
       </Tabs>
 
-      {/* 保存按钮 */}
+      {/* Save button */}
       <div className="flex justify-end">
         <Button 
           onClick={handleSaveConfig} 
@@ -339,7 +339,7 @@ export const ModelConfig: React.FC<ModelConfigProps> = ({ onConfigChange }) => {
           ) : (
             <Settings className="w-5 h-5 mr-2" />
           )}
-          保存配置
+          Save Configuration
         </Button>
       </div>
     </div>

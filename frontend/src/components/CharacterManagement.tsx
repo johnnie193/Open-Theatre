@@ -35,7 +35,7 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 添加新角色
+  // Add new character
   const handleAddCharacter = () => {
     if (!newCharacter.name.trim()) return;
 
@@ -51,7 +51,7 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
     setIsAddingCharacter(false);
   };
 
-  // 删除角色
+  // Delete character
   const handleDeleteCharacter = (characterId: string) => {
     onCharactersChange(characters.filter(c => c.id !== characterId));
     if (selectedCharacter?.id === characterId) {
@@ -59,7 +59,7 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
     }
   };
 
-  // 选择角色
+  // Select character
   const handleSelectCharacter = async (character: Character) => {
     onCharacterSelect(character);
     setIsLoading(true);
@@ -76,12 +76,12 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
     }
   };
 
-  // 上传头像
+  // Upload avatar
   const handleAvatarUpload = async (file: File, character: Character) => {
     try {
       const response = await apiService.uploadCharacterAvatar(file, character.name);
       if (response.success) {
-        // 更新角色头像
+        // Update character avatar
         onCharactersChange(characters.map(c => 
           c.id === character.id 
             ? { ...c, avatar: URL.createObjectURL(file) }
@@ -93,7 +93,7 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
     }
   };
 
-  // 处理文件选择
+  // Handle file selection
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>, character: Character) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -103,52 +103,52 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
 
   return (
     <div className="flex h-full">
-      {/* 角色列表 */}
+      {/* Character list */}
       <div className="w-1/3 border-r border-border">
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">角色列表</h3>
+            <h3 className="text-lg font-semibold">Character List</h3>
             <Button
               size="sm"
               onClick={() => setIsAddingCharacter(true)}
               className="flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
-              添加角色
+              Add Character
             </Button>
           </div>
 
-          {/* 添加角色表单 */}
+          {/* Add character form */}
           {isAddingCharacter && (
             <Card className="mb-4">
               <CardContent className="p-4 space-y-3">
                 <Input
-                  placeholder="角色名称"
+                  placeholder="Character name"
                   value={newCharacter.name}
                   onChange={(e) => setNewCharacter(prev => ({ ...prev, name: e.target.value }))}
                 />
                 <Textarea
-                  placeholder="角色档案"
+                  placeholder="Character profile"
                   value={newCharacter.profile}
                   onChange={(e) => setNewCharacter(prev => ({ ...prev, profile: e.target.value }))}
                   rows={3}
                 />
                 <Textarea
-                  placeholder="初始记忆"
+                  placeholder="Initial memory"
                   value={newCharacter.memory}
                   onChange={(e) => setNewCharacter(prev => ({ ...prev, memory: e.target.value }))}
                   rows={2}
                 />
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleAddCharacter}>
-                    添加
+                    Add
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline" 
                     onClick={() => setIsAddingCharacter(false)}
                   >
-                    取消
+                    Cancel
                   </Button>
                 </div>
               </CardContent>
@@ -202,7 +202,7 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium truncate">{character.name}</h4>
                       <p className="text-sm text-muted-foreground truncate">
-                        {character.profile || '暂无档案'}
+                        {character.profile || 'No profile'}
                       </p>
                     </div>
                     <Button
@@ -224,12 +224,12 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
         </ScrollArea>
       </div>
 
-      {/* 角色详情 */}
+      {/* Character details */}
       <div className="flex-1 p-4">
         {selectedCharacter ? (
           <ScrollArea className="h-full">
             <div className="space-y-6">
-              {/* 基本信息 */}
+              {/* Basic info */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -240,22 +240,22 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2">角色档案</h4>
+                      <h4 className="font-medium mb-2">Character Profile</h4>
                       <p className="text-sm text-muted-foreground">
-                        {characterInfo?.profile || selectedCharacter.profile || '暂无档案'}
+                        {characterInfo?.profile || selectedCharacter.profile || 'No profile'}
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* 记忆信息 */}
+              {/* Memory info */}
               {characterInfo?.memory && characterInfo.memory.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Clock className="w-5 h-5" />
-                      时间线记忆
+                      Timeline Memory
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -270,13 +270,13 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
                 </Card>
               )}
 
-              {/* 系统块 */}
+              {/* System chunks */}
               {characterInfo?.chunks && characterInfo.chunks.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Brain className="w-5 h-5" />
-                      系统块
+                      System Chunks
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -291,11 +291,11 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
                 </Card>
               )}
 
-              {/* 检索块 */}
+              {/* Retrieved chunks */}
               {characterInfo?.retrieved && characterInfo.retrieved.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>最近检索块</CardTitle>
+                    <CardTitle>Recent Retrieved Chunks</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
@@ -309,11 +309,11 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
                 </Card>
               )}
 
-              {/* 提示词 */}
+              {/* Prompts */}
               {characterInfo?.prompts && characterInfo.prompts.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>React提示词</CardTitle>
+                    <CardTitle>React Prompts</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -340,7 +340,7 @@ export const CharacterManagement: React.FC<CharacterManagementProps> = ({
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-center">
               <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>选择一个角色查看详细信息</p>
+              <p>Select a character to view details</p>
             </div>
           </div>
         )}

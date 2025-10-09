@@ -11,13 +11,15 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  Save
+  Save,
+  FilePlus
 } from 'lucide-react';
 import { apiService, GameState } from '../services/api';
 
 interface LoadScriptProps {
   onGameStateChange: (gameState: GameState) => void;
-  onSaveScriptSuccess?: () => void; // 保存脚本成功后的回调
+  onSaveScriptSuccess?: () => void; // Callback after successful script save
+  onNewScript?: () => void; // Callback for creating a new script
 }
 
 export interface LoadScriptRef {
@@ -32,7 +34,8 @@ interface SavedScript {
 
 export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
   onGameStateChange,
-  onSaveScriptSuccess
+  onSaveScriptSuccess,
+  onNewScript
 }, ref) => {
   const [savedScripts, setSavedScripts] = useState<SavedScript[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -40,12 +43,12 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
   const [savingScript, setSavingScript] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // 加载保存的脚本列表
+  // Load saved script list
   useEffect(() => {
     loadSavedScripts();
   }, []);
 
-  // 暴露刷新方法给父组件
+  // Expose refresh method to parent component
   useImperativeHandle(ref, () => ({
     refreshScripts: loadSavedScripts
   }));
@@ -57,19 +60,19 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
       if (response.success && response.data) {
         setSavedScripts(response.data.scripts);
       } else {
-        setMessage({ type: 'error', text: response.error || '加载已保存脚本失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to load saved scripts' });
         setSavedScripts([]);
       }
     } catch (error) {
       console.error('Failed to load saved scripts:', error);
-      setMessage({ type: 'error', text: '加载已保存脚本失败' });
+      setMessage({ type: 'error', text: 'Failed to load saved scripts' });
       setSavedScripts([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 保存脚本
+  // Save script
   const handleSaveScript = async () => {
     setSavingScript(true);
     setMessage(null);
@@ -79,25 +82,25 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
       if (response.success && response.data) {
         setMessage({ 
           type: 'success', 
-          text: `脚本已保存！保存ID: ${response.data.save_id}` 
+          text: `Script saved! Save ID: ${response.data.save_id}` 
         });
-        // 刷新脚本列表
+        // Refresh script list
         loadSavedScripts();
-        // 触发父组件回调
+        // Trigger parent component callback
         if (onSaveScriptSuccess) {
           onSaveScriptSuccess();
         }
       } else {
-        setMessage({ type: 'error', text: response.error || '保存脚本失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to save script' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '保存脚本失败，请重试' });
+      setMessage({ type: 'error', text: 'Failed to save script, please try again' });
     } finally {
       setSavingScript(false);
     }
   };
 
-  // 加载脚本
+  // Load script
   const handleLoadScript = async (scriptId: string) => {
     setLoadingScript(scriptId);
     setMessage(null);
@@ -106,20 +109,28 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
       const response = await apiService.loadScript(scriptId);
       if (response.success && response.data) {
         onGameStateChange(response.data);
-        setMessage({ type: 'success', text: `脚本 ${scriptId} 加载成功！` });
+        setMessage({ type: 'success', text: `Script ${scriptId} loaded successfully!` });
       } else {
-        setMessage({ type: 'error', text: response.error || '加载失败' });
+        setMessage({ type: 'error', text: response.error || 'Load failed' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '加载失败，请重试' });
+      setMessage({ type: 'error', text: 'Load failed, please try again' });
     } finally {
       setLoadingScript(null);
     }
   };
 
+  // Create new script
+  const handleNewScript = () => {
+    if (onNewScript) {
+      onNewScript();
+      setMessage({ type: 'success', text: 'New script created! Please configure it in the Script Management tab.' });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* 消息提示 */}
+      {/* Message notifications */}
       {message && (
         <Card className={`${message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <CardContent className="p-4">
@@ -137,18 +148,27 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
         </Card>
       )}
 
-      {/* 标题和操作按钮 */}
+      {/* Title and action buttons */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Download className="w-6 h-6" />
-            读取脚本
+            Load Script
           </h2>
           <p className="text-muted-foreground mt-1">
-            从已保存的脚本中选择一个来加载，或保存当前脚本
+            Select a saved script to load, or save the current script
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={handleNewScript} 
+            size="sm"
+            variant="outline"
+            className="border-blue-200 hover:bg-blue-50"
+          >
+            <FilePlus className="w-4 h-4 mr-2" />
+            New Script
+          </Button>
           <Button 
             onClick={handleSaveScript} 
             disabled={savingScript} 
@@ -160,30 +180,30 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
             ) : (
               <Save className="w-4 h-4 mr-2" />
             )}
-            保存脚本
+            Save Script
+          </Button>
+          <Button 
+            onClick={loadSavedScripts} 
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <FileText className="w-4 h-4" />
+            )}
+            Refresh List
           </Button>
         </div>
-        <Button 
-          onClick={loadSavedScripts} 
-          disabled={isLoading}
-          variant="outline"
-          size="sm"
-        >
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <FileText className="w-4 h-4" />
-          )}
-          刷新列表
-        </Button>
       </div>
 
-      {/* 脚本列表 */}
+      {/* Script list */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            已保存的脚本
+            Saved Scripts
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -191,7 +211,7 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
             <div className="flex items-center justify-center h-32">
               <div className="text-center">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-                <p className="text-muted-foreground">加载脚本列表中...</p>
+                <p className="text-muted-foreground">Loading script list...</p>
               </div>
             </div>
           ) : savedScripts.length > 0 ? (
@@ -211,7 +231,7 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="w-4 h-4" />
-                        <span>保存时间: {script.timestamp}</span>
+                        <span>Saved time: {script.timestamp}</span>
                       </div>
                     </div>
                     <Button
@@ -224,7 +244,7 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
                       ) : (
                         <Play className="w-4 h-4" />
                       )}
-                      <span className="ml-2">加载</span>
+                      <span className="ml-2">Load</span>
                     </Button>
                   </div>
                 ))}
@@ -233,9 +253,9 @@ export const LoadScript = forwardRef<LoadScriptRef, LoadScriptProps>(({
           ) : (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
-              <h3 className="text-lg font-medium mb-2">暂无保存的脚本</h3>
+              <h3 className="text-lg font-medium mb-2">No saved scripts</h3>
               <p className="text-muted-foreground">
-                请先在"当前脚本"中创建并保存脚本
+                Please create and save a script in "Current Script" first
               </p>
             </div>
           )}

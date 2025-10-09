@@ -16,7 +16,7 @@ import {
   Upload
 } from 'lucide-react';
 
-// 导入组件
+// Import components
 import { ScriptManagement } from './components/ScriptManagement';
 import { PromptManagement } from './components/PromptManagement';
 import { LoadScript, LoadScriptRef } from './components/LoadScript';
@@ -24,10 +24,10 @@ import { InfoPanels } from './components/InfoPanels';
 import { GameInterface } from './components/GameInterface';
 import { ModelConfig } from './components/ModelConfig';
 
-// 导入API服务
+// Import API service
 import { apiService, GameState, Script } from './services/api';
 
-// 类型定义
+// Type definitions
 interface Notification {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
@@ -37,18 +37,18 @@ interface Notification {
 }
 
 export default function App() {
-  // 状态管理
+  // State management
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [activeTab, setActiveTab] = useState('current');
   
-  // LoadScript组件的ref
+  // LoadScript component ref
   const loadScriptRef = useRef<LoadScriptRef>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
 
-  // 初始化游戏
+  // Initialize game
   useEffect(() => {
     initializeGame();
   }, []);
@@ -62,11 +62,11 @@ export default function App() {
           setGameState(response.data);
         } else {
         console.log('API call failed or incomplete data, showing welcome screen:', response);
-        // 不设置gameState，让它保持null以显示欢迎界面
+        // Don't set gameState, keep it null to show welcome screen
       }
     } catch (error) {
       console.error('Failed to initialize game:', error);
-      // 不设置gameState，让它保持null以显示欢迎界面
+      // Don't set gameState, keep it null to show welcome screen
     }
   };
 
@@ -75,9 +75,9 @@ export default function App() {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  // 事件处理
+  // Event handlers
   const handleGameStateChange = (newGameState: GameState) => {
-    console.log('App: 更新gameState', {
+    console.log('App: Updating gameState', {
       oldSceneCnt: gameState?.scene_cnt,
       newSceneCnt: newGameState.scene_cnt,
       newGameState
@@ -93,7 +93,7 @@ export default function App() {
   };
 
 
-  // 开始创建新剧本
+  // Start creating new script
   const handleCreateNewScript = () => {
     const newGameState: GameState = {
       id: 'new-script',
@@ -104,7 +104,7 @@ export default function App() {
       script: {
         id: 'new-script',
         background: {
-          player: '玩家',
+          player: 'Player',
           narrative: '',
           characters: {}
         },
@@ -113,26 +113,26 @@ export default function App() {
     };
     setGameState(newGameState);
     setSettingsOpen(true);
-    setMessage({ type: 'success', text: '开始创建新剧本' });
+    setMessage({ type: 'success', text: 'Started creating new script' });
   };
 
-  // 加载示例剧本
+  // Load example script
   const handleLoadExampleScript = async () => {
     try {
       const response = await apiService.loadScript('load-script-hp');
       if (response.success && response.data) {
         setGameState(response.data);
-        setMessage({ type: 'success', text: '示例剧本加载成功' });
+        setMessage({ type: 'success', text: 'Example script loaded successfully' });
       } else {
-        setMessage({ type: 'error', text: response.error || '加载示例剧本失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to load example script' });
       }
     } catch (error) {
-      console.error('加载示例剧本失败:', error);
-      setMessage({ type: 'error', text: '加载示例剧本失败' });
+      console.error('Failed to load example script:', error);
+      setMessage({ type: 'error', text: 'Failed to load example script' });
     }
   };
 
-  // 导入剧本文件
+  // Import script file
   const handleImportScript = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -142,17 +142,17 @@ export default function App() {
       if (file) {
         try {
           await file.text();
-          // 这里可以添加解析YAML文件的逻辑
-          setMessage({ type: 'info', text: '剧本文件导入功能开发中...' });
+          // Here you can add YAML file parsing logic
+          setMessage({ type: 'info', text: 'Script file import feature under development...' });
         } catch (error) {
-          setMessage({ type: 'error', text: '文件读取失败' });
+          setMessage({ type: 'error', text: 'File read failed' });
         }
       }
     };
     input.click();
   };
 
-  // 自动隐藏消息
+  // Auto-hide messages
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -162,20 +162,20 @@ export default function App() {
     }
   }, [message]);
 
-  // 如果没有加载游戏状态或者游戏状态不完整，显示欢迎界面
+  // If no game state loaded or incomplete, show welcome screen
   if (!gameState || !gameState.id || !gameState.script) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 dark:from-slate-900 dark:to-slate-800">
         <ParticlesBackground />
         <GradientBackground />
         
-        {/* 通知容器 */}
+        {/* Notification container */}
         <NotificationContainer 
           notifications={notifications}
           onClose={removeNotification}
         />
 
-        {/* 消息提示 */}
+        {/* Message notifications */}
         {message && (
           <div className="fixed top-4 right-4 z-50">
             <div className={`px-4 py-2 rounded-lg shadow-lg ${
@@ -188,9 +188,9 @@ export default function App() {
           </div>
         )}
 
-        {/* 欢迎界面 */}
+        {/* Welcome screen */}
         <div className="min-h-screen flex flex-col">
-          {/* 头部 */}
+          {/* Header */}
           <div className="w-full p-6">
             <div className="flex items-center justify-between max-w-7xl mx-auto">
               <div className="flex items-center gap-4">
@@ -198,7 +198,7 @@ export default function App() {
                   Open Theatre
                 </GlowText>
                 <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 px-3 py-1">
-                  欢迎使用
+                  Welcome
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
@@ -207,25 +207,25 @@ export default function App() {
             </div>
           </div>
 
-          {/* 主内容 - 欢迎界面 */}
+          {/* Main content - Welcome screen */}
           <div className="flex-1 flex items-center justify-center px-6 py-12">
             <div className="w-full max-w-4xl mx-auto">
-              {/* 主要内容卡片 */}
+              {/* Main content card */}
               <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-12 text-center">
-                {/* 图标和标题 */}
+                {/* Icon and title */}
                 <div className="mb-12">
                   <div className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-blue-400 via-cyan-400 to-slate-400 rounded-full flex items-center justify-center shadow-2xl">
                     <span className="text-6xl">🎭</span>
                   </div>
                   <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-cyan-600 to-slate-600 bg-clip-text text-transparent">
-                    欢迎来到 Open Theatre
+                    Welcome to Open Theatre
                   </h1>
                   <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                    创建您的互动戏剧，体验AI驱动的角色扮演
+                    Create your interactive drama, experience AI-driven role-playing
                   </p>
                 </div>
 
-                {/* 操作按钮 */}
+                {/* Action buttons */}
                 <div className="space-y-6 mb-12">
                   <Button 
                     size="lg" 
@@ -233,7 +233,7 @@ export default function App() {
                     onClick={handleCreateNewScript}
                   >
                     <Settings className="w-6 h-6 mr-3" />
-                    开始创建剧本
+                    Start Creating Script
                   </Button>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
@@ -244,7 +244,7 @@ export default function App() {
                       onClick={handleLoadExampleScript}
                     >
                       <FileText className="w-5 h-5 mr-2" />
-                      加载示例剧本
+                      Load Example Script
                     </Button>
                     <Button 
                       variant="outline" 
@@ -253,21 +253,21 @@ export default function App() {
                       onClick={handleImportScript}
                     >
                       <Upload className="w-5 h-5 mr-2" />
-                      导入剧本文件
+                      Import Script File
                     </Button>
                   </div>
                 </div>
 
-                {/* 快速开始指南 */}
+                {/* Quick start guide */}
                 <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl p-8 border border-blue-100 dark:border-blue-800/30">
-                  <h3 className="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-200">快速开始</h3>
+                  <h3 className="text-2xl font-bold mb-6 text-slate-800 dark:text-slate-200">Quick Start</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="text-center">
                       <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                         <span className="text-2xl">📝</span>
                       </div>
                       <p className="text-slate-700 dark:text-slate-300 font-medium">
-                        点击"开始创建剧本"设置基本信息和角色
+                        Click "Start Creating Script" to set basic info and characters
                       </p>
                     </div>
                     <div className="text-center">
@@ -275,7 +275,7 @@ export default function App() {
                         <span className="text-2xl">⚡</span>
                       </div>
                       <p className="text-slate-700 dark:text-slate-300 font-medium">
-                        选择或加载示例剧本快速体验
+                        Select or load example script for quick experience
                       </p>
                     </div>
                     <div className="text-center">
@@ -283,7 +283,7 @@ export default function App() {
                         <span className="text-2xl">📁</span>
                       </div>
                       <p className="text-slate-700 dark:text-slate-300 font-medium">
-                        导入现有的剧本文件继续编辑
+                        Import existing script files to continue editing
                       </p>
                     </div>
                   </div>
@@ -294,27 +294,27 @@ export default function App() {
         </div>
 
 
-        {/* 魔法效果 */}
+        {/* Magic effects */}
         <MagicEffects isActive={false} />
       </div>
     );
   }
 
-  // 游戏主界面 - 参考原版布局
+  // Main game interface - based on original layout
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <ParticlesBackground />
       <GradientBackground />
       
-      {/* 通知容器 */}
+      {/* Notification container */}
       <NotificationContainer 
         notifications={notifications}
         onClose={removeNotification}
       />
 
-      {/* 主容器 */}
+      {/* Main container */}
       <div className="min-h-screen flex flex-col">
-        {/* 头部 - 脚本名称 */}
+        {/* Header - Script name */}
         <div className="w-full p-6 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between">
@@ -323,7 +323,7 @@ export default function App() {
                   Open Theatre
                 </GlowText>
                 <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 px-3 py-1">
-                  {gameState?.id || '未命名剧本'}
+                  {gameState?.id || 'Untitled Script'}
                 </Badge>
               </div>
               <div className="flex items-center gap-3">
@@ -335,17 +335,17 @@ export default function App() {
                   className="border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                 >
                   <Settings className="w-4 h-4 mr-2" />
-                  设置
+                  Settings
                 </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 主内容区域 - 居中布局 */}
+        {/* Main content area - centered layout */}
         <div className="flex-1 flex justify-center p-6">
           <div className="w-full max-w-7xl flex gap-6">
-            {/* 左侧聊天区域 */}
+            {/* Left chat area */}
             <div className="flex-1 min-w-0 max-w-3xl">
               <GameInterface
                 gameState={gameState}
@@ -353,7 +353,7 @@ export default function App() {
               />
             </div>
 
-            {/* 右侧信息面板 */}
+            {/* Right info panel */}
             <div className="w-[500px] flex-shrink-0">
               <InfoPanels
                 gameState={gameState}
@@ -363,13 +363,13 @@ export default function App() {
         </div>
       </div>
 
-      {/* 设置面板 */}
+      {/* Settings panel */}
       {settingsOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          {/* 外侧右上角关闭按钮，便于点击 */}
+          {/* Close button in top-right corner for easy access */}
           <button
             onClick={() => setSettingsOpen(false)}
-            aria-label="关闭设置"
+            aria-label="Close settings"
             className="absolute top-4 right-4 p-3 rounded-full bg-white/80 hover:bg-white shadow-lg border border-white/60 backdrop-blur-sm transition-colors dark:bg-gray-800/80 dark:hover:bg-gray-800"
           >
             <X className="w-5 h-5" />
@@ -377,22 +377,22 @@ export default function App() {
           <Card className="w-full max-w-6xl max-h-[90vh] overflow-hidden">
             <CardContent className="p-0">
               <div className="flex h-[80vh]">
-                {/* 左侧导航 */}
+                {/* Left navigation */}
                 <div className="w-64 border-r bg-muted/50 p-4">
                   <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
                     <TabsList className="grid w-full grid-cols-1 h-auto">
-                      <TabsTrigger value="current" className="justify-start">当前脚本</TabsTrigger>
-                      <TabsTrigger value="prompts" className="justify-start">提示词设置</TabsTrigger>
-                      <TabsTrigger value="load" className="justify-start">读取脚本</TabsTrigger>
-                      <TabsTrigger value="model" className="justify-start">模型配置</TabsTrigger>
+                      <TabsTrigger value="current" className="justify-start">Current Script</TabsTrigger>
+                      <TabsTrigger value="prompts" className="justify-start">Prompt Settings</TabsTrigger>
+                      <TabsTrigger value="load" className="justify-start">Load Script</TabsTrigger>
+                      <TabsTrigger value="model" className="justify-start">Model Config</TabsTrigger>
                     </TabsList>
                   </Tabs>
                 </div>
 
-                {/* 右侧内容 */}
+                {/* Right content */}
                 <div className="flex-1 p-6 overflow-auto">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold">设置</h2>
+                    <h2 className="text-2xl font-bold">Settings</h2>
                     <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(false)}>
                       <X className="w-4 h-4" />
                     </Button>
@@ -418,7 +418,11 @@ export default function App() {
                       <PromptManagement />
                     </TabsContent>
                     <TabsContent value="load">
-                      <LoadScript ref={loadScriptRef} onGameStateChange={handleGameStateChange} />
+                      <LoadScript 
+                        ref={loadScriptRef} 
+                        onGameStateChange={handleGameStateChange} 
+                        onNewScript={handleCreateNewScript}
+                      />
                     </TabsContent>
                     <TabsContent value="model">
                       <ModelConfig />
@@ -431,7 +435,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 魔法效果 */}
+      {/* Magic effects */}
       <MagicEffects isActive={false} />
     </div>
   );

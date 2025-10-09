@@ -37,7 +37,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
   });
   const [editingScene, setEditingScene] = useState<string | null>(null);
 
-  // 添加新场景
+  // Add new scene
   const handleAddScene = () => {
     if (!newScene.name.trim()) return;
 
@@ -62,14 +62,14 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
     setIsAddingScene(false);
   };
 
-  // 删除场景
+  // Delete scene
   const handleDeleteScene = (sceneId: string) => {
     const newScenes = { ...scenes };
     delete newScenes[sceneId];
     onScenesChange(newScenes);
   };
 
-  // 更新场景
+  // Update scene
   const handleUpdateScene = (sceneId: string, updates: Partial<Scene>) => {
     onScenesChange({
       ...scenes,
@@ -77,7 +77,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
     });
   };
 
-  // 添加角色动机
+  // Add character motivation
   const handleAddCharacterMotivation = (sceneId: string) => {
     const scene = scenes[sceneId];
     const newCharacterId = `character_${Date.now()}`;
@@ -88,7 +88,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
     handleUpdateScene(sceneId, { characters: updatedCharacters });
   };
 
-  // 更新角色动机
+  // Update character motivation
   const handleUpdateCharacterMotivation = (sceneId: string, characterId: string, motivation: string) => {
     const scene = scenes[sceneId];
     const updatedCharacters = {
@@ -98,7 +98,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
     handleUpdateScene(sceneId, { characters: updatedCharacters });
   };
 
-  // 删除角色动机
+  // Delete character motivation
   const handleDeleteCharacterMotivation = (sceneId: string, characterId: string) => {
     const scene = scenes[sceneId];
     const updatedCharacters = { ...scene.characters };
@@ -106,7 +106,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
     handleUpdateScene(sceneId, { characters: updatedCharacters });
   };
 
-  // 添加剧情链
+  // Add plot chain
   const handleAddPlotChain = (sceneId: string) => {
     const scene = scenes[sceneId];
     const newChain: PlotChain = {
@@ -118,7 +118,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
     handleUpdateScene(sceneId, { chain: updatedChain });
   };
 
-  // 更新剧情链
+  // Update plot chain
   const handleUpdatePlotChain = (sceneId: string, chainIndex: number, content: string) => {
     const scene = scenes[sceneId];
     const updatedChain = [...scene.chain];
@@ -126,7 +126,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
     handleUpdateScene(sceneId, { chain: updatedChain });
   };
 
-  // 删除剧情链
+  // Delete plot chain
   const handleDeletePlotChain = (sceneId: string, chainIndex: number) => {
     const scene = scenes[sceneId];
     const updatedChain = scene.chain.filter((_, index) => index !== chainIndex);
@@ -137,36 +137,36 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 添加场景按钮 */}
+      {/* Add scene button */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">场景管理</h2>
+        <h2 className="text-2xl font-bold">Scene Management</h2>
         <Button
           onClick={() => setIsAddingScene(true)}
           className="flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
-          添加场景
+          Add Scene
         </Button>
       </div>
 
-      {/* 添加场景表单 */}
+      {/* Add scene form */}
       {isAddingScene && (
         <Card>
           <CardHeader>
-            <CardTitle>添加新场景</CardTitle>
+            <CardTitle>Add New Scene</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">场景名称</label>
+                <label className="text-sm font-medium mb-2 block">Scene Name</label>
                 <Input
-                  placeholder="请输入场景名称"
+                  placeholder="Enter scene name"
                   value={newScene.name}
                   onChange={(e) => setNewScene(prev => ({ ...prev, name: e.target.value }))}
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">架构模式</label>
+                <label className="text-sm font-medium mb-2 block">Architecture Mode</label>
                 <Select
                   value={newScene.mode}
                   onValueChange={(value) => setNewScene(prev => ({ ...prev, mode: value }))}
@@ -186,9 +186,9 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
             </div>
             
             <div>
-              <label className="text-sm font-medium mb-2 block">场景信息</label>
+              <label className="text-sm font-medium mb-2 block">Scene Information</label>
               <Textarea
-                placeholder="请输入场景背景信息"
+                placeholder="Enter scene background information"
                 value={newScene.info}
                 onChange={(e) => setNewScene(prev => ({ ...prev, info: e.target.value }))}
                 rows={4}
@@ -196,19 +196,19 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
             </div>
 
             <div className="flex gap-2">
-              <Button onClick={handleAddScene}>添加场景</Button>
+              <Button onClick={handleAddScene}>Add Scene</Button>
               <Button 
                 variant="outline" 
                 onClick={() => setIsAddingScene(false)}
               >
-                取消
+                Cancel
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* 场景列表 */}
+      {/* Scene list */}
       <div className="space-y-4">
         {sceneEntries.map(([sceneId, scene]) => (
           <Card key={sceneId}>
@@ -241,20 +241,20 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
             
             <CardContent>
               <div className="space-y-4">
-                {/* 场景信息 */}
+                {/* Scene information */}
                 <div>
-                  <h4 className="font-medium mb-2">场景信息</h4>
+                  <h4 className="font-medium mb-2">Scene Information</h4>
                   <p className="text-sm text-muted-foreground">
-                    {scene.info || '暂无场景信息'}
+                    {scene.info || 'No scene information'}
                   </p>
                 </div>
 
-                {/* 角色动机 */}
+                {/* Character motivations */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium flex items-center gap-2">
                       <Users className="w-4 h-4" />
-                      角色动机
+                      Character Motivations
                     </h4>
                     <Button
                       size="sm"
@@ -265,7 +265,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    小提示：请添加该场景所需的所有角色（包括玩家）。如有需要，请为他们填写对应的角色动机。
+                    Tip: Add all required characters for this scene (including player). Fill in their motivations if needed.
                   </p>
                   <div className="space-y-2">
                     {Object.entries(scene.characters).map(([characterId, motivation]) => (
@@ -280,7 +280,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
                           }}
                         >
                           <SelectTrigger className="w-48">
-                            <SelectValue placeholder="选择角色" />
+                            <SelectValue placeholder="Select character" />
                           </SelectTrigger>
                           <SelectContent>
                             {characters.map((char) => (
@@ -291,7 +291,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
                           </SelectContent>
                         </Select>
                         <Textarea
-                          placeholder="角色动机"
+                          placeholder="Character motivation"
                           value={motivation}
                           onChange={(e) => handleUpdateCharacterMotivation(sceneId, characterId, e.target.value)}
                           rows={2}
@@ -310,12 +310,12 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
                   </div>
                 </div>
 
-                {/* 剧情链 */}
+                {/* Plot chains */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium flex items-center gap-2">
                       <Zap className="w-4 h-4" />
-                      剧情链
+                      Plot Chains
                     </h4>
                     <Button
                       size="sm"
@@ -329,7 +329,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
                     {scene.chain.map((chainContent, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <Textarea
-                          placeholder="请输入剧情链内容"
+                          placeholder="Enter plot chain content"
                           value={chainContent}
                           onChange={(e) => handleUpdatePlotChain(sceneId, index, e.target.value)}
                           rows={2}
@@ -356,7 +356,7 @@ export const SceneManagement: React.FC<SceneManagementProps> = ({
       {sceneEntries.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>还没有场景，点击上方按钮添加第一个场景</p>
+          <p>No scenes yet, click the button above to add the first scene</p>
         </div>
       )}
     </div>
