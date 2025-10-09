@@ -11,7 +11,7 @@
 *Code repository for the paper "OPEN-THEATRE: An Open-Source Toolkit for LLM-based Interactive Drama"*
 
 [📄 Paper (arXiv)](https://arxiv.org/abs/2509.16713)
-[🎬 Demo Video](https://www.youtube.com/watch?v=iN1Q3z24-LY) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture)
+[🎬 Demo Video](https://www.youtube.com/watch?v=vjM_xrNIoM8) • [🚀 Quick Start](#quick-start) • [🏗️ Architecture](#architecture)
 
 </div>
 
