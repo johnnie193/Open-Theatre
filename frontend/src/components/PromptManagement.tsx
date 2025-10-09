@@ -32,7 +32,7 @@ export const PromptManagement: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // 加载提示词设置
+  // Load prompt settings
   useEffect(() => {
     loadPrompts();
   }, []);
@@ -44,16 +44,16 @@ export const PromptManagement: React.FC = () => {
       if (response.success && response.data) {
         setPrompts(response.data);
       } else {
-        setMessage({ type: 'error', text: response.error || '加载提示词失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to load prompts' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '加载提示词失败，请重试' });
+      setMessage({ type: 'error', text: 'Failed to load prompts, please try again' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 保存提示词设置
+  // Save prompt settings
   const handleSavePrompts = async () => {
     setIsSaving(true);
     setMessage(null);
@@ -61,18 +61,18 @@ export const PromptManagement: React.FC = () => {
     try {
       const response = await apiService.savePromptSettings(prompts);
       if (response.success) {
-        setMessage({ type: 'success', text: '提示词保存成功！' });
+        setMessage({ type: 'success', text: 'Prompts saved successfully!' });
       } else {
-        setMessage({ type: 'error', text: response.error || '保存失败' });
+        setMessage({ type: 'error', text: response.error || 'Save failed' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '保存失败，请重试' });
+      setMessage({ type: 'error', text: 'Save failed, please try again' });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // 更新提示词
+  // Update prompts
   const handlePromptChange = (key: keyof PromptSettings, value: string) => {
     setPrompts(prev => ({ ...prev, [key]: value }));
   };
@@ -81,49 +81,49 @@ export const PromptManagement: React.FC = () => {
     {
       key: 'prompt_drama_v1' as keyof PromptSettings,
       title: 'v1 - One-for-All',
-      description: '圆桌模式，总导演决策',
+      description: 'Round table mode, general director decision',
       icon: <Brain className="w-5 h-5" />,
       color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
     },
     {
       key: 'prompt_drama_v1_reflect' as keyof PromptSettings,
       title: 'v1 - Reflect',
-      description: 'v1 反思提示词',
+      description: 'v1 reflection prompt',
       icon: <Brain className="w-5 h-5" />,
       color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
     },
     {
       key: 'prompt_drama_v2' as keyof PromptSettings,
       title: 'v2 - Director-Actor(single action)',
-      description: '导演-演员模式',
+      description: 'Director-actor mode',
       icon: <Users className="w-5 h-5" />,
       color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
     },
     {
       key: 'prompt_drama_v2_plus' as keyof PromptSettings,
       title: 'v2_plus - Director-Actor(multiple actions)',
-      description: '多角色导演模式',
+      description: 'Multi-character director mode',
       icon: <Zap className="w-5 h-5" />,
       color: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
     },
     {
       key: 'prompt_character' as keyof PromptSettings,
       title: 'Character - Raw',
-      description: '角色原始模式',
+      description: 'Character raw mode',
       icon: <Users className="w-5 h-5" />,
       color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
     },
     {
       key: 'prompt_character_v2' as keyof PromptSettings,
       title: 'Character - Motivated',
-      description: '角色动机模式',
+      description: 'Character motivation mode',
       icon: <Brain className="w-5 h-5" />,
       color: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
     },
     {
       key: 'prompt_global_character' as keyof PromptSettings,
       title: 'Global Character - v2 Prime',
-      description: '全局角色主要模式',
+      description: 'Global character main mode',
       icon: <Settings className="w-5 h-5" />,
       color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
     }
@@ -131,7 +131,7 @@ export const PromptManagement: React.FC = () => {
     {
       key: 'prompt_director_reflect' as keyof PromptSettings,
       title: 'Director Reflect',
-      description: '导演反思提示词',
+      description: 'Director reflection prompt',
       icon: <Settings className="w-5 h-5" />,
       color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
     }
@@ -142,7 +142,7 @@ export const PromptManagement: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">加载提示词设置中...</p>
+          <p className="text-muted-foreground">Loading prompt settings...</p>
         </div>
       </div>
     );
@@ -150,7 +150,7 @@ export const PromptManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* 消息提示 */}
+      {/* Message notifications */}
       {message && (
         <Card className={message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
           <CardContent className="p-4">
@@ -168,9 +168,9 @@ export const PromptManagement: React.FC = () => {
         </Card>
       )}
 
-      {/* 保存按钮 */}
+      {/* Save button */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">提示词管理</h2>
+        <h2 className="text-2xl font-bold">Prompt Management</h2>
         <Button 
           onClick={handleSavePrompts} 
           disabled={isSaving}
@@ -181,11 +181,11 @@ export const PromptManagement: React.FC = () => {
           ) : (
             <Save className="w-4 h-4" />
           )}
-          保存提示词
+          Save Prompts
         </Button>
       </div>
 
-      {/* 提示词列表 */}
+      {/* Prompt list */}
       <div className="space-y-4">
         {promptConfigs.map((config) => (
           <Card key={config.key}>
@@ -206,12 +206,12 @@ export const PromptManagement: React.FC = () => {
               <Textarea
                 value={prompts[config.key] ?? ''}
                 onChange={(e) => handlePromptChange(config.key, e.target.value)}
-                placeholder={`请输入 ${config.title} 的提示词...`}
+                placeholder={`Enter prompt for ${config.title}...`}
                 rows={8}
                 className="font-mono text-sm"
               />
               <div className="mt-2 text-xs text-muted-foreground">
-                字符数: {(prompts[config.key] ?? '').length}
+                Character count: {(prompts[config.key] ?? '').length}
               </div>
             </CardContent>
           </Card>

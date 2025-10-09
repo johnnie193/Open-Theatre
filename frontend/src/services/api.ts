@@ -1,4 +1,4 @@
-// API服务层 - 与后端Flask API通信
+// API service layer - communicates with backend Flask API
 export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
@@ -19,7 +19,7 @@ export interface Character {
 export interface Scene {
   id: string;
   name: string;
-  info: string; // 场景描述信息
+  info: string; // Scene description info
   mode: string;
   characters: Record<string, string>;
   chain: string[];
@@ -74,7 +74,7 @@ export interface PromptSettings {
 }
 
 class ApiService {
-  private baseUrl = ''; // 使用相对路径，通过Vite代理到Flask后端
+  private baseUrl = ''; // Use relative path, proxy to Flask backend through Vite
 
   private async request<T>(
     endpoint: string,
@@ -104,12 +104,12 @@ class ApiService {
     }
   }
 
-  // 初始化游戏
+  // Initialize game
   async initGame(): Promise<ApiResponse<GameState>> {
     return this.request<GameState>('/api/data', { method: 'GET' });
   }
 
-  // 交互计算
+  // Calculate interaction
   async calculateInteraction(request: InteractionRequest): Promise<ApiResponse<{
     done: boolean;
     state?: GameState;
@@ -125,7 +125,7 @@ class ApiService {
   }
 
 
-  // 获取所有角色列表
+  // Get all character list
   async getCharacters(): Promise<ApiResponse<{ characters: string[] }>> {
     return this.request<{ characters: string[] }>('/api/info', {
       method: 'POST',
@@ -133,7 +133,7 @@ class ApiService {
     });
   }
 
-  // 获取世界记录
+  // Get world records
   async getWorldRecords(): Promise<ApiResponse<{
     allmemory: Record<string, string[]>;
     chunks: string[];
@@ -145,7 +145,7 @@ class ApiService {
     });
   }
 
-  // 获取系统反馈
+  // Get system feedbacks
   async getSystemFeedbacks(): Promise<ApiResponse<{
     dramallm: any[];
   }>> {
@@ -155,7 +155,7 @@ class ApiService {
     });
   }
 
-  // 获取脚本信息
+  // Get script info
   async getScriptInfo(): Promise<ApiResponse<{
     allscript: string;
     scene_cnt: number;
@@ -167,7 +167,7 @@ class ApiService {
     });
   }
 
-  // 获取角色信息
+  // Get character info
   async getCharacterInfo(characterName: string): Promise<ApiResponse<{
     profile: string;
     memory: string[];
@@ -181,7 +181,7 @@ class ApiService {
     });
   }
 
-  // 保存脚本配置
+  // Save script configuration
   async saveScriptConfig(config: {
     id: string;
     background_narrative: string;
@@ -200,7 +200,7 @@ class ApiService {
     });
   }
 
-  // 加载脚本
+  // Load script
   async loadScript(scriptName: string): Promise<ApiResponse<GameState>> {
     return this.request<GameState>('/api/load', {
       method: 'POST',
@@ -211,7 +211,7 @@ class ApiService {
     });
   }
 
-  // 保存脚本
+  // Save script
   async saveScript(): Promise<ApiResponse<{
     save_id: string;
     info: string;
@@ -219,19 +219,19 @@ class ApiService {
     return this.request('/api/save', { method: 'GET' });
   }
 
-  // 获取已保存的脚本列表
+  // Get saved script list
   async getSavedScripts(): Promise<ApiResponse<{ scripts: Array<{ id: string; name: string; timestamp: string; filename: string }> }>> {
     return this.request<{ scripts: Array<{ id: string; name: string; timestamp: string; filename: string }> }>('/api/saved-scripts', {
       method: 'GET',
     });
   }
 
-  // 获取提示词设置
+  // Get prompt settings
   async getPromptSettings(): Promise<ApiResponse<PromptSettings>> {
     return this.request<PromptSettings>('/api/prompt', { method: 'GET' });
   }
 
-  // 保存提示词设置
+  // Save prompt settings
   async savePromptSettings(prompts: PromptSettings): Promise<ApiResponse> {
     return this.request('/api/prompt', {
       method: 'POST',
@@ -239,7 +239,7 @@ class ApiService {
     });
   }
 
-  // 获取模型配置
+  // Get model configuration
   async getModelConfig(): Promise<ApiResponse<{
     provider: string;
     azure_openai: {
@@ -262,7 +262,7 @@ class ApiService {
     return this.request('/api/model-config', { method: 'GET' });
   }
 
-  // 保存模型配置
+  // Save model configuration
   async saveModelConfig(config: {
     provider: string;
     azure_openai?: {
@@ -288,7 +288,7 @@ class ApiService {
     });
   }
 
-  // 上传角色头像
+  // Upload character avatar
   async uploadCharacterAvatar(file: File, characterName: string): Promise<ApiResponse> {
     const formData = new FormData();
     formData.append('file', file);
@@ -310,7 +310,7 @@ class ApiService {
     }
   }
 
-  // 保存设置（只更新当前剧本配置，不涉及文件操作）
+  // Save settings (only update current script configuration, no file operations)
   async saveConfig(scriptData: {
     id: string;
     background_narrative: string;
@@ -342,7 +342,7 @@ class ApiService {
     });
   }
 
-  // 导出记录
+  // Export records
   async exportRecords(): Promise<Blob> {
     const response = await fetch(`${this.baseUrl}/api/info`, {
       method: 'POST',
@@ -353,7 +353,7 @@ class ApiService {
     });
     
     if (!response.ok) {
-      throw new Error('导出失败');
+      throw new Error('Export failed');
     }
     
     return response.blob();

@@ -36,24 +36,24 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
   const [pendingUploadCharacter, setPendingUploadCharacter] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // 初始化
+  // Initialize
   useEffect(() => {
     loadAvailableCharacters();
   }, []);
 
-  // 当gameState变化时重新加载角色列表
+  // Reload character list when gameState changes
   useEffect(() => {
     loadAvailableCharacters();
   }, [gameState]);
 
-  // 当选择角色时加载角色信息
+  // Load character info when character is selected
   useEffect(() => {
     if (selectedCharacterName) {
       loadCharacterInfo(selectedCharacterName);
     }
   }, [selectedCharacterName]);
 
-  // 切换到“系统反馈”或“记录”标签时自动刷新
+  // Auto refresh when switching to "system feedback" or "records" tab
   useEffect(() => {
     if (activeTab === 'system') {
       loadSystemFeedbacks();
@@ -62,7 +62,7 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
     }
   }, [activeTab]);
 
-  // 当 gameState 变化且当前在“系统反馈/记录”时自动刷新
+  // Auto refresh when gameState changes and currently in "system feedback/records"
   useEffect(() => {
     if (activeTab === 'system') {
       loadSystemFeedbacks();
@@ -72,7 +72,7 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
   }, [gameState]);
 
 
-  // 加载世界记录
+  // Load world records
   const loadWorldRecords = async () => {
     setIsLoading(true);
     try {
@@ -80,16 +80,16 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
       if (response.success && response.data) {
         setWorldRecords(response.data);
       } else {
-        setMessage({ type: 'error', text: response.error || '加载世界记录失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to load world records' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '加载世界记录失败，请重试' });
+      setMessage({ type: 'error', text: 'Failed to load world records, please try again' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 加载系统反馈
+  // Load system feedbacks
   const loadSystemFeedbacks = async () => {
     setIsLoading(true);
     try {
@@ -97,16 +97,16 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
       if (response.success && response.data) {
         setSystemFeedbacks(response.data);
       } else {
-        setMessage({ type: 'error', text: response.error || '加载系统反馈失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to load system feedbacks' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '加载系统反馈失败，请重试' });
+      setMessage({ type: 'error', text: 'Failed to load system feedbacks, please try again' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 加载角色信息
+  // Load character info
   const loadCharacterInfo = async (characterName: string) => {
     if (!characterName) return;
     
@@ -116,21 +116,21 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
       if (response.success && response.data) {
         setCharacterInfo(response.data);
       } else {
-        setMessage({ type: 'error', text: response.error || '加载角色信息失败' });
+        setMessage({ type: 'error', text: response.error || 'Failed to load character info' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '加载角色信息失败，请重试' });
+      setMessage({ type: 'error', text: 'Failed to load character info, please try again' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 获取可用角色列表
+  // Get available character list
   const loadAvailableCharacters = async () => {
     try {
       const response = await apiService.getCharacters();
       if (response.success && response.data) {
-        // 过滤掉null、undefined和空字符串
+        // Filter out null, undefined and empty strings
         const validCharacters = (response.data.characters || [])
           .filter(char => char && char !== 'null' && char.trim() !== '');
         setAvailableCharacters(validCharacters);
@@ -141,39 +141,39 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
     }
   };
 
-  // 处理头像双击：打开文件选择
+  // Handle avatar double click: open file selection
   const handleAvatarDoubleClick = (charName: string) => {
     setPendingUploadCharacter(charName);
     fileInputRef.current?.click();
   };
 
-  // 处理文件选择并上传头像
+  // Handle file selection and upload avatar
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !pendingUploadCharacter) return;
     try {
       const resp = await apiService.uploadCharacterAvatar(file, pendingUploadCharacter);
       if (resp.success) {
-        // 刷新右侧角色信息
+        // Refresh right side character info
         if (selectedCharacterName === pendingUploadCharacter) {
           await loadCharacterInfo(pendingUploadCharacter);
         }
-        // 强制头像缓存刷新
+        // Force avatar cache refresh
         setAvatarRefreshKey(Date.now());
-        setMessage({ type: 'success', text: '头像上传成功！' });
+        setMessage({ type: 'success', text: 'Avatar uploaded successfully!' });
       } else {
-        setMessage({ type: 'error', text: resp.error || '头像上传失败' });
+        setMessage({ type: 'error', text: resp.error || 'Avatar upload failed' });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: '头像上传失败，请重试' });
+      setMessage({ type: 'error', text: 'Avatar upload failed, please try again' });
     } finally {
-      // 清空选择，避免同名文件无法再次触发change
+      // Clear selection to avoid same file not triggering change again
       if (fileInputRef.current) fileInputRef.current.value = '';
       setPendingUploadCharacter(null);
     }
   };
 
-  // 导出记录
+  // Export records
   const handleExportRecords = async () => {
     try {
       const blob = await apiService.exportRecords();
@@ -185,36 +185,36 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      setMessage({ type: 'success', text: '记录导出成功！' });
+      setMessage({ type: 'success', text: 'Records exported successfully!' });
     } catch (error) {
-      setMessage({ type: 'error', text: '导出失败，请重试' });
+      setMessage({ type: 'error', text: 'Export failed, please try again' });
     }
   };
 
-  // 格式化脚本内容：根据 gameState.scene_cnt 与 gameState.nc 标注当前场景与完成的剧情链
+  // Format script content: mark current scene and completed plot chains based on gameState.scene_cnt and gameState.nc
   const formatScriptContent = (scriptData: any, meta?: { scene_cnt?: number; nc?: Array<[string, boolean]> }) => {
-    if (!scriptData) return '暂无脚本信息';
+    if (!scriptData) return 'No script information';
     
     let content = `<div class="space-y-2">`;
-    content += `<div><strong>脚本名称：</strong> ${scriptData.id || '未命名'}</div>`;
-    content += `<div><strong>玩家名称：</strong> ${scriptData.background?.player || '未设置'}</div>`;
-    content += `<div><strong>角色及其档案：</strong></div>`;
+    content += `<div><strong>Script Name:</strong> ${scriptData.id || 'Unnamed'}</div>`;
+    content += `<div><strong>Player Name:</strong> ${scriptData.background?.player || 'Not set'}</div>`;
+    content += `<div><strong>Characters and Profiles:</strong></div>`;
     
     if (scriptData.background?.characters) {
       Object.entries(scriptData.background.characters).forEach(([name, profile]) => {
-        content += `<div class="ml-4">${name}: ${profile || '无档案'}</div>`;
+        content += `<div class="ml-4">${name}: ${profile || 'No profile'}</div>`;
       });
     }
     
-    content += `<div><strong>背景叙述：</strong> ${scriptData.background?.narrative || '无背景叙述'}</div>`;
-    content += `<div><strong>角色初始记忆：</strong></div>`;
+    content += `<div><strong>Background Narrative:</strong> ${scriptData.background?.narrative || 'No background narrative'}</div>`;
+    content += `<div><strong>Character Initial Memory:</strong></div>`;
     
     if (scriptData.background?.context) {
       Object.entries(scriptData.background.context).forEach(([name, memory]) => {
-        content += `<div class="ml-4">${name}: ${memory || '无记忆'}</div>`;
+        content += `<div class="ml-4">${name}: ${memory || 'No memory'}</div>`;
       });
     } else {
-      content += `<div class="ml-4">无初始记忆</div>`;
+      content += `<div class="ml-4">No initial memory</div>`;
     }
     
     if (scriptData.scenes) {
@@ -224,18 +224,18 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
         
         content += `<div class="mt-4 ${sceneClass}">`;
         content += `<div><strong>${sceneKey}:</strong></div>`;
-        content += `<div class="ml-4"><strong>场景名称：</strong> ${scene.name || '无名称'}</div>`;
-        content += `<div class="ml-4"><strong>场景信息：</strong> ${scene.info || '无信息'}</div>`;
-        content += `<div class="ml-4"><strong>架构：</strong> ${scene.mode || 'v1'}</div>`;
-        content += `<div class="ml-4"><strong>角色动机：</strong></div>`;
+        content += `<div class="ml-4"><strong>Scene Name:</strong> ${scene.name || 'No name'}</div>`;
+        content += `<div class="ml-4"><strong>Scene Info:</strong> ${scene.info || 'No info'}</div>`;
+        content += `<div class="ml-4"><strong>Architecture:</strong> ${scene.mode || 'v1'}</div>`;
+        content += `<div class="ml-4"><strong>Character Motivations:</strong></div>`;
         
         if (scene.characters) {
           Object.entries(scene.characters).forEach(([name, motivation]) => {
-            content += `<div class="ml-8">${name}: ${motivation || '无动机'}</div>`;
+            content += `<div class="ml-8">${name}: ${motivation || 'No motivation'}</div>`;
           });
         }
         
-        content += `<div class="ml-4"><strong>剧情链：</strong></div>`;
+        content += `<div class="ml-4"><strong>Plot Chains:</strong></div>`;
         if (scene.chain && scene.chain.length > 0) {
           scene.chain.forEach((item: string) => {
             const isCompleted = meta?.nc?.some(([entry, status]: [string, boolean]) => entry === item && status);
@@ -243,7 +243,7 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
             content += `<div class="ml-8 ${itemClass}">${item}</div>`;
           });
         } else {
-          content += `<div class="ml-8">无剧情链</div>`;
+          content += `<div class="ml-8">No plot chains</div>`;
         }
         content += `</div>`;
       });
@@ -255,7 +255,7 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
 
   return (
     <div className="h-full max-h-[calc(100vh-200px)] overflow-hidden flex flex-col">
-      {/* 消息提示 */}
+      {/* Message notifications */}
       {message && (
         <Card className={`mb-4 ${message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <CardContent className="p-4">
@@ -277,29 +277,29 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="script" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
-            当前脚本
+            Current Script
           </TabsTrigger>
           <TabsTrigger value="characters" className="flex items-center gap-2">
             <Users className="w-4 h-4" />
-            角色信息
+            Character Info
           </TabsTrigger>
           <TabsTrigger value="system" className="flex items-center gap-2">
             <Brain className="w-4 h-4" />
-            系统反馈
+            System Feedback
           </TabsTrigger>
           <TabsTrigger value="records" className="flex items-center gap-2">
             <Database className="w-4 h-4" />
-            记录
+            Records
           </TabsTrigger>
         </TabsList>
 
-        {/* 当前脚本 */}
+        {/* Current script */}
         <TabsContent value="script" className="h-[calc(100%-60px)]">
           <Card className="h-full flex flex-col">
             <CardHeader className="flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="w-5 h-5" />
-                当前脚本
+                Current Script
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto p-4">
@@ -321,18 +321,18 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
           </Card>
         </TabsContent>
 
-        {/* 角色信息 */}
+        {/* Character info */}
         <TabsContent value="characters" className="h-[calc(100%-60px)]">
           <Card className="h-full flex flex-col">
             <CardHeader className="flex-shrink-0">
               <CardTitle className="flex items-center gap-2">
                 <Users className="w-5 h-5" />
-                角色信息
+                Character Info
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto">
               <div className="flex h-full">
-                {/* 左侧角色列表 */}
+                {/* Left side character list */}
                 <div className="w-2/5 border-r pr-4">
                   <div className="space-y-2">
                     {availableCharacters.map((char) => (
@@ -363,7 +363,7 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
                   </div>
                 </div>
 
-                {/* 右侧角色详细信息 */}
+                {/* Right side character details */}
                 <div className="flex-1 pl-4 min-w-0">
                   <ScrollArea className="h-full">
                     {isLoading ? (
@@ -441,13 +441,13 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
                     ) : (
                       <div className="text-center text-muted-foreground py-8">
                         <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>选择一个角色查看详细信息</p>
+                        <p>Select a character to view details</p>
                       </div>
                     )}
                   </ScrollArea>
                 </div>
               </div>
-            {/* 隐藏文件输入用于上传头像 */}
+            {/* Hidden file input for avatar upload */}
             <input
               ref={fileInputRef}
               type="file"
@@ -459,13 +459,13 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
           </Card>
         </TabsContent>
 
-        {/* 系统反馈 */}
+        {/* System feedback */}
         <TabsContent value="system" className="h-[calc(100%-60px)]">
           <Card className="h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Brain className="w-5 h-5" />
-                系统反馈
+                System Feedback
               </CardTitle>
             </CardHeader>
             <CardContent className="h-[calc(100%-80px)]">
@@ -513,14 +513,14 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
                     ) : (
                       <div className="text-center text-muted-foreground py-8">
                         <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>暂无系统反馈</p>
+                        <p>No system feedback</p>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="text-center text-muted-foreground py-8">
                     <Button onClick={loadSystemFeedbacks} variant="outline">
-                      加载系统反馈
+                      Load System Feedback
                     </Button>
                   </div>
                 )}
@@ -529,18 +529,18 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
           </Card>
         </TabsContent>
 
-        {/* 记录 */}
+        {/* Records */}
         <TabsContent value="records" className="h-[calc(100%-60px)]">
           <Card className="h-full">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Database className="w-5 h-5" />
-                  记录
+                  Records
                 </div>
                 <Button onClick={handleExportRecords} size="sm" variant="outline">
                   <Download className="w-4 h-4 mr-2" />
-                  导出记录
+                  Export Records
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -601,14 +601,14 @@ export const InfoPanels: React.FC<InfoPanelsProps> = ({
                      (!worldRecords.retrieved || worldRecords.retrieved.length === 0) && (
                       <div className="text-center text-muted-foreground py-8">
                         <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>暂无记录</p>
+                        <p>No records</p>
                       </div>
                     )}
                   </div>
                 ) : (
                   <div className="text-center text-muted-foreground py-8">
                     <Button onClick={loadWorldRecords} variant="outline">
-                      加载世界记录
+                      Load World Records
                     </Button>
                   </div>
                 )}

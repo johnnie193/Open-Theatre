@@ -33,7 +33,7 @@ interface Character {
 interface Scene {
   id: string;
   name: string;
-  info: string; // 场景描述信息
+  info: string; // Scene description info
   mode: 'v1' | 'v2' | 'v2_plus' | 'v2_prime' | 'v3';
   characters: Record<string, string>; // character motivations
   chains: string[];
@@ -48,24 +48,24 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
-  // 脚本基本信息
+  // Script basic info
   const [scriptName, setScriptName] = useState(script.id || '');
   const [playerName, setPlayerName] = useState(script.background?.player || '');
   const [backgroundNarrative, setBackgroundNarrative] = useState(script.background?.narrative || '');
   
-  // 角色管理
+  // Character management
   const [characters, setCharacters] = useState<Character[]>([]);
   
-  // 场景管理
+  // Scene management
   const [scenes, setScenes] = useState<Scene[]>([]);
 
-  // 初始化数据
+  // Initialize data
   useEffect(() => {
     initializeData();
   }, []);
 
   const initializeData = () => {
-    // 初始化角色数据
+    // Initialize character data
     if (script.background?.characters) {
       const chars = Object.entries(script.background.characters).map(([name, profile]) => ({
         id: name,
@@ -75,7 +75,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
       setCharacters(chars);
     }
 
-    // 初始化场景数据
+    // Initialize scene data
     if (script.scenes) {
       const sceneList = Object.entries(script.scenes).map(([key, scene]) => ({
         id: key,
@@ -90,7 +90,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
     }
   };
 
-  // 角色管理函数
+  // Character management functions
   const addCharacter = () => {
     const newCharacter: Character = {
       id: '',
@@ -110,7 +110,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
     setCharacters(updated);
   };
 
-  // 场景管理函数
+  // Scene management functions
   const addScene = () => {
     const newScene: Scene = {
       id: `scene${scenes.length + 1}`,
@@ -134,16 +134,16 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
     setScenes(updated);
   };
 
-  // 添加场景角色动机
+  // Add scene character motivation
   const addSceneCharacter = (sceneIndex: number) => {
     const scene = scenes[sceneIndex];
     const allCharacterNames = characters.map(c => c.id).filter(name => !!name);
     if (allCharacterNames.length === 0) return;
 
-    // 选择一个尚未加入该场景的角色，避免覆盖
+    // Select a character not yet added to this scene to avoid overwriting
     const existingNames = new Set(Object.keys(scene.characters || {}));
     const candidate = allCharacterNames.find(name => !existingNames.has(name));
-    if (!candidate) return; // 所有可选角色都已添加时不再新增
+    if (!candidate) return; // Don't add more when all available characters are already added
 
     const updated = [...scenes];
     updated[sceneIndex] = {
@@ -173,7 +173,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
     setScenes(updated);
   };
 
-  // 添加剧情链
+  // Add plot chain
   const addChain = (sceneIndex: number) => {
     const updated = [...scenes];
     updated[sceneIndex] = {
@@ -201,39 +201,76 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
     setScenes(updated);
   };
 
-  // 保存配置
+  // Save configuration
   const handleSaveConfig = async () => {
     setIsLoading(true);
     setMessage(null);
 
     try {
       const scriptData = {
-        id: scriptName,
-        background_narrative: backgroundNarrative,
-        player_name: playerName,
-        characters: characters.map(char => ({
-          id: char.id,
-          profile: char.profile,
-          initial_memory: char.initialMemory
-        })),
+        id: scriptName || 'untitled-script',
+        background_narrative: backgroundNarrative || '',
+        player_name: playerName || 'Player',
+        characters: characters.filter(char => char.id && char.id.trim()).map(char => ({
+          id: char.id.trim(),
+          profile: char.profile || '',
+          initial_memory: char.initialMemory || ''
+        })) || [],
         scenes: scenes.reduce((acc, scene, index) => {
           acc[`scene${index + 1}`] = {
-            sceneName: scene.name,
-            info: scene.info, // 使用info字段存储场景信息
-            chains: scene.chains,
-            streams: scene.streams,
-            characters: scene.characters,
-            mode: scene.mode
+            sceneName: scene.name || `Scene ${index + 1}`,
+            sceneInfo: scene.info || '', // Use sceneInfo field to match backend expectation
+            chains: Array.isArray(scene.chains) ? scene.chains
+              .filter(chain => chain && typeof chain === 'string' && chain.trim())
+              .map(chain => chain.trim())
+              .filter(chain => chain.length > 0) : [],
+            streams: scene.streams && typeof scene.streams === 'object' ? 
+              Object.fromEntries(
+                Object.entries(scene.streams).map(([key, value]) => [
+                  key, 
+                  Array.isArray(value) ? value.filter(item => item && typeof item === 'string' && item.trim()) : []
+                ])
+              ) : {},
+            characters: scene.characters && typeof scene.characters === 'object' ? 
+              Object.fromEntries(
+                Object.entries(scene.characters).map(([key, value]) => [
+                  key, 
+                  value === null || value === undefined ? '' : value
+                ])
+              ) : {},
+            mode: scene.mode || 'v1'
           };
           return acc;
         }, {} as Record<string, any>),
         storageMode: true
       };
 
+      // 验证数据完整性
+      const isValidData = (data: any): boolean => {
+        try {
+          const jsonString = JSON.stringify(data);
+          // 检查是否有截断的字符串
+          if (jsonString.includes('\\n') && !jsonString.endsWith('}')) {
+            console.error('Data appears to be truncated');
+            return false;
+          }
+          return true;
+        } catch (e) {
+          console.error('Invalid data detected:', e);
+          return false;
+        }
+      };
+
+      if (!isValidData(scriptData)) {
+        setMessage({ type: 'error', text: 'Invalid data detected. Please check your input.' });
+        return;
+      }
+
+      console.log('Sending script data:', JSON.stringify(scriptData, null, 2));
       const response = await apiService.saveConfig(scriptData);
       if (response.success && response.data) {
-        setMessage({ type: 'success', text: '脚本配置保存成功！' });
-        // 更新父组件的脚本数据
+        setMessage({ type: 'success', text: 'Script configuration saved successfully!' });
+        // Update parent component's script data
         const updatedScript = {
           ...script,
           id: scriptName,
@@ -255,7 +292,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
               name: scene.name,
               info: scene.info,
               chain: scene.chains,
-              streams: scene.streams,
+              stream: scene.streams,
               characters: scene.characters,
               mode: scene.mode
             };
@@ -264,10 +301,10 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
         };
         onScriptChange(updatedScript);
         
-        // 更新gameState以刷新主页面
+        // Update gameState to refresh main page
         const updatedGameState: GameState = {
           id: scriptName,
-          scene_cnt: 1, // 设置为1，因为场景从scene1开始
+          scene_cnt: 1, // Set to 1 because scenes start from scene1
           nc: [],
           characters: characters.reduce((acc, char) => {
             if (char.id) {
@@ -296,10 +333,12 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
         };
         onGameStateChange(updatedGameState);
       } else {
-        setMessage({ type: 'error', text: response.error || '保存失败' });
+        console.error('Save failed:', response.error);
+        setMessage({ type: 'error', text: response.error || 'Save failed' });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: '保存失败，请重试' });
+      console.error('Save error:', error);
+      setMessage({ type: 'error', text: 'Save failed, please try again' });
     } finally {
       setIsLoading(false);
     }
@@ -308,7 +347,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* 消息提示 */}
+      {/* Message notifications */}
       {message && (
         <Card className={`${message.type === 'success' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <CardContent className="p-4">
@@ -328,69 +367,69 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
 
       <div className="space-y-6">
 
-        {/* 脚本配置 */}
+        {/* Script configuration */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5" />
-                脚本配置
+                Script Configuration
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">脚本名称</label>
+                  <label className="text-sm font-medium mb-2 block">Script Name</label>
                   <Input
                     value={scriptName || ''}
                     onChange={(e) => setScriptName(e.target.value)}
-                    placeholder="请输入脚本名称..."
+                    placeholder="Enter script name..."
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">玩家名称</label>
+                  <label className="text-sm font-medium mb-2 block">Player Name</label>
                   <Input
                     value={playerName || ''}
                     onChange={(e) => setPlayerName(e.target.value)}
-                    placeholder="请输入玩家名称..."
+                    placeholder="Enter player name..."
                   />
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">背景叙述</label>
+                <label className="text-sm font-medium mb-2 block">Background Narrative</label>
                 <Textarea
                   value={backgroundNarrative}
                   onChange={(e) => setBackgroundNarrative(e.target.value)}
-                  placeholder="请输入背景叙述..."
+                  placeholder="Enter background narrative..."
                   rows={4}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* 角色管理 */}
+          {/* Character management */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="w-5 h-5" />
-                  角色管理
+                  Character Management
                 </div>
                 <Button onClick={addCharacter} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
-                  添加角色
+                  Add Character
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground mb-3">
-                小提示：请在此处添加本剧本的所有角色，并确保包含玩家名称。
+                Tip: Add all characters for this script here, including the player name.
               </p>
               <ScrollArea className="h-64">
                 <div className="space-y-4">
                   {characters.map((character, index) => (
                     <div key={index} className="p-4 border rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">角色 {index + 1}</h4>
+                        <h4 className="font-medium">Character {index + 1}</h4>
                         <Button
                           variant="outline"
                           size="sm"
@@ -402,28 +441,28 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-sm font-medium mb-1 block">角色名称</label>
+                          <label className="text-sm font-medium mb-1 block">Character Name</label>
                           <Input
                             value={character.id || ''}
                             onChange={(e) => updateCharacter(index, 'id', e.target.value)}
-                            placeholder="角色名称"
+                            placeholder="Character name"
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium mb-1 block">角色档案</label>
+                          <label className="text-sm font-medium mb-1 block">Character Profile</label>
                           <Input
                             value={character.profile || ''}
                             onChange={(e) => updateCharacter(index, 'profile', e.target.value)}
-                            placeholder="角色档案"
+                            placeholder="Character profile"
                           />
                         </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium mb-1 block">初始记忆</label>
+                        <label className="text-sm font-medium mb-1 block">Initial Memory</label>
                         <Textarea
                           value={character.initialMemory}
                           onChange={(e) => updateCharacter(index, 'initialMemory', e.target.value)}
-                          placeholder="角色的初始记忆..."
+                          placeholder="Character's initial memory..."
                           rows={2}
                         />
                       </div>
@@ -432,7 +471,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                   {characters.length === 0 && (
                     <div className="text-center text-muted-foreground py-8">
                       <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>暂无角色，点击"添加角色"开始创建</p>
+                      <p>No characters yet, click "Add Character" to start creating</p>
                     </div>
                   )}
                 </div>
@@ -440,17 +479,17 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
             </CardContent>
           </Card>
 
-          {/* 场景管理 */}
+          {/* Scene management */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
-                  场景管理
+                  Scene Management
                 </div>
                 <Button onClick={addScene} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
-                  添加场景
+                  Add Scene
                 </Button>
               </CardTitle>
             </CardHeader>
@@ -460,7 +499,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                   {scenes.map((scene, sceneIndex) => (
                     <div key={sceneIndex} className="p-4 border rounded-lg space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium">场景 {sceneIndex + 1}</h4>
+                        <h4 className="font-medium">Scene {sceneIndex + 1}</h4>
                         <Button
                           variant="outline"
                           size="sm"
@@ -473,15 +512,15 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="text-sm font-medium mb-1 block">场景名称</label>
+                          <label className="text-sm font-medium mb-1 block">Scene Name</label>
                           <Input
                             value={scene.name || ''}
                             onChange={(e) => updateScene(sceneIndex, 'name', e.target.value)}
-                            placeholder="场景名称"
+                            placeholder="Scene name"
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium mb-1 block">架构模式</label>
+                          <label className="text-sm font-medium mb-1 block">Architecture Mode</label>
                           <Select
                             value={scene.mode}
                             onValueChange={(value: any) => updateScene(sceneIndex, 'mode', value)}
@@ -501,30 +540,30 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium mb-1 block">场景信息</label>
+                        <label className="text-sm font-medium mb-1 block">Scene Information</label>
                         <Textarea
                           value={scene.info}
                           onChange={(e) => updateScene(sceneIndex, 'info', e.target.value)}
-                          placeholder="场景背景信息..."
+                          placeholder="Scene background information..."
                           rows={3}
                         />
                       </div>
 
-                      {/* 角色动机 */}
+                      {/* Character motivations */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="text-sm font-medium">角色动机</label>
+                          <label className="text-sm font-medium">Character Motivations</label>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => addSceneCharacter(sceneIndex)}
                           >
                             <Plus className="w-4 h-4 mr-1" />
-                            添加角色
+                            Add Character
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">
-                          小提示：请为该场景补充所有需要的角色（含玩家），并在需要时为他们填写角色动机。
+                          Tip: Add all required characters for this scene (including player) and fill in their motivations when needed.
                         </p>
                         <div className="space-y-2">
                           {Object.entries(scene.characters).map(([charName, motivation]) => (
@@ -552,7 +591,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                               <Input
                                 value={motivation || ''}
                                 onChange={(e) => updateSceneCharacter(sceneIndex, charName, e.target.value)}
-                                placeholder="角色动机..."
+                                placeholder="Character motivation..."
                                 className="flex-1"
                               />
                               <Button
@@ -568,17 +607,17 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                         </div>
                       </div>
 
-                      {/* 剧情链 */}
+                      {/* Plot chains */}
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <label className="text-sm font-medium">剧情链</label>
+                          <label className="text-sm font-medium">Plot Chains</label>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => addChain(sceneIndex)}
                           >
                             <Plus className="w-4 h-4 mr-1" />
-                            添加剧情
+                            Add Plot
                           </Button>
                         </div>
                         <div className="space-y-2">
@@ -587,7 +626,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                               <Input
                                 value={chain || ''}
                                 onChange={(e) => updateChain(sceneIndex, chainIndex, e.target.value)}
-                                placeholder="剧情链内容..."
+                                placeholder="Plot chain content..."
                                 className="flex-1"
                               />
                               <Button
@@ -607,7 +646,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
                   {scenes.length === 0 && (
                     <div className="text-center text-muted-foreground py-8">
                       <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>暂无场景，点击"添加场景"开始创建</p>
+                      <p>No scenes yet, click "Add Scene" to start creating</p>
                     </div>
                   )}
                 </div>
@@ -627,7 +666,7 @@ export const ScriptManagement: React.FC<ScriptManagementProps> = ({
               ) : (
                 <Settings className="w-5 h-5 mr-2" />
               )}
-              保存设置
+              Save Settings
             </Button>
           </div>
       </div>
