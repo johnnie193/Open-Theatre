@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Demo Video](https://img.shields.io/badge/Demo-YouTube-red.svg)](https://www.youtube.com/watch?v=iN1Q3z24-LY)
+[![Demo Video](https://img.shields.io/badge/Demo-YouTube-red.svg)](https://www.youtube.com/watch?v=vjM_xrNIoM8)
 
 **An Open-Source Toolkit for LLM-based Interactive Drama**
 
@@ -111,7 +111,7 @@ Our sophisticated memory system features:
 
 ### 🎬 Demo Video
 
-Watch our comprehensive setup and usage demo: [**YouTube Demo**](https://www.youtube.com/watch?v=iN1Q3z24-LY)
+Watch our comprehensive setup and usage demo: [**YouTube Demo**](https://www.youtube.com/watch?v=vjM_xrNIoM8)
 
 ---
 
@@ -417,6 +417,6 @@ copies or substantial portions of the Software.
 [![GitHub stars](https://img.shields.io/github/stars/your-username/Open-Theatre?style=social)](https://github.com/johnnie193/Open-Theatre/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/your-username/Open-Theatre?style=social)](https://github.com/johnnie193/Open-Theatre/network/members)
 
-[⭐ Star us on GitHub](https://github.com/johnnie193/Open-Theatre) • [🎬 Watch Demo](https://www.youtube.com/watch?v=iN1Q3z24-LY)
+[⭐ Star us on GitHub](https://github.com/johnnie193/Open-Theatre) • [🎬 Watch Demo](https://www.youtube.com/watch?v=vjM_xrNIoM8)
 
 </div>
