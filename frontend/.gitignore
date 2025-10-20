@@ -1,0 +1,21 @@
+# Node / frontend
+node_modules/
+dist/
+.turbo/
+/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vite
+.vite/
+
+# local env
+.env
+
+# Editor directories and files
+.vscode/
+*.log
+
+# macOS
+.DS_Store

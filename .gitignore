@@ -1,3 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+venv/
+pip-wheel-metadata/
+build/
+dist/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.so
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+*.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# Distribution / packaging
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# dotenv
+.env
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Jupyter
+.ipynb_checkpoints
+
+# data
+data/
+
+# frontend build artifacts and node modules (if someone placed front-end build at repo root)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 cache/*
 tests/*
-.env

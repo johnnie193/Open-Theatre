@@ -18,13 +18,13 @@ class ModelSingleton:
     _instance = None
 
     @staticmethod
-    def get_instance(embed_model_name="all-MiniLM-L6-v2"):
+    def get_instance(embed_model_name="/data2/xuty/model/all-MiniLM-L6-v2"):
         if ModelSingleton._instance is None and STORAGE_MODE:
             ModelSingleton._instance = SentenceTransformer(embed_model_name)
         return ModelSingleton._instance
 
 class MemoryStorage:
-    def __init__(self, embed_model_name="all-MiniLM-L6-v2", chunk_max_pieces=5, chunk_overlap_pieces=1):
+    def __init__(self, embed_model_name="/data2/xuty/model/all-MiniLM-L6-v2", chunk_max_pieces=5, chunk_overlap_pieces=1):
         self.embed_model = ModelSingleton.get_instance(embed_model_name)
         self.dimension = self.embed_model.get_sentence_embedding_dimension()
         self.tag_embeddings = {}

@@ -84,13 +84,30 @@ Our sophisticated memory system features:
    # Edit .env with your API keys
    ```
 
-4. **Launch the application**
-   ```bash
-   python main.py
-   ```
+4. **Launch the backend (API + static files)**
+  ```bash
+  # From the repository root
+  python main.py
+  ```
 
-5. **Access the interface**
-   Open `http://127.0.0.1:3000` in your browser
+5. **Start the frontend (development)**
+
+  The web UI lives in the `frontend/` folder. In a separate terminal, run:
+
+  ```bash
+  cd frontend
+  npm install
+  npm run dev
+  ```
+
+  - `npm run dev` starts Vite's dev server (hot reload). By default it serves on `http://127.0.0.1:5173` (Vite) while the backend runs on port `3000`.
+  - If you prefer the backend to serve a built frontend, run a production build and copy the output into the repo root (or serve from `frontend/dist`):
+
+  ```bash
+  cd frontend
+  npm run build
+  # then open the built `index.html` in `frontend/dist` or configure your backend to serve it
+  ```
 
 ### 🎬 Demo Video
 
@@ -146,6 +163,21 @@ STORAGE_MODE=true #whether to start with memory system
 ```
 
 ---
+
+## 💻 Computer / Configuration (recommended)
+
+Minimum recommendations to run the project and the frontend smoothly:
+
+- OS: Linux / macOS / Windows (Linux recommended for GPU setups)
+- Python: 3.10+ (repo targets Python 3.12 in badges). Use Conda or pyenv to manage environments.
+- Node: 18.x or later, npm: 8.x or later (required to run the frontend dev server and build with Vite)
+- npm packages: run `npm install` in `frontend/` before `npm run dev`
+- Optional GPU (for local model hosting / heavy LLMs): NVIDIA GPU with CUDA 11.8+ recommended. If you plan to use GPU-accelerated libraries (PyTorch, FlashAttention, Apex), install matching CUDA toolkit and drivers.
+
+Notes:
+- Backend: the backend uses FastAPI and is started with `python main.py`, which launches Uvicorn and binds to `0.0.0.0:3000` by default. If you run the backend this way you can open `http://127.0.0.1:3000` to access the served `index.html` (if the static frontend files are present) or use the frontend dev server.
+- Frontend: the `frontend/` folder contains a Vite React app. Use `npm run dev` for development (hot reload) or `npm run build` to create a production bundle in `frontend/dist`.
+
 
 ## 🤖 PlayerAgent System
 
